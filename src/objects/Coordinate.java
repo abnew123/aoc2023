@@ -29,6 +29,6 @@ class Coordinate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(x, y, z);
+        return 10000 * x + 100 * y + z;
     }
 }

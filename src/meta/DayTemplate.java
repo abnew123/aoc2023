@@ -1,5 +1,7 @@
-import java.io.FileNotFoundException;
-import java.util.Scanner;
+package src.meta;
+
+import java.util.*;
+import java.io.*;
 
 public abstract class DayTemplate {
 
