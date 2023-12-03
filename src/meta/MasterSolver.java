@@ -12,7 +12,7 @@ public class MasterSolver {
         boolean runTimer = true;
         boolean totalTimer = false;
         boolean exclusionTimer = true;
-        int[] days = new int[] {1};
+        int[] days = new int[] {};
         boolean[] parts = new boolean[] { true, false };
 
         // Do not change anything in the method below this comment
@@ -50,7 +50,7 @@ public class MasterSolver {
 
     public static void timer(boolean total, boolean exclusion) throws Exception {
         Double totalTime = 0.0;
-        for (int day = 1; day <= 1; day++) {
+        for (int day = 1; day <= 3; day++) {
             String zeroFilledDay = (day < 10 ? "0" : "") + day;
             for (int part = 1; part <= 2; part++) {
                 boolean exclude = (boolean) Class.forName("src.solutions.Day" + zeroFilledDay).getMethod("exclude")
