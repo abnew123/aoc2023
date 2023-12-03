@@ -1,0 +1,114 @@
+package src.solutions;
+
+import src.meta.DayTemplate;
+import java.util.*;
+import java.io.*;
+
+public class Day03 extends DayTemplate {
+
+    /**
+     * Main solving method.
+     * @param part1
+     * The solver will solve part 1 if param is set to true.
+     * The solver will solve part 2 if param is set to false.
+     * @param in
+     * The solver will read data from this Scanner.
+     * @return
+     * Returns answer in string format.
+     * @throws FileNotFoundException
+     */
+    public String solve(boolean part1, Scanner in) throws FileNotFoundException{
+        int answer = 0;
+        List<String> lines = new ArrayList<>();
+        Map<Integer, List<SchematicNum>> nums = new HashMap<>();
+        Map<Integer, List<Integer>> gears = new HashMap<>();
+        Map<Integer, List<Integer>> symbols = new HashMap<>();
+        int index = 0;
+        while(in.hasNext()){
+            String line = in.nextLine();
+            lines.add(line);
+            nums.put(index, addNums(line));
+            gears.put(index, addGears(line));
+            symbols.put(index, addSymbols(line));
+            index++;
+        }
+        if(part1){
+            for(int i = 0; i < index; i++){
+                for(SchematicNum num: nums.get(i)){
+                    for(int j = Math.max(0, i - 1); j <= Math.min(i + 1, index - 1); j++){
+                        for(Integer symbol: symbols.get(j)){
+                            if(matches(num, symbol)){
+                                answer+= Integer.parseInt(lines.get(i).substring(num.start, num.end + 1));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            for(int i = 0; i < index; i++) {
+                for (Integer gear : gears.get(i)) {
+                    int gearVal = 1;
+                    int nearNums = 0;
+                    for (int j = Math.max(0, i - 1); j <= Math.min(i + 1, index - 1); j++) {
+                        for (SchematicNum num : nums.get(j)) {
+                            if (matches(num, gear)) {
+                                gearVal *= Integer.parseInt(lines.get(j).substring(num.start, num.end + 1));
+                                nearNums++;
+                            }
+                        }
+                    }
+                    if (nearNums == 2) {
+                        answer += gearVal;
+                    }
+                }
+            }
+        }
+        return answer+"";
+    }
+
+    private boolean matches(SchematicNum num,  int coord){
+        return (coord >= num.start - 1 && coord <= num.end + 1);
+    }
+
+    private List<SchematicNum> addNums(String line){
+        List<SchematicNum> tmp = new ArrayList<>();
+        for(int i = 0; i < line.length(); i++){
+            if(Character.isDigit(line.charAt(i))){
+                int start = i;
+                while(i <  line.length() - 1 && Character.isDigit(line.charAt(i + 1))){
+                    i++;
+                }
+                tmp.add(new SchematicNum(start, i));
+            }
+        }
+        return tmp;
+    }
+    private List<Integer> addGears(String line){
+        List<Integer> tmp = new ArrayList<>();
+        for(int i = 0; i < line.length(); i++){
+            if(line.charAt(i) == '*'){
+                tmp.add(i);
+            }
+        }
+        return tmp;
+    }
+    private List<Integer> addSymbols(String line){
+        List<Integer> tmp = new ArrayList<>();
+        for(int i = 0; i < line.length(); i++){
+            if(!Character.isDigit(line.charAt(i)) && !(line.charAt(i) == '.')) {
+                tmp.add(i);
+            }
+        }
+        return tmp;
+    }
+}
+
+class SchematicNum{
+    int start;
+    int end;
+    public SchematicNum(int s, int e){
+        start = s;
+        end = e;
+    }
+}
