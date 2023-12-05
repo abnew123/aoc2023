@@ -51,23 +51,26 @@ public class Day05 extends DayTemplate {
                 }
             }
         } else {
-            for(int i = 0; i < seeds.length; i+=2){
-                System.out.println("check");
-                for(long j = seeds[i]; j < seeds[i] + seeds[i + 1]; j++){
-                    long val = j;
-                    for (RangeMap rangeMap : rangeMaps) {
-                        val = rangeMap.convert(val);
+            for (int i = 0; i < seeds.length; i += 2) {
+                for (long j = seeds[i]; j < seeds[i] + seeds[i + 1]; j++) {
+                    long[] ret = returnValAndBound(j, rangeMaps);
+                    if (ret[0] < answer) {
+                        answer = ret[0];
                     }
-                    if (val < answer) {
-                        answer = val;
-                        System.out.println(answer);
-                    }
+                    j += ret[1];
                 }
             }
         }
-
-
         return answer + "";
+    }
+
+    private long[] returnValAndBound(long val, List<RangeMap> rangeMaps) {
+        long bound = 10000000000L;
+        for (RangeMap rangeMap : rangeMaps) {
+            bound = Math.min(bound, rangeMap.convert2(val)[1]);
+            val = rangeMap.convert2(val)[0];
+        }
+        return new long[]{val, bound};
     }
 }
 
@@ -112,7 +115,19 @@ class RangeMap {
                 return ends.get(i) + (val - starts.get(i));
             }
         }
-
         return val;
+    }
+
+    public long[] convert2(long val) {
+        long nextStart = 10000000000L;
+        for (int i = 0; i < starts.size(); i++) {
+            if (starts.get(i) > val) {
+                nextStart = Math.min(nextStart, starts.get(i) - val - 1);
+            }
+            if (starts.get(i) <= val && starts.get(i) + betweens.get(i) > val) {
+                return new long[]{ends.get(i) + (val - starts.get(i)), betweens.get(i) - (val - starts.get(i)) - 1};
+            }
+        }
+        return new long[]{val, nextStart == 10000000000L ? 0 : nextStart};
     }
 }
