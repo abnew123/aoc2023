@@ -1,9 +1,9 @@
 package src.objects;
 
-class Coordinate {
-    int x;
-    int y;
-    int z;
+public class Coordinate {
+    public int x;
+    public int y;
+    public int z;
 
     public Coordinate(int x, int y) {
         this.x = x;
