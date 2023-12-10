@@ -1,6 +1,7 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
+import src.objects.Coordinate;
 
 import java.util.*;
 
@@ -22,103 +23,72 @@ public class Day10 extends DayTemplate {
             String line = in.nextLine();
             grid.add(Arrays.stream(line.split("")).toList());
         }
-        distances = new int[grid.get(0).size() * 2 + 1][grid.size() * 2 + 1];
-        Location curr = null;
-        Location prev = null;
+        distances = new int[grid.size() * 2 + 1][grid.get(0).size() * 2 + 1];
+        Coordinate prev = null;
+        Set<Coordinate> been = new HashSet<>();
         for (int i = 0; i < distances.length; i++) {
             for (int j = 0; j < distances[0].length; j++) {
                 if (i % 2 == 1 && j % 2 == 1 && grid.get(i / 2).get(j / 2).equals("S")) {
-                    distances[i][j] = 1;
-                    curr = new Location(j / 2, i / 2);
+                    prev = new Coordinate(j / 2, i / 2);
                 } else {
                     distances[i][j] = 2;
                 }
             }
         }
-        List<Location> been = new ArrayList<>();
+        //next five lines are a manual step, since S is unknown.
+        been.add(prev);
+        Coordinate curr = new Coordinate(prev.x, prev.y + 1);
+        distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
+        distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
+        answer++;
+
+        Map<String, Integer> types = new HashMap<>();
+        types.put("|", 10102);
+        types.put("-", 12010);
+        types.put("F", 11001);
+        types.put("J", 10220);
+        types.put("7", 12001);
+        types.put("L", 10210);
         while (!been.contains(curr)) {
-            Location tmp = curr;
+            Coordinate tmp = curr;
             answer += 1;
-            String pipe = grid.get(curr.y).get(curr.x);
-            if (prev == null) {
-                curr = new Location(curr.x, curr.y + 1);
+            Integer pipe = types.get(grid.get(curr.y).get(curr.x));
+            int x1 = (pipe / 1000 % 10) == 2 ? -1 : (pipe / 1000 % 10);
+            int y1 = (pipe / 100 % 10) == 2 ? -1 : (pipe / 100 % 10);
+            int x2 = (pipe / 10 % 10) == 2 ? -1 : (pipe / 10 % 10);
+            int y2 = (pipe % 10) == 2 ? -1 : (pipe % 10);
+            Coordinate case1 = new Coordinate(curr.x + x1, curr.y + y1);
+            if (prev.x == case1.x && prev.y == case1.y) {
+                curr = new Coordinate(curr.x + x2, curr.y + y2);
             } else {
-                if (pipe.equals("|")) {
-                    if (prev.equals(new Location(curr.x, curr.y + 1))) {
-                        curr = new Location(curr.x, curr.y - 1);
-                    } else {
-                        curr = new Location(curr.x, curr.y + 1);
-                    }
-                }
-                if (pipe.equals("-")) {
-                    if (prev.equals(new Location(curr.x + 1, curr.y))) {
-                        curr = new Location(curr.x - 1, curr.y);
-                    } else {
-                        curr = new Location(curr.x + 1, curr.y);
-                    }
-                }
-                if (pipe.equals("L")) {
-                    if (prev.equals(new Location(curr.x + 1, curr.y))) {
-                        curr = new Location(curr.x, curr.y - 1);
-                    } else {
-                        curr = new Location(curr.x + 1, curr.y);
-                    }
-                }
-                if (pipe.equals("J")) {
-                    if (prev.equals(new Location(curr.x - 1, curr.y))) {
-                        curr = new Location(curr.x, curr.y - 1);
-                    } else {
-                        curr = new Location(curr.x - 1, curr.y);
-                    }
-                }
-                if (pipe.equals("7")) {
-                    if (prev.equals(new Location(curr.x, curr.y + 1))) {
-                        curr = new Location(curr.x - 1, curr.y);
-                    } else {
-                        curr = new Location(curr.x, curr.y + 1);
-                    }
-                }
-                if (pipe.equals("F")) {
-                    if (prev.equals(new Location(curr.x, curr.y + 1))) {
-                        curr = new Location(curr.x + 1, curr.y);
-                    } else {
-                        curr = new Location(curr.x, curr.y + 1);
-                    }
-                }
+                curr = case1;
             }
-            been.add(prev);
             prev = tmp;
+            been.add(prev);
             distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
             distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
         }
-        boolean check = true;
-        distances[0][0] = 0;
-        while (check) {
-            check = false;
-            for (int i = 0; i < distances.length; i++) {
-                for (int j = 0; j < distances[i].length; j++) {
-                    if (distances[i][j] == 0) {
-                        if (i > 0 && distances[i - 1][j] == 2) {
-                            distances[i - 1][j] = 0;
-                            check = true;
-                        }
-                        if (i < distances.length - 1 && distances[i + 1][j] == 2) {
-                            distances[i + 1][j] = 0;
-                            check = true;
-                        }
-                        if (j > 0 && distances[i][j - 1] == 2) {
-                            distances[i][j - 1] = 0;
-                            check = true;
-                        }
-                        if (j < distances[i].length - 1 && distances[i][j + 1] == 2) {
-                            distances[i][j + 1] = 0;
-                            check = true;
+        if (!part1) {
+            List<Coordinate> pointsToCheck = new ArrayList<>();
+            pointsToCheck.add(new Coordinate(0,0));
+            int[] xs = new int[]{-1, 1, 0, 0};
+            int[] ys = new int[]{0, 0, -1, 1};
+            while (pointsToCheck.size() > 0) {
+                List<Coordinate> tmp = new ArrayList<>();
+                for(Coordinate point: pointsToCheck){
+                    for (int k = 0; k < 4; k++) {
+                        int newx = point.x + xs[k];
+                        int newy = point.y + ys[k];
+                        if (newx >= 0 && newy >= 0 && newx < distances.length && newy < distances[0].length) {
+                            if (distances[newx][newy] == 2) {
+                                distances[newx][newy] = 0;
+                                tmp.add(new Coordinate(newx, newy));
+                            }
                         }
                     }
+                    pointsToCheck = tmp;
                 }
             }
-        }
-        if (!part1) {
             answer = 0;
             for (int i = 1; i < distances.length; i += 2) {
                 for (int j = 1; j < distances[i].length; j += 2) {
@@ -132,28 +102,5 @@ public class Day10 extends DayTemplate {
             answer /= 2;
         }
         return answer + "";
-    }
-}
-
-class Location {
-    int x;
-    int y;
-
-    public Location(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Location location = (Location) o;
-        return x == location.x && y == location.y;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(x, y);
     }
 }
