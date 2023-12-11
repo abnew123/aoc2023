@@ -39,7 +39,7 @@ public class Day11 extends DayTemplate {
             index++;
             space.add(tmp);
         }
-        for (int i = space.get(0).size() - 1; i >= 0; i--) {
+        for (int i = 0; i < space.get(0).size(); i++) {
             boolean noGalaxy = true;
             for (int j = 0; j < space.size(); j++) {
                 if (space.get(j).get(i).equals("#")) {
@@ -51,24 +51,31 @@ public class Day11 extends DayTemplate {
                 emptyV.add(i);
             }
         }
-        for (Coordinate g1 : galaxies) {
-            for (Coordinate g2 : galaxies) {
-                if (!g1.equals(g2)) {
-                    for (Integer i : emptyV) {
-                        if ((g1.x > i && g2.x < i) || (g1.x < i && g2.x > i)) {
-                            answer += part1 ? 1 : 999999;
-                        }
-                    }
-                    for (Integer i : emptyH) {
-                        if ((g1.y > i && g2.y < i) || (g1.y < i && g2.y > i)) {
-                            answer += part1 ? 1 : 999999;
-                        }
-                    }
-                    answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
-                }
+        for (int i = 0; i < galaxies.size(); i++) {
+            for (int j = i + 1; j < galaxies.size(); j++) {
+                Coordinate g1 = galaxies.get(i);
+                Coordinate g2 = galaxies.get(j);
+                answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
             }
         }
-        answer /= 2;
+        for(Integer ind: emptyV){
+            int left = 0;
+            for(Coordinate g: galaxies){
+                if(g.x < ind){
+                    left++;
+                }
+            }
+            answer+= left * (galaxies.size() - left) * (part1 ? 1 : 999999L);
+        }
+        for(Integer ind: emptyH){
+            int up = 0;
+            for(Coordinate g: galaxies){
+                if(g.y < ind){
+                    up++;
+                }
+            }
+            answer+= up * (galaxies.size() - up) * (part1 ? 1 : 999999L);
+        }
         return answer + "";
     }
 }
