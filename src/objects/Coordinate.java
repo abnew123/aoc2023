@@ -17,6 +17,11 @@ public class Coordinate {
         this.z = z;
     }
 
+    public void set(int x, int y){
+        this.x = x;
+        this.y = y;
+    }
+
     // Optional: Add getters, setters, or other methods as needed
 
     @Override
