@@ -37,6 +37,12 @@ public class Day14 extends DayTemplate {
         }
         if (part1) {
             shiftNorth(stones);
+//            for(int i = 0; i < stones.length; i++){
+//                for(int j = 0; j < stones.length; j++){
+//                    System.out.print(stones[j][i]);
+//                }
+//                System.out.println("");
+//            }
         } else {
             int index = 0;
             int offset = 0;
@@ -48,7 +54,7 @@ public class Day14 extends DayTemplate {
                 int tmpVal = getSupportLoad(stones);
                 index++;
                 if (states.containsKey(Arrays.deepHashCode(stones) + tmpVal)) {
-                    int cycle = index - states.get(Arrays.deepHashCode(stones)+tmpVal);
+                    int cycle = index - states.get(Arrays.deepHashCode(stones) + tmpVal);
                     offset = (1000000000 - index) % cycle;
                     break;
                 } else {
@@ -67,64 +73,68 @@ public class Day14 extends DayTemplate {
     }
 
     private void shiftNorth(int[][] stones) {
-        boolean moved = true;
-        while (moved) {
-            moved = false;
-            for (int i = 0; i < stones[0].length; i++) {
-                for (int j = 1; j < stones.length; j++) {
-                    if (stones[i][j] == 2 && stones[i][j - 1] == 0) {
-                        stones[i][j] = 0;
-                        stones[i][j - 1] = 2;
-                        moved = true;
-                    }
+        for (int i = 0; i < stones.length; i++) {
+            int lastObstacle = -1;
+            for (int j = 0; j < stones[0].length; j++) {
+                if (stones[i][j] == 1) {
+                    lastObstacle = j;
+                    continue;
+                }
+                if (stones[i][j] == 2) {
+                    stones[i][j] = 0;
+                    stones[i][lastObstacle + 1] = 2;
+                    lastObstacle++;
                 }
             }
         }
     }
 
     private void shiftSouth(int[][] stones) {
-        boolean moved = true;
-        while (moved) {
-            moved = false;
-            for (int i = 0; i < stones[0].length; i++) {
-                for (int j = 0; j < stones.length - 1; j++) {
-                    if (stones[i][j] == 2 && stones[i][j + 1] == 0) {
-                        stones[i][j] = 0;
-                        stones[i][j + 1] = 2;
-                        moved = true;
-                    }
+        for (int i = 0; i < stones.length; i++) {
+            int lastObstacle = -1;
+            for (int j = 0; j < stones[0].length; j++) {
+                if (stones[i][stones.length - 1-j] == 1) {
+                    lastObstacle = j;
+                    continue;
+                }
+                if (stones[i][stones.length - 1-j] == 2) {
+                    stones[i][stones.length - 1-j] = 0;
+                    stones[i][stones.length - 1-(lastObstacle + 1)] = 2;
+                    lastObstacle++;
                 }
             }
         }
     }
 
     private void shiftWest(int[][] stones) {
-        boolean moved = true;
-        while (moved) {
-            moved = false;
-            for (int i = 1; i < stones[0].length; i++) {
-                for (int j = 0; j < stones.length; j++) {
-                    if (stones[i][j] == 2 && stones[i - 1][j] == 0) {
-                        stones[i][j] = 0;
-                        stones[i - 1][j] = 2;
-                        moved = true;
-                    }
+        for (int i = 0; i < stones.length; i++) {
+            int lastObstacle = -1;
+            for (int j = 0; j < stones[0].length; j++) {
+                if (stones[j][i] == 1) {
+                    lastObstacle = j;
+                    continue;
+                }
+                if (stones[j][i] == 2) {
+                    stones[j][i] = 0;
+                    stones[lastObstacle + 1][i] = 2;
+                    lastObstacle++;
                 }
             }
         }
     }
 
     private void shiftEast(int[][] stones) {
-        boolean moved = true;
-        while (moved) {
-            moved = false;
-            for (int i = 0; i < stones[0].length - 1; i++) {
-                for (int j = 0; j < stones.length; j++) {
-                    if (stones[i][j] == 2 && stones[i + 1][j] == 0) {
-                        stones[i][j] = 0;
-                        stones[i + 1][j] = 2;
-                        moved = true;
-                    }
+        for (int i = 0; i < stones.length; i++) {
+            int lastObstacle = -1;
+            for (int j = 0; j < stones[0].length; j++) {
+                if (stones[stones.length - 1-j][i] == 1) {
+                    lastObstacle = j;
+                    continue;
+                }
+                if (stones[stones.length - 1-j][i] == 2) {
+                    stones[stones.length - 1-j][i] = 0;
+                    stones[stones.length - 1-(lastObstacle + 1)][i] = 2;
+                    lastObstacle++;
                 }
             }
         }
