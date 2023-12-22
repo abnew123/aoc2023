@@ -32,7 +32,8 @@ public class Day22 extends DayTemplate {
                 }
             }
         }
-        bricks.sort(null);
+        Collections.sort(bricks);
+        Collections.reverse(bricks);
         for (int i = 0; i < bricks.size(); i++) {
             bricks.get(i).id = i;
         }
@@ -41,11 +42,10 @@ public class Day22 extends DayTemplate {
                 grid[b.x + i * xs[b.dir]][b.y + i * ys[b.dir]][b.z + i * zs[b.dir]] = b.id;
             }
         }
-        boolean somethingMoved = true;
-        while (somethingMoved) {
-            somethingMoved = false;
-            for (Brick b : bricks) {
-                boolean supported = false;
+        for (Brick b : bricks) {
+            boolean supported = b.z == 1;
+            while(!supported){
+                supported = b.z == 1;
                 if (b.z > 1) {
                     if (b.dir == 2) {
                         if (grid[b.x][b.y][b.z - 1] != -1) {
@@ -65,7 +65,6 @@ public class Day22 extends DayTemplate {
                             grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + k * zs[b.dir]] = -1;
                         }
                         b.z = b.z - 1;
-                        somethingMoved = true;
                     }
                 }
             }
