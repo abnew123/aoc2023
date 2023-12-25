@@ -36,4 +36,8 @@ public class Coordinate {
     public int hashCode() {
         return 10000 * x + 100 * y + z;
     }
+
+    public String toString(){
+        return (x + " " + y);
+    }
 }
