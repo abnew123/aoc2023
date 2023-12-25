@@ -4,4 +4,4 @@ repos:
     hooks:
       - id: aoc-tiles
         args:
-          - --overwrite-year=2023
+          - --verbose
