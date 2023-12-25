@@ -3,6 +3,4 @@ repos:
     rev: 0.5.3
     hooks:
       - id: aoc-tiles
-        args:
-          - --verbose
-          - --contrast-improvement-threshold=50
+        args: ["--overwrite-year", "2023"]
