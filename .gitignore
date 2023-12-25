@@ -24,3 +24,8 @@ hs_err_pid*
 .idea/
 data/
 out/
+
+# for https://github.com/LiquidFun/aoc_tiles
+/.aoc_tiles/**/*
+!/.aoc_tiles/tiles/
+session.cookie
