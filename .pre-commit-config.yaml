@@ -5,4 +5,4 @@ repos:
       - id: aoc-tiles
         args:
           - --verbose
-          - --overwrite-year=2023
+          - --contrast_improvement_threshold=50
