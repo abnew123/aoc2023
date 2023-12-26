@@ -1,6 +1,7 @@
 repos:
   - repo: https://github.com/LiquidFun/aoc_tiles
-    rev: 0.5.3
+    rev: 0.5.6
     hooks:
       - id: aoc-tiles
-        args: ["--overwrite-year", 2023]
+        args:
+          - --overwrite-year=2023
