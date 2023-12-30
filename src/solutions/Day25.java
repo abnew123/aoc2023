@@ -11,72 +11,90 @@ public class Day25 extends DayTemplate {
         if(!part1){
             return "Merry Christmas!";
         }
-        Map<String, Component> components = new HashMap<>();
-        Set<String> vertices = new HashSet<>();
-        Set<Edge> edges = new HashSet<>();
-        long answer;
+        Map<String, List<String>> graph = new HashMap<>();
+        List<Edge> edges = new ArrayList<>();
         while (in.hasNext()) {
-            String line = in.nextLine();
-            components.put(line.split(":")[0], new Component(line.split(":")));
-        }
-        Map<String, Component> tmp = new HashMap<>();
-        for (String s : components.keySet()) {
-            tmp.putIfAbsent(s, new Component(s));
-            tmp.get(s).connections.addAll(components.get(s).connections);
-            Component c = components.get(s);
-            for (String s2 : c.connections) {
-                tmp.putIfAbsent(s2, new Component(s2));
-                tmp.get(s2).connections.add(s);
-                vertices.add(s);
-                vertices.add(s2);
-                edges.add(new Edge(s, s2));
-                edges.add(new Edge(s2, s));
+            String[] line = in.nextLine().split(":");
+            graph.putIfAbsent(line[0], new ArrayList<>());
+            for (String s : line[1].trim().split(" ")) {
+                graph.putIfAbsent(s, new ArrayList<>());
+                graph.get(line[0]).add(s);
+                graph.get(s).add(line[0]);
+                edges.add(new Edge(line[0], s));
             }
         }
-        components = tmp;
-        Edge first = new Edge("fmr", "zhg");
-        Edge second = new Edge("krf", "crg");
-        Edge third = new Edge("jct", "rgv");
-        edges.remove(first);
-        edges.remove(second);
-        edges.remove(third);
+        List<String> verticesList = new ArrayList<>(graph.keySet());
+        Map<Edge, Integer> frequencies = new HashMap<>();
+        for(Edge edge: edges){
+            frequencies.put(edge,0);
+        }
+        getMostUsedEdges(graph, frequencies);
+        for(Edge e: frequencies.keySet()){
+            edges.get(edges.indexOf(e)).used = frequencies.get(e);
+        }
+        Collections.sort(edges);
+        for(int i = 0; i < 3; i++){
+            edges.remove(0);
+        }
         Set<String> visited = new HashSet<>();
-        Queue<String> queue = new PriorityQueue<>();
-        List<String> verticesList = new ArrayList<>(vertices);
+        Queue<String> queue = new LinkedList<>();
+
         queue.add(verticesList.get(0));
         while(!queue.isEmpty()){
             String s = queue.poll();
             visited.add(s);
-            for(String con: components.get(s).connections){
+            for(String con: graph.get(s)){
                 if(!visited.contains(con) && edges.contains(new Edge(s, con))){
                     queue.add(con);
                 }
             }
         }
-        answer = (long) visited.size() * (vertices.size() - visited.size());
-        return answer + "";
-    }
-}
-
-class Component {
-    Set<String> connections = new HashSet<>();
-    String name;
-
-    public Component(String s) {
-        name = s;
+        return visited.size() * (graph.keySet().size() - visited.size()) + "";
     }
 
-    public Component(String[] line) {
-        name = line[0];
-        for (String s : line[1].trim().split(" ")) {
-            connections.add(s.trim());
+    public void getMostUsedEdges(Map<String, List<String>> graph, Map<Edge,Integer> frequencies){
+        for(String vertex: graph.keySet()){
+            Set<String> visited = new HashSet<>();
+            visited.add(vertex);
+            Set<Route> routes = new HashSet<>();
+            routes.add(new Route(vertex));
+            while(!routes.isEmpty()) {
+                Set<Route> routeTmp = new HashSet<>();
+                for(Route r: routes){
+                    for(Edge e: r.edges){
+                        frequencies.put(e, frequencies.get(e) + 1);
+                    }
+                    for(String con: graph.get(r.vertex)){
+                        if(!visited.contains(con)){
+                            Route tmp = new Route(con);
+                            tmp.edges.addAll(r.edges);
+                            tmp.edges.add(new Edge(r.vertex, con));
+                            routeTmp.add(tmp);
+                            visited.add(con);
+                        }
+                    }
+                }
+               routes = routeTmp;
+            }
         }
     }
 }
 
-class Edge {
+class Route{
+    String vertex;
+    List<Edge> edges;
+
+    public Route(String start){
+        vertex = start;
+        edges = new ArrayList<>();
+    }
+
+}
+
+class Edge implements Comparable<Edge> {
     String start;
     String end;
+    int used = 0;
 
     public Edge(String s, String e) {
         start = (s.compareTo(e) > 0)?s: e;
@@ -84,7 +102,7 @@ class Edge {
     }
 
     public String toString() {
-        return start + " " + end;
+        return start + " " + end + " " + used;
     }
 
     @Override
@@ -98,4 +116,8 @@ class Edge {
         return Objects.hash(start, end);
     }
 
+    @Override
+    public int compareTo(Edge o) {
+        return o.used - used;
+    }
 }
