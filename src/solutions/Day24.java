@@ -106,38 +106,36 @@ public class Day24 extends DayTemplate {
         long x = Long.MAX_VALUE;
         long y = Long.MAX_VALUE;
         long z = Long.MAX_VALUE;
-        for (int i = 0; i < stones.size(); i++) {
-            for (int j = i + 1; j < stones.size(); j++) {
-                Hailstone first = stones.get(i);
-                Hailstone second = stones.get(j);
-                int newFirstXVel = first.xvel - v.x;
-                int newSecondXVel = second.xvel - v.x;
-                int newFirstYVel = first.yvel - v.y;
-                int newSecondYVel = second.yvel - v.y;
-                long denom = (newFirstXVel * newSecondYVel) - (newFirstYVel * newSecondXVel);
-                if (denom == 0) {
-                    continue;
-                }
-                long numer1 = ((second.x - first.x) * newSecondYVel) - ((second.y - first.y) * newSecondXVel);
-                long numer2 = ((first.x - second.x) * newFirstYVel) - ((first.y - second.y) * newFirstXVel);
-                if ((numer1 / denom) < 0 || (numer2 / denom) > 0) {
-                    return new long[]{-1, -1, -1};
-                }
-                long intersectionX = (numer1 / denom) * newFirstXVel + first.x;
-                long intersectionY = (numer1 / denom) * newFirstYVel + first.y;
-                long intersectionZ = (numer1 / denom) * (first.zvel - v.z) + first.z;
-                if (x == Long.MAX_VALUE) {
-                    x = intersectionX;
-                }
-                if (y == Long.MAX_VALUE) {
-                    y = intersectionY;
-                }
-                if (z == Long.MAX_VALUE) {
-                    z = intersectionZ;
-                }
-                if (x != intersectionX || y != intersectionY || z!= intersectionZ) {
-                    return new long[]{-1, -1, -1};
-                }
+        for (int i = 1; i < stones.size(); i++) {
+            Hailstone first = stones.get(0);
+            Hailstone second = stones.get(i);
+            int newFirstXVel = first.xvel - v.x;
+            int newSecondXVel = second.xvel - v.x;
+            int newFirstYVel = first.yvel - v.y;
+            int newSecondYVel = second.yvel - v.y;
+            long denom = (newFirstXVel * newSecondYVel) - (newFirstYVel * newSecondXVel);
+            if (denom == 0) {
+                continue;
+            }
+            long numer1 = ((second.x - first.x) * newSecondYVel) - ((second.y - first.y) * newSecondXVel);
+            long numer2 = ((first.x - second.x) * newFirstYVel) - ((first.y - second.y) * newFirstXVel);
+            if ((numer1 / denom) < 0 || (numer2 / denom) > 0) {
+                return new long[]{-1, -1, -1};
+            }
+            long intersectionX = (numer1 / denom) * newFirstXVel + first.x;
+            long intersectionY = (numer1 / denom) * newFirstYVel + first.y;
+            long intersectionZ = (numer1 / denom) * (first.zvel - v.z) + first.z;
+            if (x == Long.MAX_VALUE) {
+                x = intersectionX;
+            }
+            if (y == Long.MAX_VALUE) {
+                y = intersectionY;
+            }
+            if (z == Long.MAX_VALUE) {
+                z = intersectionZ;
+            }
+            if (x != intersectionX || y != intersectionY || z != intersectionZ) {
+                return new long[]{-1, -1, -1};
             }
         }
         return new long[]{x, y, z};
