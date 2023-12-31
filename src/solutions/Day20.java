@@ -15,7 +15,7 @@ public class Day20 extends DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long answer;
         Map<String, Module> modules = new HashMap<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split("->|,");
@@ -29,9 +29,14 @@ public class Day20 extends DayTemplate {
                 modules.put(line[0].trim(), new Broadcaster(line));
             }
         }
+
+        String rxInput = null;
         for (String s : modules.keySet()) {
             List<String> targets = modules.get(s).getTargets();
             for (String t : targets) {
+                if(t.equals("rx")){
+                    rxInput = s;
+                }
                 if (modules.get(t) instanceof Conjunction) {
                     ((Conjunction) modules.get(t)).inputs.add(s);
                 }
@@ -59,10 +64,14 @@ public class Day20 extends DayTemplate {
         } else {
             answer = 1;
             List<String> allInputs = new ArrayList<>();
-            allInputs.add("vc");
-            allInputs.add("tn");
-            allInputs.add("hd");
-            allInputs.add("jx");
+            for (String s : modules.keySet()) {
+                List<String> targets = modules.get(s).getTargets();
+                for (String t : targets) {
+                    if(t.equals(rxInput)){
+                        allInputs.add(s);
+                    }
+                }
+            }
             List<Integer> recordedSuccesses = new ArrayList<>();
             int totalRecorded = allInputs.size();
             int recordedSoFar = 0;
@@ -75,7 +84,7 @@ public class Day20 extends DayTemplate {
                 int index = 0;
                 while (pulses.size() > index) {
                     for (int j = 0; j < allInputs.size(); j++) {
-                        if (pulses.get(index).input.equals(allInputs.get(j)) && !pulses.get(index).high && recordedSuccesses.get(j) == 0) {
+                        if (pulses.get(index).input.equals(allInputs.get(j)) && pulses.get(index).high && recordedSuccesses.get(j) == 0) {
                             recordedSuccesses.set(j, i);
                             recordedSoFar++;
                         }
