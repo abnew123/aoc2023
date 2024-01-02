@@ -1,10 +1,18 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
+import src.objects.Coordinate;
 
 import java.util.*;
 
 public class Day16 extends DayTemplate {
+
+    static int[][] dirChart;
+
+    static int[] xs = new int[]{-1, 1, 0, 0};
+    static int[] ys = new int[]{0, 0, -1, 1};
+
+    static Set<Coordinate> pointsOfInterest;
 
     /**
      * Main solving method.
@@ -21,24 +29,53 @@ public class Day16 extends DayTemplate {
             String[] line = in.nextLine().split("");
             tmpGraph.add(line);
         }
+        pointsOfInterest = new HashSet<>();
+        dirChart = new int[6][4];
+        for (int i = 0; i < dirChart.length; i++) {
+            for (int j = 0; j < dirChart[0].length; j++) {
+                if (i == 0) {
+                    dirChart[i][j] = 3 - j;
+                }
+                if (i == 1) {
+                    dirChart[i][j] = (j + 2) % 4;
+                }
+                if (i == 2) {
+                    if (j >= 2) {
+                        dirChart[i][j] = j;
+                    } else {
+                        dirChart[i][j] = 2;
+                    }
+                }
+                if (i == 3) {
+                    if (j < 2) {
+                        dirChart[i][j] = j;
+                    } else {
+                        dirChart[i][j] = 0;
+                    }
+                }
+                if (i == 4) {
+                    if (j >= 2) {
+                        dirChart[i][j] = j;
+                    } else {
+                        dirChart[i][j] = 3;
+                    }
+                }
+                if (i == 5) {
+                    if (j < 2) {
+                        dirChart[i][j] = j;
+                    } else {
+                        dirChart[i][j] = 1;
+                    }
+                }
+            }
+        }
         int[][] graph = new int[tmpGraph.size()][tmpGraph.get(0).length];
+        Map<String, Integer> graphConvert = Map.of(".", 1, "/", 2, "\\", 3, "|", 4, "-", 5);
         for (int i = 0; i < graph.length; i++) {
             for (int j = 0; j < graph[0].length; j++) {
-                String val = tmpGraph.get(j)[i];
-                if (val.equals(".")) {
-                    graph[i][j] = 1;
-                }
-                if (val.equals("/")) {
-                    graph[i][j] = 2;
-                }
-                if (val.equals("\\")) {
-                    graph[i][j] = 3;
-                }
-                if (val.equals("|")) {
-                    graph[i][j] = 4;
-                }
-                if (val.equals("-")) {
-                    graph[i][j] = 5;
+                graph[i][j] = graphConvert.get(tmpGraph.get(j)[i]);
+                if (graph[i][j] != 1) {
+                    pointsOfInterest.add(new Coordinate(i, j));
                 }
             }
         }
@@ -76,13 +113,13 @@ public class Day16 extends DayTemplate {
         int[][] energized = new int[graph.length][graph[0].length];
         beams.add(new Beam(x, y, dir));
         while (beams.size() > 0) {
-            beams = helper(graph, energized, beams, seen);
+            beams = oneCycle(graph, energized, beams, seen);
         }
         return totalEnergized(energized);
     }
 
-    private long totalEnergized(int[][] energized) {
-        long answer = 0;
+    private int totalEnergized(int[][] energized) {
+        int answer = 0;
         for (int i = 0; i < energized.length; i++) {
             for (int j = 0; j < energized[0].length; j++) {
                 if (energized[i][j] > 0) {
@@ -93,50 +130,36 @@ public class Day16 extends DayTemplate {
         return answer;
     }
 
-    private Set<Beam> helper(int[][] graph, int[][] energized, Set<Beam> beams, Set<Beam> seen) {
+    private Set<Beam> oneCycle(int[][] graph, int[][] energized, Set<Beam> beams, Set<Beam> seen) {
         Set<Beam> newBeams = new HashSet<>();
-        int[] xs = new int[]{-1, 1, 0, 0};
-        int[] ys = new int[]{0, 0, -1, 1};
         for (Beam beam : beams) {
-            int x = beam.x;
-            int y = beam.y;
             int dir = beam.direction;
-            int newx = x + xs[dir];
-            int newy = y + ys[dir];
-            if (newx < 0 || newx >= graph.length || newy < 0 || newy >= graph[0].length) {
+            int newx = beam.x + xs[dir];
+            int newy = beam.y + ys[dir];
+            while (!pointsOfInterest.contains(new Coordinate(newx, newy)) && inBounds(newx, newy, graph)) {
+                energized[newx][newy]++;
+                newx += xs[dir];
+                newy += ys[dir];
+            }
+            if (!inBounds(newx, newy, graph)) {
                 continue;
             }
             energized[newx][newy]++;
             int str = graph[newx][newy];
-            if (str == 1) {
-                newBeams.add(new Beam(newx, newy, dir));
-            }
-            if (str == 2) {
-                newBeams.add(new Beam(newx, newy, 3 - dir));
-            }
-            if (str == 3) {
-                newBeams.add(new Beam(newx, newy, (dir + 2) % 4));
-            }
-            if (str == 4) {
-                if (dir >= 2) {
-                    newBeams.add(new Beam(newx, newy, dir));
-                } else {
-                    newBeams.add(new Beam(newx, newy, 2));
-                    newBeams.add(new Beam(newx, newy, 3));
-                }
-            }
-            if (str == 5) {
-                if (dir < 2) {
-                    newBeams.add(new Beam(newx, newy, dir));
-                } else {
-                    newBeams.add(new Beam(newx, newy, 0));
-                    newBeams.add(new Beam(newx, newy, 1));
-                }
+            if (str < 4) {
+                newBeams.add(new Beam(newx, newy, dirChart[str - 2][dir]));
+            } else {
+                newBeams.add(new Beam(newx, newy, dirChart[str - 2][dir]));
+                newBeams.add(new Beam(newx, newy, dirChart[str][dir]));
             }
         }
         newBeams.removeAll(seen);
         seen.addAll(newBeams);
         return newBeams;
+    }
+
+    public boolean inBounds(int x, int y, int[][] graph) {
+        return x >= 0 && y >= 0 && x < graph.length && y < graph.length;
     }
 }
 
