@@ -54,7 +54,6 @@ public class Day25 extends DayTemplate {
         Queue<Route> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
         Set<Edge> usedEdges = new HashSet<>();
-        System.out.println(start + " " + end);
         for (int i = 0; i < 4; i++) {
             result = 0;
             queue.add(new Route(start));
