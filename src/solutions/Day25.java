@@ -4,6 +4,10 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
+/* Major inspiration drawn from the following rust solution
+ * https://github.com/maneatingape/advent-of-code-rust/blob/main/src/year2023/day25.rs
+ * Did not do the low level optimizations, but roughly followed the high level solution
+ */
 
 public class Day25 extends DayTemplate {
 
@@ -12,7 +16,6 @@ public class Day25 extends DayTemplate {
             return "Merry Christmas!";
         }
         Map<String, List<String>> graph = new HashMap<>();
-        List<Edge> edges = new ArrayList<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split(":");
             graph.putIfAbsent(line[0], new ArrayList<>());
@@ -20,63 +23,64 @@ public class Day25 extends DayTemplate {
                 graph.putIfAbsent(s, new ArrayList<>());
                 graph.get(line[0]).add(s);
                 graph.get(s).add(line[0]);
-                edges.add(new Edge(line[0], s));
             }
         }
-        Map<Edge, Integer> frequencies = new HashMap<>();
-        for (Edge edge : edges) {
-            frequencies.put(edge, 0);
-        }
-        getMostUsedEdges(graph, frequencies);
-        for (Edge e : frequencies.keySet()) {
-            edges.get(edges.indexOf(e)).used = frequencies.get(e);
-        }
-        Collections.sort(edges);
-        edges.subList(0, 3).clear();
-        Set<String> visited = new HashSet<>();
-        Queue<String> queue = new LinkedList<>();
         List<String> verticesList = new ArrayList<>(graph.keySet());
-        queue.add(verticesList.get(0));
-        while (!queue.isEmpty()) {
-            String s = queue.poll();
-            visited.add(s);
-            for (String con : graph.get(s)) {
-                if (!visited.contains(con) && edges.contains(new Edge(s, con))) {
-                    queue.add(con);
-                }
-            }
-        }
-        return visited.size() * (graph.keySet().size() - visited.size()) + "";
+        String start = bfs(verticesList.get(0), graph);
+        String end = bfs(start, graph);
+        int size = getSize(start, end, graph);
+        return size * (verticesList.size() - size) + "";
     }
 
-    public void getMostUsedEdges(Map<String, List<String>> graph, Map<Edge, Integer> frequencies) {
-        for (String vertex : graph.keySet()) {
-            Set<String> visited = new HashSet<>();
-            visited.add(vertex);
-            List<Route> routes = new ArrayList<>();
-            routes.add(new Route(vertex));
-            while (!routes.isEmpty()) {
-                List<Route> routeTmp = new ArrayList<>();
-                for (Route r : routes) {
-                    if (r.edges.size() > 10) {
-                        for (Edge e : r.edges) {
-                            frequencies.put(e, frequencies.get(e) + 1);
-                        }
-                    }
-                    for (String con : graph.get(r.vertex)) {
-                        if (!visited.contains(con)) {
-                            Route tmp = new Route(con);
-                            tmp.edges.addAll(r.edges);
-                            tmp.edges.add(new Edge(r.vertex, con));
-                            routeTmp.add(tmp);
-                            visited.add(con);
-                        }
-                    }
+    private String bfs(String node, Map<String, List<String>> graph) {
+        String ret = "";
+        Queue<String> queue = new LinkedList<>();
+        Set<String> visited = new HashSet<>();
+        queue.add(node);
+        while (!queue.isEmpty()) {
+            ret = queue.poll();
+            for (String neighbor : graph.get(ret)) {
+                if (!visited.contains(neighbor)) {
+                    queue.add(neighbor);
+                    visited.add(neighbor);
                 }
-                routes = routeTmp;
             }
         }
+        return ret;
     }
+
+    private int getSize(String start, String end, Map<String, List<String>> graph) {
+        int result = 0;
+        Queue<Route> queue = new LinkedList<>();
+        Set<String> visited = new HashSet<>();
+        Set<Edge> usedEdges = new HashSet<>();
+        System.out.println(start + " " + end);
+        for (int i = 0; i < 4; i++) {
+            result = 0;
+            queue.add(new Route(start));
+            visited.add(start);
+            while (!queue.isEmpty()) {
+                result++;
+                Route current = queue.poll();
+                if (current.vertex.equals(end)) {
+                    usedEdges.addAll(current.edges);
+                    break;
+                }
+                for (String neighbor : graph.get(current.vertex)) {
+                    Edge e = new Edge(current.vertex, neighbor);
+                    if (!visited.contains(neighbor) && !usedEdges.contains(e)) {
+                        visited.add(neighbor);
+                        queue.add(new Route(neighbor, current));
+                    }
+                }
+            }
+            visited = new HashSet<>();
+            queue = new LinkedList<>();
+        }
+
+        return result;
+    }
+
 }
 
 class Route {
@@ -88,12 +92,21 @@ class Route {
         edges = new ArrayList<>();
     }
 
+    public Route(String next, Route current) {
+        vertex = next;
+        edges = new ArrayList<>(current.edges);
+        edges.add(new Edge(current.vertex, next));
+    }
+
+    public String toString() {
+        return vertex + ": " + edges;
+    }
+
 }
 
-class Edge implements Comparable<Edge> {
+class Edge {
     String start;
     String end;
-    int used = 0;
 
     public Edge(String s, String e) {
         start = (s.compareTo(e) > 0) ? s : e;
@@ -109,10 +122,5 @@ class Edge implements Comparable<Edge> {
     @Override
     public int hashCode() {
         return Objects.hash(start, end);
-    }
-
-    @Override
-    public int compareTo(Edge o) {
-        return o.used - used;
     }
 }
