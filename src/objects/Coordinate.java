@@ -5,6 +5,8 @@ public class Coordinate {
     public int y;
     public int z;
 
+    public int weight = 0;
+
     public Coordinate(int x, int y) {
         this.x = x;
         this.y = y;
@@ -21,8 +23,6 @@ public class Coordinate {
         this.x = x;
         this.y = y;
     }
-
-    // Optional: Add getters, setters, or other methods as needed
 
     @Override
     public boolean equals(Object obj) {
