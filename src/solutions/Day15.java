@@ -27,32 +27,12 @@ public class Day15 implements DayTemplate {
                 String[] parts = s.split("[-=]");
                 int hash = hash(parts[0]);
                 if (parts.length == 1) {
-                    if (map.containsKey(hash)) {
-                        List<Lens> current = map.get(hash);
-                        for (int i = current.size() - 1; i >= 0; i--) {
-                            if (current.get(i).name.equals(parts[0])) {
-                                current.remove(i);
-                            }
-                        }
-                    }
+                    removeKey(map, hash, parts[0]);
                 } else {
                     if (map.containsKey(hash)) {
-                        boolean present = false;
-                        List<Lens> current = map.get(hash);
-                        for (int i = current.size() - 1; i >= 0; i--) {
-                            if (current.get(i).name.equals(parts[0])) {
-                                current.get(i).length = Integer.parseInt(parts[1]);
-                                present = true;
-                            }
-                        }
-                        if (!present) {
-                            current.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
-                        }
-                        map.put(hash, current);
+                        replaceKey(map, hash, parts);
                     } else {
-                        List<Lens> tmp = new ArrayList<>();
-                        tmp.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
-                        map.put(hash, tmp);
+                        addKey(map, hash, parts);
                     }
                 }
             }
@@ -68,7 +48,39 @@ public class Day15 implements DayTemplate {
         return answer + "";
     }
 
-    public int hash(String s) {
+    private void replaceKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
+        boolean present = false;
+        List<Lens> current = map.get(hash);
+        for (int i = current.size() - 1; i >= 0; i--) {
+            if (current.get(i).name.equals(parts[0])) {
+                current.get(i).length = Integer.parseInt(parts[1]);
+                present = true;
+            }
+        }
+        if (!present) {
+            current.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
+        }
+        map.put(hash, current);
+    }
+
+    private void addKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
+        List<Lens> tmp = new ArrayList<>();
+        tmp.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
+        map.put(hash, tmp);
+    }
+
+    private void removeKey(Map<Integer, List<Lens>> map, int hash, String part) {
+        if (map.containsKey(hash)) {
+            List<Lens> current = map.get(hash);
+            for (int i = current.size() - 1; i >= 0; i--) {
+                if (current.get(i).name.equals(part)) {
+                    current.remove(i);
+                }
+            }
+        }
+    }
+
+    private int hash(String s) {
         int val = 0;
         for (int i = 0; i < s.length(); i++) {
             val += s.charAt(i);

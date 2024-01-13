@@ -7,6 +7,11 @@ import java.util.*;
 
 public class Day10 implements DayTemplate {
 
+    List<List<String>> grid;
+    int[][] distances;
+    Coordinate prev;
+    Set<Coordinate> been;
+
     /**
      * Main solving method.
      *
@@ -17,24 +22,7 @@ public class Day10 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        int[][] distances;
-        List<List<String>> grid = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            grid.add(Arrays.stream(line.split("")).toList());
-        }
-        distances = new int[grid.size() * 2 + 1][grid.get(0).size() * 2 + 1];
-        Coordinate prev = null;
-        Set<Coordinate> been = new HashSet<>();
-        for (int i = 0; i < distances.length; i++) {
-            for (int j = 0; j < distances[0].length; j++) {
-                if (i % 2 == 1 && j % 2 == 1 && grid.get(i / 2).get(j / 2).equals("S")) {
-                    prev = new Coordinate(j / 2, i / 2);
-                } else {
-                    distances[i][j] = 2;
-                }
-            }
-        }
+        parse(in);
         //next five lines are a manual step, since S is unknown.
         been.add(prev);
         assert prev != null;
@@ -42,14 +30,48 @@ public class Day10 implements DayTemplate {
         distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
         distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
         answer++;
+        answer += traverseGrid(curr);
+        if (!part1) {
+            floodFill();
+            answer = 0;
+            for (int i = 1; i < distances.length; i += 2) {
+                for (int j = 1; j < distances[i].length; j += 2) {
+                    if (distances[i][j] == 2) {
+                        answer += 1;
+                    }
+                }
+            }
+        }
+        if (part1) {
+            answer /= 2;
+        }
+        return answer + "";
+    }
 
-        Map<String, Integer> types = new HashMap<>();
-        types.put("|", 10102);
-        types.put("-", 12010);
-        types.put("F", 11001);
-        types.put("J", 10220);
-        types.put("7", 12001);
-        types.put("L", 10210);
+    private void floodFill() {
+        List<Coordinate> pointsToCheck = new ArrayList<>();
+        pointsToCheck.add(new Coordinate(0, 0));
+        int[] xs = new int[]{-1, 1, 0, 0};
+        int[] ys = new int[]{0, 0, -1, 1};
+        while (!pointsToCheck.isEmpty()) {
+            List<Coordinate> tmp = new ArrayList<>();
+            for (Coordinate point : pointsToCheck) {
+                for (int k = 0; k < 4; k++) {
+                    int newx = point.x + xs[k];
+                    int newy = point.y + ys[k];
+                    if (newx >= 0 && newy >= 0 && newx < distances.length && newy < distances[0].length && distances[newx][newy] == 2) {
+                        distances[newx][newy] = 0;
+                        tmp.add(new Coordinate(newx, newy));
+                    }
+                }
+                pointsToCheck = tmp;
+            }
+        }
+    }
+
+    private int traverseGrid(Coordinate curr) {
+        Map<String, Integer> types = Map.of("|", 10102, "-", 12010, "F", 11001, "J", 10220, "7", 12001, "L", 10210);
+        int answer = 0;
         while (!been.contains(curr)) {
             Coordinate tmp = curr;
             answer += 1;
@@ -69,37 +91,27 @@ public class Day10 implements DayTemplate {
             distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
             distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
         }
-        if (!part1) {
-            List<Coordinate> pointsToCheck = new ArrayList<>();
-            pointsToCheck.add(new Coordinate(0, 0));
-            int[] xs = new int[]{-1, 1, 0, 0};
-            int[] ys = new int[]{0, 0, -1, 1};
-            while (!pointsToCheck.isEmpty()) {
-                List<Coordinate> tmp = new ArrayList<>();
-                for (Coordinate point : pointsToCheck) {
-                    for (int k = 0; k < 4; k++) {
-                        int newx = point.x + xs[k];
-                        int newy = point.y + ys[k];
-                        if (newx >= 0 && newy >= 0 && newx < distances.length && newy < distances[0].length && distances[newx][newy] == 2) {
-                            distances[newx][newy] = 0;
-                            tmp.add(new Coordinate(newx, newy));
-                        }
-                    }
-                    pointsToCheck = tmp;
-                }
-            }
-            answer = 0;
-            for (int i = 1; i < distances.length; i += 2) {
-                for (int j = 1; j < distances[i].length; j += 2) {
-                    if (distances[i][j] == 2) {
-                        answer += 1;
-                    }
+        answer++;
+        return answer;
+    }
+
+    private void parse(Scanner in) {
+        grid = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            grid.add(Arrays.stream(line.split("")).toList());
+        }
+        distances = new int[grid.size() * 2 + 1][grid.get(0).size() * 2 + 1];
+        prev = null;
+        been = new HashSet<>();
+        for (int i = 0; i < distances.length; i++) {
+            for (int j = 0; j < distances[0].length; j++) {
+                if (i % 2 == 1 && j % 2 == 1 && grid.get(i / 2).get(j / 2).equals("S")) {
+                    prev = new Coordinate(j / 2, i / 2);
+                } else {
+                    distances[i][j] = 2;
                 }
             }
         }
-        if (part1) {
-            answer /= 2;
-        }
-        return answer + "";
     }
 }

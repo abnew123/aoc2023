@@ -7,6 +7,8 @@ import java.util.*;
 public class Day19 implements DayTemplate {
 
     protected static final String[] allCategories = new String[]{"x", "m", "a", "s"};
+    Map<String, Workflow> workflows;
+    List<Part> parts;
 
     /**
      * Main solving method.
@@ -18,34 +20,9 @@ public class Day19 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        boolean workflow = true;
-        Map<String, Workflow> workflows = new HashMap<>();
-        List<Part> parts = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.equals("")) {
-                workflow = false;
-            } else {
-                if (workflow) {
-                    String[] pieces = line.split("[{}]");
-                    workflows.put(pieces[0], new Workflow(pieces[1]));
-                } else {
-                    parts.add(new Part(line));
-                }
-            }
-        }
+        parse(in);
         if (!part1) {
-            List<SubRangeTuple> accepted = new ArrayList<>();
-            SubRangeTuple tuple = new SubRangeTuple();
-            Workflow w = workflows.get("in");
-            w.getValid(accepted, workflows, tuple);
-            for (SubRangeTuple t : accepted) {
-                long rangeTotal = 1;
-                for (String s : allCategories) {
-                    rangeTotal *= t.upper.get(s) - t.lower.get(s) + 1;
-                }
-                answer += rangeTotal;
-            }
+            answer = solvePart2();
         } else {
             List<Part> accepted = new ArrayList<>();
             for (Part p : parts) {
@@ -67,6 +44,41 @@ public class Day19 implements DayTemplate {
             }
         }
         return answer + "";
+    }
+
+    private long solvePart2() {
+        long answer = 0;
+        List<SubRangeTuple> accepted = new ArrayList<>();
+        SubRangeTuple tuple = new SubRangeTuple();
+        Workflow w = workflows.get("in");
+        w.getValid(accepted, workflows, tuple);
+        for (SubRangeTuple t : accepted) {
+            long rangeTotal = 1;
+            for (String s : allCategories) {
+                rangeTotal *= t.upper.get(s) - t.lower.get(s) + 1;
+            }
+            answer += rangeTotal;
+        }
+        return answer;
+    }
+
+    private void parse(Scanner in) {
+        boolean workflow = true;
+        workflows = new HashMap<>();
+        parts = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            if (line.equals("")) {
+                workflow = false;
+            } else {
+                if (workflow) {
+                    String[] pieces = line.split("[{}]");
+                    workflows.put(pieces[0], new Workflow(pieces[1]));
+                } else {
+                    parts.add(new Part(line));
+                }
+            }
+        }
     }
 }
 

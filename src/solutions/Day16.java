@@ -21,50 +21,19 @@ public class Day16 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        int answer;
         List<String[]> tmpGraph = new ArrayList<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split("");
             tmpGraph.add(line);
         }
         pointsOfInterest = new HashSet<>();
+        // yes this is an atrocity, but hardcoding ray split saves cycles computing during actual ray movement
+        String precomputedDirChart = "321023012223010033230111";
         dirChart = new int[6][4];
         for (int i = 0; i < dirChart.length; i++) {
             for (int j = 0; j < dirChart[0].length; j++) {
-                if (i == 0) {
-                    dirChart[i][j] = 3 - j;
-                }
-                if (i == 1) {
-                    dirChart[i][j] = (j + 2) % 4;
-                }
-                if (i == 2) {
-                    if (j >= 2) {
-                        dirChart[i][j] = j;
-                    } else {
-                        dirChart[i][j] = 2;
-                    }
-                }
-                if (i == 3) {
-                    if (j < 2) {
-                        dirChart[i][j] = j;
-                    } else {
-                        dirChart[i][j] = 0;
-                    }
-                }
-                if (i == 4) {
-                    if (j >= 2) {
-                        dirChart[i][j] = j;
-                    } else {
-                        dirChart[i][j] = 3;
-                    }
-                }
-                if (i == 5) {
-                    if (j < 2) {
-                        dirChart[i][j] = j;
-                    } else {
-                        dirChart[i][j] = 1;
-                    }
-                }
+                dirChart[i][j] = Integer.parseInt(precomputedDirChart.substring(4 * i + j, 4 * i + j + 1));
             }
         }
         int[][] graph = new int[tmpGraph.size()][tmpGraph.get(0).length];
@@ -80,32 +49,37 @@ public class Day16 implements DayTemplate {
         if (part1) {
             answer = tryFromLocation(graph, -1, 0, 1);
         } else {
-            long currBest = 0;
-            for (int i = 0; i < graph.length; i++) {
-                long result1 = tryFromLocation(graph, -1, i, 1);
-                if (result1 > currBest) {
-                    currBest = result1;
-                }
-                long result2 = tryFromLocation(graph, graph.length, i, 0);
-                if (result2 > currBest) {
-                    currBest = result2;
-                }
-                long result3 = tryFromLocation(graph, i, -1, 3);
-                if (result3 > currBest) {
-                    currBest = result3;
-                }
-                long result4 = tryFromLocation(graph, i, graph.length, 2);
-                if (result4 > currBest) {
-                    currBest = result4;
-                }
-            }
-            answer = currBest;
+            answer = runFromAllPoints(graph);
         }
 
         return answer + "";
     }
 
-    private long tryFromLocation(int[][] graph, int x, int y, int dir) {
+    private int runFromAllPoints(int[][] graph){
+        int currBest = 0;
+        for (int i = 0; i < graph.length; i++) {
+            int result1 = tryFromLocation(graph, -1, i, 1);
+            if (result1 > currBest) {
+                currBest = result1;
+            }
+            int result2 = tryFromLocation(graph, graph.length, i, 0);
+            if (result2 > currBest) {
+                currBest = result2;
+            }
+            int result3 = tryFromLocation(graph, i, -1, 3);
+            if (result3 > currBest) {
+                currBest = result3;
+            }
+            int result4 = tryFromLocation(graph, i, graph.length, 2);
+            if (result4 > currBest) {
+                currBest = result4;
+            }
+        }
+        return currBest;
+
+    }
+
+    private int tryFromLocation(int[][] graph, int x, int y, int dir) {
         Set<Beam> beams = new HashSet<>();
         Set<Beam> seen = new HashSet<>();
         int[][] energized = new int[graph.length][graph[0].length];
