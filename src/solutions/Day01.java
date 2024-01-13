@@ -23,13 +23,13 @@ public class Day01 implements DayTemplate {
             lines.add(in.nextLine());
         }
         for (String line : lines) {
-            answer += 10 * helper(line, true, part1);
-            answer += helper(line, false, part1);
+            answer += 10 * findFirstDigit(line, true, part1);
+            answer += findFirstDigit(line, false, part1);
         }
         return answer + "";
     }
 
-    private int helper(String line, boolean forwards, boolean part1) {
+    private int findFirstDigit(String line, boolean forwards, boolean part1) {
         String[] digits = new String[]{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
         char[] chars = line.toCharArray();
         for (int i = 0; i < chars.length; i++) {

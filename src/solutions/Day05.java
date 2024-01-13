@@ -8,6 +8,9 @@ import java.util.Scanner;
 
 public class Day05 implements DayTemplate {
 
+    long[] seeds;
+    List<RangeMap> rangeMaps;
+
     /**
      * Main solving method.
      *
@@ -17,11 +20,10 @@ public class Day05 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 10000000000L;
-        List<RangeMap> rangeMaps = new ArrayList<>();
         List<Range> tmp = new ArrayList<>();
+        rangeMaps = new ArrayList<>();
         String[] stringSeeds = in.nextLine().split(" ");
-        long[] seeds = new long[stringSeeds.length - 1];
+        seeds = new long[stringSeeds.length - 1];
         for (int i = 1; i < stringSeeds.length; i++) {
             seeds[i - 1] = Long.parseLong(stringSeeds[i]);
         }
@@ -40,29 +42,36 @@ public class Day05 implements DayTemplate {
             }
         }
         rangeMaps.add(new RangeMap(tmp));
-        if (part1) {
-            for (Long seed : seeds) {
-                long val = seed;
-                for (RangeMap rangeMap : rangeMaps) {
-                    val = rangeMap.convert(val);
-                }
-                if (val < answer) {
-                    answer = val;
-                }
+        return (part1?solvePart1():solvePart2()) + "";
+    }
+
+    private long solvePart1(){
+        long answer = 1L<<40;
+        for (Long seed : seeds) {
+            long val = seed;
+            for (RangeMap rangeMap : rangeMaps) {
+                val = rangeMap.convert(val);
             }
-        } else {
-            for (int i = 0; i < seeds.length; i += 2) {
-                long index = seeds[i];
-                while(index < seeds[i] + seeds[i+1]){
-                    long[] ret = returnValAndBound(index, rangeMaps);
-                    if (ret[0] < answer) {
-                        answer = ret[0];
-                    }
-                    index += ret[1] + 1;
-                }
+            if (val < answer) {
+                answer = val;
             }
         }
-        return answer + "";
+        return answer;
+    }
+
+    private long solvePart2(){
+        long answer = 1L<<40;
+        for (int i = 0; i < seeds.length; i += 2) {
+            long index = seeds[i];
+            while(index < seeds[i] + seeds[i+1]){
+                long[] ret = returnValAndBound(index, rangeMaps);
+                if (ret[0] < answer) {
+                    answer = ret[0];
+                }
+                index += ret[1] + 1;
+            }
+        }
+        return answer;
     }
 
     private long[] returnValAndBound(long val, List<RangeMap> rangeMaps) {

@@ -70,7 +70,6 @@ public class Day12 implements DayTemplate {
 
         int current = groups.get(currGroup);
         int index = 0;
-
         if (conditionRecord.startsWith(".")) {
             while (index < conditionRecord.length() && conditionRecord.charAt(index) == '.') {
                 index++;

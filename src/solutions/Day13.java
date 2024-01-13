@@ -80,26 +80,17 @@ class Pattern {
     private boolean vertHelper(int i, int closeness){
         boolean oneOff = false;
         for (int j = 0; j < grid[0].length; j++) {
-            if (i <= grid.length / 2) {
-                for (int k = 1; k <= i; k++) {
-                    if (grid[k - 1][j] != grid[(2 * i + 1) - k - 1][j]) {
-                        if(closeness == 0 || oneOff){
-                            return false;
-                        }
-                        oneOff = true;
+            boolean firstHalf = i <= grid.length / 2;
+            int column = firstHalf?1:grid.length;
+            while(column != (firstHalf?i+1:i)){
+                if (grid[column - 1][j] != grid[(2 * i + 1) - column - 1][j]) {
+                    if(closeness == 0 || oneOff){
+                        return false;
                     }
+                    oneOff = true;
                 }
-            } else {
-                for (int k = grid.length; k > i; k--) {
-                    if (grid[k - 1][j] != grid[(2 * i + 1) - k - 1][j]) {
-                        if(closeness == 0 || oneOff){
-                            return false;
-                        }
-                        oneOff = true;
-                    }
-                }
+                column+= firstHalf?1:-1;
             }
-
         }
         return closeness == 0 || oneOff;
     }
@@ -117,24 +108,16 @@ class Pattern {
     private boolean horizHelper(int i, int closeness){
         boolean oneOff = false;
         for (int j = 0; j < grid.length; j++) {
-            if (i <= grid[0].length / 2) {
-                for (int k = 1; k <= i; k++) {
-                    if (grid[j][k - 1] != grid[j][(2 * i + 1) - k - 1]) {
-                        if(closeness == 0 || oneOff){
-                            return false;
-                        }
-                        oneOff = true;
+            boolean firstHalf = i <= grid[0].length / 2;
+            int row = firstHalf?1:grid[0].length;
+            while(row != (firstHalf?i+1:i)){
+                if (grid[j][row - 1] != grid[j][(2 * i + 1) - row - 1]) {
+                    if(closeness == 0 || oneOff){
+                        return false;
                     }
+                    oneOff = true;
                 }
-            } else {
-                for (int k = grid[0].length; k > i; k--) {
-                    if (grid[j][k - 1] != grid[j][(2 * i + 1) - k - 1]) {
-                        if(closeness == 0 || oneOff){
-                            return false;
-                        }
-                        oneOff = true;
-                    }
-                }
+                row+= firstHalf?1:-1;
             }
         }
         return closeness == 0 || oneOff;
