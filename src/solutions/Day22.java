@@ -44,7 +44,7 @@ public class Day22 extends DayTemplate {
         }
         for (Brick b : bricks) {
             boolean supported = b.z == 1;
-            while(!supported){
+            while (!supported) {
                 supported = b.z == 1;
                 if (b.z > 1) {
                     if (b.dir == 2) {
@@ -103,7 +103,7 @@ public class Day22 extends DayTemplate {
                 Set<Integer> deadBricks = new HashSet<>();
                 deadBricks.add(i);
                 Set<Integer> bricksToCheck = bricks.get(i).dependents;
-                while (bricksToCheck.size() > 0) {
+                while (!bricksToCheck.isEmpty()) {
                     Set<Integer> tmp = new HashSet<>();
                     for (Integer j : bricksToCheck) {
                         Set<Integer> dependencies = bricks.get(j).dependencies;
@@ -167,5 +167,18 @@ class Brick implements Comparable<Brick> {
     @Override
     public int compareTo(Brick o) {
         return o.z - z;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Brick o) {
+            return o.z == z;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(z);
     }
 }

@@ -23,10 +23,8 @@ public class Day08 extends DayTemplate {
         while (in.hasNext()) {
             Step step = new Step(in.nextLine());
             map.put(step.name, step);
-            if (step.name.substring(2).equals("A")) {
-                if (step.name.equals("AAA") || !part1) {
-                    currSteps.add(step.name);
-                }
+            if (step.name.substring(2).equals("A") && (step.name.equals("AAA") || !part1)) {
+                currSteps.add(step.name);
             }
         }
         int index = 0;
@@ -80,8 +78,8 @@ class Step {
     String name;
 
     public Step(String line) {
-        left = line.split("\\(|,")[1].trim();
-        right = line.split(",|\\)")[1].trim();
+        left = line.split("[\\(,]")[1].trim();
+        right = line.split("[,\\)]")[1].trim();
         name = line.split("=")[0].trim();
     }
 }

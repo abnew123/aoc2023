@@ -16,9 +16,8 @@ public class Day02 extends DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         int answer = 0;
-        List<String> lines = new ArrayList<>();
         while (in.hasNext()) {
-            String[] parts = in.nextLine().split(":|;");
+            String[] parts = in.nextLine().split("[:;]");
             Map<String, Integer> totals = new HashMap<>();
             int index = Integer.parseInt(parts[0].split(" ")[1]);
             for (int i = 1; i < parts.length; i++) {

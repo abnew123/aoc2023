@@ -112,7 +112,7 @@ public class Day16 extends DayTemplate {
         Set<Beam> seen = new HashSet<>();
         int[][] energized = new int[graph.length][graph[0].length];
         beams.add(new Beam(x, y, dir));
-        while (beams.size() > 0) {
+        while (!beams.isEmpty()) {
             beams = oneCycle(graph, energized, beams, seen);
         }
         return totalEnergized(energized);

@@ -16,9 +16,8 @@ public class Day15 extends DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        List<String> lines = new ArrayList<>();
+        List<String> lines = Arrays.stream(in.nextLine().split(",")).toList();
         Map<Integer, List<Lens>> map = new HashMap<>();
-        lines = Arrays.stream(in.nextLine().split(",")).toList();
         if (part1) {
             for (String s : lines) {
                 answer += helper(s);
@@ -57,11 +56,11 @@ public class Day15 extends DayTemplate {
                     }
                 }
             }
-            for(Integer key: map.keySet()){
+            for (Map.Entry<Integer, List<Lens>> entry : map.entrySet()) {
                 int index = 0;
-                for(Lens lens: map.get(key)){
-                    index ++;
-                    answer+= (key + 1) * index * lens.length;
+                for (Lens lens : entry.getValue()) {
+                    index++;
+                    answer += (entry.getKey() + 1) * index * lens.length;
                 }
             }
         }

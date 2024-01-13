@@ -69,14 +69,16 @@ public class Day03 extends DayTemplate {
 
     private List<SchematicNum> addNums(String line) {
         List<SchematicNum> tmp = new ArrayList<>();
-        for (int i = 0; i < line.length(); i++) {
-            if (Character.isDigit(line.charAt(i))) {
-                int start = i;
-                while (i < line.length() - 1 && Character.isDigit(line.charAt(i + 1))) {
-                    i++;
+        int index = 0;
+        while(index < line.length()){
+            if (Character.isDigit(line.charAt(index))) {
+                int start = index;
+                while (index < line.length() - 1 && Character.isDigit(line.charAt(index + 1))) {
+                    index++;
                 }
-                tmp.add(new SchematicNum(start, i));
+                tmp.add(new SchematicNum(start, index));
             }
+            index++;
         }
         return tmp;
     }
@@ -84,10 +86,11 @@ public class Day03 extends DayTemplate {
     private List<Integer> addSymbols(String line, boolean justGears) {
         List<Integer> tmp = new ArrayList<>();
         for (int i = 0; i < line.length(); i++) {
-            if (!Character.isDigit(line.charAt(i)) && !(line.charAt(i) == '.')) {
-                if (line.charAt(i) == '*' || !justGears) {
-                    tmp.add(i);
+            if (!Character.isDigit(line.charAt(i)) && line.charAt(i) != '.') {
+                if (line.charAt(i) != '*' && justGears) {
+                    continue;
                 }
+                tmp.add(i);
             }
         }
         return tmp;

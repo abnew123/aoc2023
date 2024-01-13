@@ -17,14 +17,14 @@ public class Day17 extends DayTemplate {
                 grid[i][j] = Integer.parseInt(tmp.get(j)[i]);
             }
         }
-        return helper(grid, part1?1:4, part1?3:10) + "";
+        return helper(grid, part1 ? 1 : 4, part1 ? 3 : 10) + "";
     }
 
-    private long helper(int[][] grid, int min, int max){
+    private long helper(int[][] grid, int min, int max) {
         int[][][] debug = new int[grid.length][grid[0].length][5];
-        for(int i = 0; i < debug.length; i++){
-            for(int j = 0; j < debug[0].length; j++){
-                for(int k = 0; k < debug[0][0].length; k++){
+        for (int i = 0; i < debug.length; i++) {
+            for (int j = 0; j < debug[0].length; j++) {
+                for (int k = 0; k < debug[0][0].length; k++) {
                     debug[i][j][k] = 999999;
                 }
             }
@@ -35,7 +35,7 @@ public class Day17 extends DayTemplate {
         queue.add(new Location(0, 0, 0, 0));
         int[] xs = new int[]{-1, 0, 0, 1};
         int[] ys = new int[]{0, -1, 1, 0};
-        while (queue.size() > 0) {
+        while (!queue.isEmpty()) {
             Location c = queue.poll();
             allSeen.add(c);
             if (c.x == grid.length - 1 && c.y == grid[0].length - 1) {
@@ -46,16 +46,16 @@ public class Day17 extends DayTemplate {
                     continue;
                 }
                 int path = c.currBest;
-                for(int j = 1; j <= max; j++){
+                for (int j = 1; j <= max; j++) {
                     int newx = c.x + j * xs[i - 1];
                     int newy = c.y + j * ys[i - 1];
                     if (newx < 0 || newy < 0 || newx >= grid.length || newy >= grid[0].length) {
                         break;
                     }
-                    path+= grid[newx][newy];
-                    if(j >= min && path < debug[newx][newy][i]){
+                    path += grid[newx][newy];
+                    if (j >= min && path < debug[newx][newy][i]) {
                         debug[newx][newy][i] = path;
-                        Location tmp2 = new Location(newx, newy, i,  path);
+                        Location tmp2 = new Location(newx, newy, i, path);
                         if (!allSeen.contains(tmp2)) {
                             queue.add(tmp2);
                         }
@@ -88,8 +88,10 @@ class Location implements Comparable<Location> {
 
     @Override
     public boolean equals(Object other) {
-        Location o = (Location) other;
-        return o.x == x && o.y == y && o.direction == direction;
+        if (other instanceof Location o) {
+            return o.x == x && o.y == y && o.direction == direction;
+        }
+        return false;
     }
 
     @Override

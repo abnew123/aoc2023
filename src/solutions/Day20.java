@@ -6,6 +6,8 @@ import java.util.*;
 
 public class Day20 extends DayTemplate {
 
+    protected static final String BROADCASTER = "broadcaster";
+
     /**
      * Main solving method.
      *
@@ -25,20 +27,20 @@ public class Day20 extends DayTemplate {
             if (line[0].contains("&")) {
                 modules.put(line[0].substring(1).trim(), new Conjunction(line));
             }
-            if (line[0].startsWith("broadcaster")) {
+            if (line[0].startsWith(BROADCASTER)) {
                 modules.put(line[0].trim(), new Broadcaster(line));
             }
         }
 
         String rxInput = null;
-        for (String s : modules.keySet()) {
-            List<String> targets = modules.get(s).getTargets();
+        for (Map.Entry<String, Module> entry : modules.entrySet()) {
+            List<String> targets = entry.getValue().getTargets();
             for (String t : targets) {
-                if(t.equals("rx")){
-                    rxInput = s;
+                if (t.equals("rx")) {
+                    rxInput = entry.getKey();
                 }
-                if (modules.get(t) instanceof Conjunction) {
-                    ((Conjunction) modules.get(t)).inputs.add(s);
+                if (modules.get(t) instanceof Conjunction conjunction) {
+                    conjunction.inputs.add(entry.getKey());
                 }
             }
         }
@@ -48,7 +50,7 @@ public class Day20 extends DayTemplate {
             long lowPulses = 0;
             for (int i = 0; i < 1000; i++) {
                 pulses = new ArrayList<>();
-                pulses.add(new Pulse(false, "broadcaster", "button"));
+                pulses.add(new Pulse(false, BROADCASTER, "button"));
                 int index = 0;
                 while (pulses.size() > index) {
                     Module m = modules.get(pulses.get(index).target);
@@ -64,11 +66,11 @@ public class Day20 extends DayTemplate {
         } else {
             answer = 1;
             List<String> allInputs = new ArrayList<>();
-            for (String s : modules.keySet()) {
-                List<String> targets = modules.get(s).getTargets();
+            for (Map.Entry<String, Module> entry : modules.entrySet()) {
+                List<String> targets = entry.getValue().getTargets();
                 for (String t : targets) {
-                    if(t.equals(rxInput)){
-                        allInputs.add(s);
+                    if (t.equals(rxInput)) {
+                        allInputs.add(entry.getKey());
                     }
                 }
             }
@@ -80,7 +82,7 @@ public class Day20 extends DayTemplate {
             }
             for (int i = 1; (i < 10000 && recordedSoFar < totalRecorded); i++) {
                 pulses = new ArrayList<>();
-                pulses.add(new Pulse(false, "broadcaster", "button"));
+                pulses.add(new Pulse(false, BROADCASTER, "button"));
                 int index = 0;
                 while (pulses.size() > index) {
                     for (int j = 0; j < allInputs.size(); j++) {
@@ -104,21 +106,18 @@ public class Day20 extends DayTemplate {
     }
 }
 
-class Module {
-
+abstract class Module {
     String name;
     List<String> targets = new ArrayList<>();
 
-    public Module(String[] line, String n) {
+    protected Module(String[] line, String n) {
         for (int i = 1; i < line.length; i++) {
             targets.add(line[i].trim());
         }
         name = n;
     }
 
-    public List<Pulse> sendPulse(Map<String, Module> modules, Pulse p) {
-        return new ArrayList<>();
-    }
+    public abstract List<Pulse> sendPulse(Map<String, Module> modules, Pulse p);
 
     public List<String> getTargets() {
         return targets;
@@ -128,9 +127,10 @@ class Module {
 class Broadcaster extends Module {
 
     public Broadcaster(String[] line) {
-        super(line, "broadcaster");
+        super(line, Day20.BROADCASTER);
     }
 
+    @Override
     public List<Pulse> sendPulse(Map<String, Module> modules, Pulse p) {
         List<Pulse> ret = new ArrayList<>();
         for (String target : targets) {
@@ -150,6 +150,7 @@ class FlipFlop extends Module {
         on = false;
     }
 
+    @Override
     public List<Pulse> sendPulse(Map<String, Module> modules, Pulse p) {
         List<Pulse> ret = new ArrayList<>();
         if (!p.high) {
@@ -171,17 +172,18 @@ class Conjunction extends Module {
         super(line, line[0].substring(1).trim());
     }
 
+    @Override
     public List<Pulse> sendPulse(Map<String, Module> modules, Pulse p) {
         List<Pulse> ret = new ArrayList<>();
         if (lastPulses.isEmpty()) {
-            for (String ignored : inputs) {
+            for (int i = 0; i < inputs.size(); i++) {
                 lastPulses.add(false);
             }
         }
         lastPulses.set(inputs.indexOf(p.input), p.high);
         boolean on = false;
         for (Boolean b : lastPulses) {
-            if (!b) {
+            if (Boolean.FALSE.equals(b)) {
                 on = true;
                 break;
             }
@@ -194,7 +196,7 @@ class Conjunction extends Module {
 }
 
 class Pulse {
-    
+
     boolean high;
     String target;
     String input;

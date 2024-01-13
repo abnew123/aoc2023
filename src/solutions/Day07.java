@@ -29,12 +29,12 @@ public class Day07 extends DayTemplate {
     }
 }
 
-class Hand implements Comparable {
+class Hand implements Comparable<Hand> {
     int bid;
     int strength;
     int[] freqs = new int[13];
     int[] cards = new int[5];
-    String[] ranks= new String[]{"A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"};
+    String[] ranks = new String[]{"A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"};
 
     public Hand(String line, int bid, boolean part1) {
         if (!part1) {
@@ -65,17 +65,38 @@ class Hand implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        Hand other = (Hand) o;
-        if (strength != other.strength) {
-            return strength - other.strength;
+    public int compareTo(Hand o) {
+        if (strength != o.strength) {
+            return strength - o.strength;
         } else {
             for (int i = 0; i < cards.length; i++) {
-                if (cards[i] != other.cards[i]) {
-                    return other.cards[i] - cards[i];
+                if (cards[i] != o.cards[i]) {
+                    return o.cards[i] - cards[i];
                 }
             }
             return 0;
         }
+    }
+
+    @Override
+    public boolean equals(Object other){
+        if(other instanceof Hand o){
+            if (strength != o.strength) {
+                return false;
+            } else {
+                for (int i = 0; i < cards.length; i++) {
+                    if (cards[i] != o.cards[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode(){
+        return strength;
     }
 }

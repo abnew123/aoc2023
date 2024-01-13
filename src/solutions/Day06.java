@@ -17,8 +17,8 @@ public class Day06 extends DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 1;
-        String timeLine = part1 ? in.nextLine().split(":")[1].trim() : in.nextLine().replaceAll(" ", "").split(":")[1];
-        String distLine = part1 ? in.nextLine().split(":")[1].trim() : in.nextLine().replaceAll(" ", "").split(":")[1];
+        String timeLine = part1 ? in.nextLine().split(":")[1].trim() : in.nextLine().replace(" ", "").split(":")[1];
+        String distLine = part1 ? in.nextLine().split(":")[1].trim() : in.nextLine().replace(" ", "").split(":")[1];
         double[] times = Arrays.stream(timeLine.split("\\s+")).mapToDouble(Double::parseDouble).toArray();
         double[] dists = Arrays.stream(distLine.split("\\s+")).mapToDouble(Double::parseDouble).toArray();
         for (int i = 0; i < times.length; i++) {

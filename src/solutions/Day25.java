@@ -114,8 +114,10 @@ class Edge {
 
     @Override
     public boolean equals(Object o) {
-        Edge edge = (Edge) o;
-        return start.equals(edge.start) && end.equals(edge.end);
+        if (o instanceof Edge edge) {
+            return start.equals(edge.start) && end.equals(edge.end);
+        }
+        return false;
     }
 
     @Override

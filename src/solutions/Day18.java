@@ -51,8 +51,9 @@ public class Day18 extends DayTemplate {
 class Instruction {
     int distance;
     int direction;
+
     public Instruction(String line, boolean part1) {
-        Map<String, Integer> map = Map.of("R", 0, "D", 1, "L", 2, "U",3);
+        Map<String, Integer> map = Map.of("R", 0, "D", 1, "L", 2, "U", 3);
         if (part1) {
             distance = Integer.parseInt(line.split(" ")[1]);
             direction = map.get(line.split(" ")[0]);

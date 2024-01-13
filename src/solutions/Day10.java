@@ -37,6 +37,7 @@ public class Day10 extends DayTemplate {
         }
         //next five lines are a manual step, since S is unknown.
         been.add(prev);
+        assert prev != null;
         Coordinate curr = new Coordinate(prev.x, prev.y + 1);
         distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
         distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
@@ -70,20 +71,18 @@ public class Day10 extends DayTemplate {
         }
         if (!part1) {
             List<Coordinate> pointsToCheck = new ArrayList<>();
-            pointsToCheck.add(new Coordinate(0,0));
+            pointsToCheck.add(new Coordinate(0, 0));
             int[] xs = new int[]{-1, 1, 0, 0};
             int[] ys = new int[]{0, 0, -1, 1};
-            while (pointsToCheck.size() > 0) {
+            while (!pointsToCheck.isEmpty()) {
                 List<Coordinate> tmp = new ArrayList<>();
-                for(Coordinate point: pointsToCheck){
+                for (Coordinate point : pointsToCheck) {
                     for (int k = 0; k < 4; k++) {
                         int newx = point.x + xs[k];
                         int newy = point.y + ys[k];
-                        if (newx >= 0 && newy >= 0 && newx < distances.length && newy < distances[0].length) {
-                            if (distances[newx][newy] == 2) {
-                                distances[newx][newy] = 0;
-                                tmp.add(new Coordinate(newx, newy));
-                            }
+                        if (newx >= 0 && newy >= 0 && newx < distances.length && newy < distances[0].length && distances[newx][newy] == 2) {
+                            distances[newx][newy] = 0;
+                            tmp.add(new Coordinate(newx, newy));
                         }
                     }
                     pointsToCheck = tmp;

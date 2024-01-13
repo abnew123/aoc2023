@@ -3,7 +3,9 @@ package src.solutions;
 import src.meta.DayTemplate;
 import src.objects.Coordinate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Day21 extends DayTemplate {
 
@@ -41,50 +43,47 @@ public class Day21 extends DayTemplate {
         int[] xs = new int[]{-1, 1, 0, 0};
         int[] ys = new int[]{0, 0, -1, 1};
         int index = 0;
-        while (index < (part1?64: grid.length)) {
+        while (index < (part1 ? 64 : grid.length)) {
             index++;
             List<Coordinate> tmp2 = new ArrayList<>();
             for (Coordinate c : reachablePoints) {
                 for (int i = 0; i < 4; i++) {
                     int newx = c.x + xs[i];
                     int newy = c.y + ys[i];
-                    if(newx >= 0 && newy >= 0 && newx < grid.length && newy < grid[0].length){
-                        if(grid[newx][newy] == 9999){
-                            Coordinate candidate = new Coordinate(newx, newy);
-                            tmp2.add(candidate);
-                            grid[newx][newy] = index;
-                        }
+                    if (newx >= 0 && newy >= 0 && newx < grid.length && newy < grid[0].length && grid[newx][newy] == 9999) {
+                        Coordinate candidate = new Coordinate(newx, newy);
+                        tmp2.add(candidate);
+                        grid[newx][newy] = index;
                     }
                 }
             }
             reachablePoints = tmp2;
         }
-        if(part1){
-            for(int i = 0; i < grid.length; i++){
-                for(int j = 0; j < grid[0].length; j++){
-                    if(grid[i][j] % 2 == 0 && grid[i][j] <= 64){
+        if (part1) {
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[0].length; j++) {
+                    if (grid[i][j] % 2 == 0 && grid[i][j] <= 64) {
                         answer++;
                     }
                 }
             }
         }
-        if(!part1){
+        if (!part1) {
             long oddParity = 0;
             long evenParity = 0;
             long largeOddParity = 0;
             long largeEvenParity = 0;
-            for(int i = 0; i < grid.length; i++){
-                for(int j = 0; j < grid[0].length; j++){
-                    if(grid[i][j] != -1 && grid[i][j] != 9999){
-                        if((i+j)%2 == 1){
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[0].length; j++) {
+                    if (grid[i][j] != -1 && grid[i][j] != 9999) {
+                        if ((i + j) % 2 == 1) {
                             oddParity++;
-                            if(grid[i][j] > grid.length/2){
+                            if (grid[i][j] > grid.length / 2) {
                                 largeOddParity++;
                             }
-                        }
-                        else{
+                        } else {
                             evenParity++;
-                            if(grid[i][j] > grid.length/2){
+                            if (grid[i][j] > grid.length / 2) {
                                 largeEvenParity++;
                             }
                         }

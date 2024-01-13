@@ -53,11 +53,10 @@ public class Day19 extends DayTemplate {
                 String result;
                 while (true) {
                     result = w.process(p);
-                    if (result.equals("A")) {
-                        accepted.add(p);
-                        break;
-                    }
-                    if (result.equals("R")) {
+                    if (result.equals("A") || result.equals("R")) {
+                        if (result.equals("A")) {
+                            accepted.add(p);
+                        }
                         break;
                     }
                     w = workflows.get(result);
@@ -110,6 +109,8 @@ class Workflow {
 }
 
 class Condition {
+
+    private static final String regex = "[<>:]";
     String var;
     boolean greater;
     int threshold;
@@ -117,9 +118,9 @@ class Condition {
 
     public Condition(String l) {
         greater = l.contains(">");
-        var = l.split("[<>:]")[0];
-        threshold = Integer.parseInt(l.split("[<>:]")[1]);
-        ifYes = l.split("[<>:]")[2];
+        var = l.split(regex)[0];
+        threshold = Integer.parseInt(l.split(regex)[1]);
+        ifYes = l.split(regex)[2];
     }
 
     public String process(Part p) {

@@ -16,7 +16,7 @@ public class Day23 extends DayTemplate {
     Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
 
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        int answer = 0;
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {
             String line = in.nextLine();
@@ -37,18 +37,16 @@ public class Day23 extends DayTemplate {
         Set<Coordinate> intersections = new HashSet<>();
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
-                int neighbors = 0;
+                int numNeighbors = 0;
                 if (grid[i][j] != 2) {
                     for (int k = 0; k < 4; k++) {
                         Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length) {
-                            if (grid[next.x][next.y] != 2) {
-                                neighbors++;
-                            }
+                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
+                            numNeighbors++;
                         }
                     }
                 }
-                if (neighbors == 1 || neighbors > 2) {
+                if (numNeighbors == 1 || numNeighbors > 2) {
                     intersections.add(new Coordinate(i, j));
                 }
             }
@@ -72,7 +70,7 @@ public class Day23 extends DayTemplate {
             path.latest = start;
             Stack<Path> stack = new Stack<>();
             stack.push(path);
-            while (stack.size() > 0) {
+            while (!stack.isEmpty()) {
                 Path p = stack.pop();
                 Coordinate current = p.latest;
                 for (Coordinate next : neighbors.get(current)) {
@@ -132,8 +130,7 @@ public class Day23 extends DayTemplate {
                     // if we are in the last column, there's not enough room to start a new loop
                     nextConnections.add("+-");
                 }
-            }
-            else{
+            } else {
                 // node has connection from the left but not from above. It can either pass its connection down or to the right
                 nextConnections.add(left + above);
                 if (column < nodeGrid[row].length - 1) {
@@ -209,8 +206,8 @@ public class Day23 extends DayTemplate {
                 Coordinate node = nodeGrid[row][column];
                 Coordinate rightNode = nodeGrid[row][column + 1];
                 if (node != null) {
-                    if(rightNode == null){
-                        rightNode = nodeGrid[row + 1][column+1];
+                    if (rightNode == null) {
+                        rightNode = nodeGrid[row + 1][column + 1];
                     }
                     for (Coordinate neighbor : neighbors.get(node)) {
                         if (neighbor.equals(rightNode)) {
@@ -224,7 +221,7 @@ public class Day23 extends DayTemplate {
                 Coordinate node = nodeGrid[row][column];
                 Coordinate underNode = nodeGrid[row + 1][column];
                 if (node != null) {
-                    if(underNode == null){
+                    if (underNode == null) {
                         underNode = nodeGrid[row + 1][column + 1];
                     }
                     for (Coordinate neighbor : neighbors.get(node)) {
@@ -284,7 +281,7 @@ public class Day23 extends DayTemplate {
         }
         for (int i = 1; i < nodeGrid.length; i++) {
             for (int j = 0; j < nodeGrid[0].length; j++) {
-                if(i == 5 && j == 0){
+                if (i == 5 && j == 0) {
                     continue;
                 }
                 for (Coordinate neighbor : neighbors.get(nodeGrid[i - 1][(i == 1) ? Math.min(j, 4) : j])) {
@@ -366,9 +363,9 @@ class State {
     }
 
     @Override
-    public boolean equals(Object other){
-        if(other instanceof State){
-            return state.equals(((State) other).state);
+    public boolean equals(Object o) {
+        if (o instanceof State other) {
+            return state.equals(other.state);
         }
         return false;
     }

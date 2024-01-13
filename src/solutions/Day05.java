@@ -31,7 +31,7 @@ public class Day05 extends DayTemplate {
                 continue;
             }
             if (line.contains("map")) {
-                if (tmp.size() > 0) {
+                if (!tmp.isEmpty()) {
                     rangeMaps.add(new RangeMap(tmp));
                 }
                 tmp = new ArrayList<>();
@@ -52,12 +52,13 @@ public class Day05 extends DayTemplate {
             }
         } else {
             for (int i = 0; i < seeds.length; i += 2) {
-                for (long j = seeds[i]; j < seeds[i] + seeds[i + 1]; j++) {
-                    long[] ret = returnValAndBound(j, rangeMaps);
+                long index = seeds[i];
+                while(index < seeds[i] + seeds[i+1]){
+                    long[] ret = returnValAndBound(index, rangeMaps);
                     if (ret[0] < answer) {
                         answer = ret[0];
                     }
-                    j += ret[1];
+                    index += ret[1] + 1;
                 }
             }
         }
