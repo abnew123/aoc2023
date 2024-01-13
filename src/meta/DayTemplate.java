@@ -2,7 +2,7 @@ package src.meta;
 
 import java.util.Scanner;
 
-public abstract class DayTemplate {
+public interface DayTemplate {
 
     /**
      * Times execution of the solve method
@@ -11,7 +11,7 @@ public abstract class DayTemplate {
      * @param in    Param for data solve() will read.
      * @return Time in milliseconds (not nanoseconds) for execution of the method.
      */
-    public double timer(boolean part1, Scanner in) {
+    default double timer(boolean part1, Scanner in) {
         Long startTime = System.nanoTime();
         solve(part1, in);
         Long endTime = System.nanoTime();
@@ -26,7 +26,7 @@ public abstract class DayTemplate {
      * @param in    The solver will read data from this Scanner.
      * @return Returns answer in string format.
      */
-    public abstract String solve(boolean part1, Scanner in);
+    String solve(boolean part1, Scanner in);
 
     /**
      * Some classes require additional, non code steps (e.g. judge an image output).
@@ -35,7 +35,7 @@ public abstract class DayTemplate {
      * @return By default, returns false.
      * Subclasses can override in exceptional cases.
      */
-    public boolean exclude() {
+    default boolean exclude() {
         return false;
     }
 }

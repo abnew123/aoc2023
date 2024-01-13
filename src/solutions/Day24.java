@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 
 
-public class Day24 extends DayTemplate {
+public class Day24 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         int[] maxes = new int[3];
@@ -33,20 +33,13 @@ public class Day24 extends DayTemplate {
                 for (int j = i + 1; j < stones.size(); j++) {
                     Hailstone first = stones.get(i);
                     Hailstone second = stones.get(j);
-                    double denom = (first.xvel * second.yvel) - (first.yvel * second.xvel);
-                    if (denom == 0) {
-                        if (first.x == second.x && first.y == second.y) {
-                            if (first.x >= min && first.x <= max && first.y >= min && first.y <= max) {
-                                answer++;
-                            }
-                        }
-                    }
-                    double numer1 = ((second.x - first.x) * second.yvel) - ((second.y - first.y) * second.xvel);
-                    double numer2 = ((first.x - second.x) * first.yvel) - ((first.y - second.y) * first.xvel);
-                    double intersectionX = (numer1 / denom) * first.xvel + first.x;
-                    double intersectionY = (numer1 / denom) * first.yvel + first.y;
-                    if (intersectionX >= min && intersectionX <= max && intersectionY >= min && intersectionY <= max) {
-                        if ((numer1 / denom) > 0 && (numer2 / denom) < 0) {
+                    int denom = (first.xvel * second.yvel) - (first.yvel * second.xvel);
+                    long numer1 = ((second.x - first.x) * second.yvel) - ((second.y - first.y) * second.xvel);
+                    long numer2 = ((first.x - second.x) * first.yvel) - ((first.y - second.y) * first.xvel);
+                    if (denom != 0 && (numer1 / denom) > 0 && (numer2 / denom) < 0) {
+                        double intersectionX = (numer1 / (double)denom) * first.xvel + first.x;
+                        double intersectionY = (numer1 / (double)denom) * first.yvel + first.y;
+                        if (intersectionX >= min && intersectionX <= max && intersectionY >= min && intersectionY <= max) {
                             answer++;
                         }
                     }
@@ -113,7 +106,7 @@ public class Day24 extends DayTemplate {
             int newSecondXVel = second.xvel - v.x;
             int newFirstYVel = first.yvel - v.y;
             int newSecondYVel = second.yvel - v.y;
-            long denom = (newFirstXVel * newSecondYVel) - (newFirstYVel * newSecondXVel);
+            int denom = (newFirstXVel * newSecondYVel) - (newFirstYVel * newSecondXVel);
             if (denom == 0) {
                 continue;
             }

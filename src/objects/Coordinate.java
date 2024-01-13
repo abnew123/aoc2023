@@ -6,7 +6,8 @@ public class Coordinate {
     public int z;
 
     public int weight = 0;
-
+    public int down = 0;
+    public int right = 0;
     public Coordinate(int x, int y) {
         this.x = x;
         this.y = y;

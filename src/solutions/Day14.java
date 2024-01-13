@@ -4,7 +4,7 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day14 extends DayTemplate {
+public class Day14 implements DayTemplate {
 
     /**
      * Main solving method.
@@ -37,12 +37,6 @@ public class Day14 extends DayTemplate {
         }
         if (part1) {
             shiftNorth(stones);
-//            for(int i = 0; i < stones.length; i++){
-//                for(int j = 0; j < stones.length; j++){
-//                    System.out.print(stones[j][i]);
-//                }
-//                System.out.println("");
-//            }
         } else {
             int index = 0;
             int offset = 0;

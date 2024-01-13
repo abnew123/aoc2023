@@ -5,14 +5,12 @@ import src.objects.Coordinate;
 
 import java.util.*;
 
-public class Day16 extends DayTemplate {
+public class Day16 implements DayTemplate {
 
-    static int[][] dirChart;
-
-    static int[] xs = new int[]{-1, 1, 0, 0};
-    static int[] ys = new int[]{0, 0, -1, 1};
-
-    static Set<Coordinate> pointsOfInterest;
+    int[][] dirChart;
+    int[] xs = new int[]{-1, 1, 0, 0};
+    int[] ys = new int[]{0, 0, -1, 1};
+    Set<Coordinate> pointsOfInterest;
 
     /**
      * Main solving method.

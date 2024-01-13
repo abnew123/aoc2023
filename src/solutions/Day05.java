@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Day05 extends DayTemplate {
+public class Day05 implements DayTemplate {
 
     /**
      * Main solving method.
@@ -78,19 +78,19 @@ public class Day05 extends DayTemplate {
 class Range {
     long destination;
     long source;
-    long range;
+    long specificRange;
 
     public Range(long des, long src, long r) {
         destination = des;
         source = src;
-        range = r;
+        specificRange = r;
     }
 
     public Range(String line) {
         String[] pieces = line.split(" ");
         destination = Long.parseLong(pieces[0]);
         source = Long.parseLong(pieces[1]);
-        range = Long.parseLong(pieces[2]);
+        specificRange = Long.parseLong(pieces[2]);
     }
 }
 
@@ -106,7 +106,7 @@ class RangeMap {
         for (Range range : ranges) {
             starts.add(range.source);
             ends.add(range.destination);
-            betweens.add(range.range);
+            betweens.add(range.specificRange);
         }
     }
 

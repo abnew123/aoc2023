@@ -7,11 +7,11 @@ import java.util.*;
 
 //Heavily inspired by https://gist.github.com/Voltara/ae028b17ba5cd69fa9b8b912e41e853b
 
-public class Day23 extends DayTemplate {
+public class Day23 implements DayTemplate {
 
-    static Coordinate[][] nodeGrid = new Coordinate[6][6];
+    Coordinate[][] nodeGrid = new Coordinate[6][6];
 
-    static Set<State> nextStates = new HashSet<>();
+    Set<State> nextStates = new HashSet<>();
 
     Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
 
@@ -66,9 +66,9 @@ public class Day23 extends DayTemplate {
         }
         if (part1) {
             Path path = new Path();
-            path.path.add(start);
+            path.coordsOnPath.add(start);
             path.latest = start;
-            Stack<Path> stack = new Stack<>();
+            Deque<Path> stack = new LinkedList<>();
             stack.push(path);
             while (!stack.isEmpty()) {
                 Path p = stack.pop();
@@ -80,14 +80,13 @@ public class Day23 extends DayTemplate {
                         }
                         break;
                     }
-                    if (p.path.contains(next)) {
-                        continue;
+                    if (!p.coordsOnPath.contains(next)) {
+                        Path newPath = new Path(p);
+                        newPath.latest = next;
+                        newPath.coordsOnPath.add(next);
+                        newPath.pathLength += next.weight;
+                        stack.push(newPath);
                     }
-                    Path newPath = new Path(p);
-                    newPath.latest = next;
-                    newPath.path.add(next);
-                    newPath.pathLength += next.weight;
-                    stack.push(newPath);
                 }
             }
         } else {
@@ -104,7 +103,7 @@ public class Day23 extends DayTemplate {
                 nextStates = new HashSet<>();
             }
             for (State state : states) {
-                if (state.state.equals("     +")) {
+                if (state.dpState.equals("     +")) {
                     answer += state.val;
                 }
             }
@@ -120,7 +119,7 @@ public class Day23 extends DayTemplate {
             return;
         }
         List<String> nextConnections = new ArrayList<>();
-        String above = state.state.substring(column, column + 1);
+        String above = state.dpState.substring(column, column + 1);
         String newState = null;
         if (above.equals(" ")) {
             if (left.equals(" ")) {
@@ -151,18 +150,18 @@ public class Day23 extends DayTemplate {
             if (left.equals("+")) {
                 // node is joining two loops together with different polarity. It cannot take more connections
                 // to correct the polarity issue, find the original - that matches with the current + that's being turned into a -. Set that - to a + to keep balance.
-                int index = possibility.state.length();
+                int index = possibility.dpState.length();
                 int amount = 1;
                 while (amount != 0) {
                     index++;
-                    if (state.state.charAt(index) == '+') {
+                    if (state.dpState.charAt(index) == '+') {
                         amount++;
                     }
-                    if (state.state.charAt(index) == '-') {
+                    if (state.dpState.charAt(index) == '-') {
                         amount--;
                     }
                 }
-                newState = state.state.substring(0, index) + "+" + state.state.substring(index + 1);
+                newState = state.dpState.substring(0, index) + "+" + state.dpState.substring(index + 1);
                 nextConnections.add("  !");
             }
             if (left.equals("-")) {
@@ -185,18 +184,18 @@ public class Day23 extends DayTemplate {
             if (left.equals("-")) {
                 // node is joining two loops together with different polarity. It cannot take more connections
                 // to correct the polarity issue, find the original + that matches with the current - that's being turned into a +. Set that + to a - to keep balance.
-                int index = possibility.state.length();
+                int index = possibility.dpState.length();
                 int amount = 1;
                 while (amount != 0) {
                     index--;
-                    if (possibility.state.charAt(index) == '+') {
+                    if (possibility.dpState.charAt(index) == '+') {
                         amount--;
                     }
-                    if (possibility.state.charAt(index) == '-') {
+                    if (possibility.dpState.charAt(index) == '-') {
                         amount++;
                     }
                 }
-                possibility.state = possibility.state.substring(0, index) + "-" + possibility.state.substring(index + 1);
+                possibility.dpState = possibility.dpState.substring(0, index) + "-" + possibility.dpState.substring(index + 1);
                 nextConnections.add("  ");
             }
         }
@@ -233,7 +232,7 @@ public class Day23 extends DayTemplate {
             }
             if (nextConnection.length() > 2) {
                 State fixedState = new State(state, "");
-                fixedState.state = newState;
+                fixedState.dpState = newState;
                 addNextRow(fixedState, row, column + 1, nextConnection.substring(1, 2), next);
             } else {
                 addNextRow(state, row, column + 1, nextConnection.substring(1, 2), next);
@@ -246,7 +245,7 @@ public class Day23 extends DayTemplate {
             nextStates.add(possibility);
         } else {
             for (State state : nextStates) {
-                if (state.state.equals(possibility.state) && possibility.val > state.val) {
+                if (state.dpState.equals(possibility.dpState) && possibility.val > state.val) {
                     state.val = possibility.val;
                 }
             }
@@ -255,7 +254,7 @@ public class Day23 extends DayTemplate {
 
     private boolean validSigns(State possibility) {
         int sign = 0;
-        for (String s : possibility.state.split("")) {
+        for (String s : possibility.dpState.split("")) {
             if (s.equals("+")) {
                 sign++;
             }
@@ -334,12 +333,12 @@ public class Day23 extends DayTemplate {
 }
 
 class Path {
-    Set<Coordinate> path = new HashSet<>();
+    Set<Coordinate> coordsOnPath = new HashSet<>();
     Coordinate latest;
     int pathLength = 0;
 
     public Path(Path root) {
-        path.addAll(root.path);
+        coordsOnPath.addAll(root.coordsOnPath);
         pathLength = root.pathLength;
     }
 
@@ -349,29 +348,29 @@ class Path {
 }
 
 class State {
-    String state;
+    String dpState;
     int val;
 
-    public State(String state, int val) {
-        this.state = state;
+    public State(String dpState, int val) {
+        this.dpState = dpState;
         this.val = val;
     }
 
     public State(State original, String append) {
-        state = original.state + append;
+        dpState = original.dpState + append;
         val = original.val;
     }
 
     @Override
     public boolean equals(Object o) {
         if (o instanceof State other) {
-            return state.equals(other.state);
+            return dpState.equals(other.dpState);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return state.hashCode();
+        return dpState.hashCode();
     }
 }

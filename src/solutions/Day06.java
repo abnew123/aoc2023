@@ -5,7 +5,7 @@ import src.meta.DayTemplate;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class Day06 extends DayTemplate {
+public class Day06 implements DayTemplate {
 
     /**
      * Main solving method.

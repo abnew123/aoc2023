@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Day11 extends DayTemplate {
+public class Day11 implements DayTemplate {
 
     /**
      * Main solving method.

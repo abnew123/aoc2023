@@ -4,7 +4,7 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day04 extends DayTemplate {
+public class Day04 implements DayTemplate {
 
     /**
      * Main solving method.
@@ -62,9 +62,5 @@ public class Day04 extends DayTemplate {
             }
         }
         return answer;
-        //alternate stream solution (slower)
-        //int[] winningNumbers = Arrays.stream(line.split("[:\\|]")[1].trim().split("\\s+")).mapToInt(Integer::parseInt).toArray();
-        //int[] myNumbers = Arrays.stream(line.split("[:\\|]")[2].trim().split("\\s+")).mapToInt(Integer::parseInt).toArray();
-        //return (int) Arrays.stream(myNumbers).filter(num -> Arrays.stream(winningNumbers).anyMatch(n -> n == num)).count();
     }
 }

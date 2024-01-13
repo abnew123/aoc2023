@@ -4,7 +4,7 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day17 extends DayTemplate {
+public class Day17 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         List<String[]> tmp = new ArrayList<>();

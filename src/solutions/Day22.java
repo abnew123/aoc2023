@@ -4,7 +4,7 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day22 extends DayTemplate {
+public class Day22 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         int[][][] grid;

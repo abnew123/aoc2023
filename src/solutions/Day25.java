@@ -9,7 +9,7 @@ import java.util.*;
  * Did not do the low level optimizations, but roughly followed the high level solution
  */
 
-public class Day25 extends DayTemplate {
+public class Day25 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         if (!part1) {

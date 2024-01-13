@@ -4,20 +4,19 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day12 extends DayTemplate {
-    static List<Integer> groups;
-    static int[] sums;
-    static long[] hashesCount;
-    static long[] questionsCount;
+public class Day12 implements DayTemplate {
+    List<Integer> groups;
+    long[] hashesCount;
+    long[] questionsCount;
 
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        List<String> records = new ArrayList<>();
+        List<String> conditionRecords = new ArrayList<>();
         List<List<Integer>> vals = new ArrayList<>();
         while (in.hasNext()) {
             List<Integer> tmp = new ArrayList<>();
             String line = in.nextLine();
-            records.add(line.split(" ")[0]);
+            conditionRecords.add(line.split(" ")[0]);
             for (String v : line.split(" ")[1].split(",")) {
                 tmp.add(Integer.parseInt(v));
             }
@@ -26,8 +25,8 @@ public class Day12 extends DayTemplate {
         if (!part1) {
             List<String> newRecords = new ArrayList<>();
             List<List<Integer>> newGroups = new ArrayList<>();
-            for (int i = 0; i < records.size(); i++) {
-                String a = records.get(i);
+            for (int i = 0; i < conditionRecords.size(); i++) {
+                String a = conditionRecords.get(i);
                 List<Integer> b = vals.get(i);
                 newRecords.add(a + "?" + a + "?" + a + "?" + a + "?" + a);
                 List<Integer> tmp = new ArrayList<>();
@@ -36,36 +35,35 @@ public class Day12 extends DayTemplate {
                 }
                 newGroups.add(tmp);
             }
-            records = newRecords;
+            conditionRecords = newRecords;
             vals = newGroups;
         }
-        for (int i = 0; i < records.size(); i++) {
+        for (int i = 0; i < conditionRecords.size(); i++) {
             groups = vals.get(i);
-            sums = precomputeSums(groups);
-            hashesCount = precomputeCounts(records.get(i), '#');
-            questionsCount = precomputeCounts(records.get(i), '?');
+            hashesCount = precomputeCounts(conditionRecords.get(i), '#');
+            questionsCount = precomputeCounts(conditionRecords.get(i), '?');
             Map<List<Integer>, Long> memo = new HashMap<>();
-            answer += helper(records.get(i), memo, 0);
+            answer += helper(conditionRecords.get(i), memo, 0, precomputeSums(groups));
         }
         return answer + "";
     }
 
-    private long helper(String record, Map<List<Integer>, Long> memo, int currGroup) {
+    private long helper(String conditionRecord, Map<List<Integer>, Long> memo, int currGroup, int[] sums) {
         long answer = 0;
         if (groups.size() == currGroup) {
-            if (record.contains("#")) {
+            if (conditionRecord.contains("#")) {
                 return 0;
             }
             return 1;
         }
-        if (record.length() == 0) {
+        if (conditionRecord.length() == 0) {
             return 0;
         }
-        List<Integer> memoKey = Arrays.asList(currGroup, record.length());
+        List<Integer> memoKey = Arrays.asList(currGroup, conditionRecord.length());
         if (memo.containsKey(memoKey)) {
             return memo.get(memoKey);
         }
-        if (!check(groups, record, currGroup)) {
+        if (!check(groups, conditionRecord, currGroup, sums)) {
             memo.put(memoKey, 0L);
             return 0;
         }
@@ -73,39 +71,39 @@ public class Day12 extends DayTemplate {
         int current = groups.get(currGroup);
         int index = 0;
 
-        if (record.startsWith(".")) {
-            while (index < record.length() && record.charAt(index) == '.') {
+        if (conditionRecord.startsWith(".")) {
+            while (index < conditionRecord.length() && conditionRecord.charAt(index) == '.') {
                 index++;
             }
-            answer = helper(record.substring(index), memo, currGroup);
-        } else if (record.startsWith("#")) {
-            if (record.length() == current) {
-                if (record.contains(".")) {
+            answer = helper(conditionRecord.substring(index), memo, currGroup, sums);
+        } else if (conditionRecord.startsWith("#")) {
+            if (conditionRecord.length() == current) {
+                if (conditionRecord.contains(".")) {
                     return 0;
                 } else {
                     return 1;
                 }
             }
-            if (record.substring(0, current).contains(".") || record.charAt(current) == '#') {
+            if (conditionRecord.substring(0, current).contains(".") || conditionRecord.charAt(current) == '#') {
                 return 0;
             } else {
-                answer = helper(record.substring(current + 1), memo, currGroup + 1);
+                answer = helper(conditionRecord.substring(current + 1), memo, currGroup + 1, sums);
             }
-        } else if (record.startsWith("?")) {
-            String rec1 = "#" + record.substring(1);
-            answer = helper(rec1, memo, currGroup) + helper(record.substring(1), memo, currGroup);
+        } else if (conditionRecord.startsWith("?")) {
+            String rec1 = "#" + conditionRecord.substring(1);
+            answer = helper(rec1, memo, currGroup, sums) + helper(conditionRecord.substring(1), memo, currGroup, sums);
         }
 
         memo.put(memoKey, answer);
         return answer;
     }
 
-    private boolean check(List<Integer> groups, String record, int currGroup) {
+    private boolean check(List<Integer> groups, String conditionRecord, int currGroup, int[] sums) {
         int sum = sums[currGroup];
         int sum2 = sum + groups.size() - 1 - currGroup;
-        long hashes = (record.charAt(0) == '#'?1:0) + hashesCount[hashesCount.length - record.length()];
-        long questions = (record.charAt(0) == '?'?1:0) +questionsCount[questionsCount.length - record.length()];
-        return sum >= hashes && sum <= (hashes + questions) && record.length() >= sum2;
+        long hashes = (conditionRecord.charAt(0) == '#'?1:0) + hashesCount[hashesCount.length - conditionRecord.length()];
+        long questions = (conditionRecord.charAt(0) == '?'?1:0) +questionsCount[questionsCount.length - conditionRecord.length()];
+        return sum >= hashes && sum <= (hashes + questions) && conditionRecord.length() >= sum2;
     }
 
     private int[] precomputeSums(List<Integer> groups) {
@@ -118,11 +116,11 @@ public class Day12 extends DayTemplate {
         return sums;
     }
 
-    private long[] precomputeCounts(String record, char target) {
-        long[] counts = new long[record.length() + 1];
+    private long[] precomputeCounts(String conditionRecord, char target) {
+        long[] counts = new long[conditionRecord.length() + 1];
         long count = 0;
-        for (int i = record.length() - 1; i >= 0; i--) {
-            count += record.charAt(i) == target ? 1 : 0;
+        for (int i = conditionRecord.length() - 1; i >= 0; i--) {
+            count += conditionRecord.charAt(i) == target ? 1 : 0;
             counts[i] = count;
         }
         return counts;

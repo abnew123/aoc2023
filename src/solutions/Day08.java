@@ -4,7 +4,7 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day08 extends DayTemplate {
+public class Day08 implements DayTemplate {
 
     /**
      * Main solving method.

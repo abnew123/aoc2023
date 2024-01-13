@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Day13 extends DayTemplate {
+public class Day13 implements DayTemplate {
 
     /**
      * Main solving method.
@@ -47,13 +47,13 @@ public class Day13 extends DayTemplate {
 }
 
 class Pattern {
-    int[][] pattern;
+    int[][] grid;
 
     public Pattern(List<String> tmp) {
-        pattern = new int[tmp.get(0).length()][tmp.size()];
-        for (int i = 0; i < pattern.length; i++) {
-            for (int j = 0; j < pattern[0].length; j++) {
-                pattern[i][j] = tmp.get(j).charAt(i) == '.' ? 0 : 1;
+        grid = new int[tmp.get(0).length()][tmp.size()];
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                grid[i][j] = tmp.get(j).charAt(i) == '.' ? 0 : 1;
             }
         }
     }
@@ -69,7 +69,7 @@ class Pattern {
 
     private List<Long> vert(int closeness) {
         List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < pattern.length; i++) {
+        for (int i = 1; i < grid.length; i++) {
             if(vertHelper(i, closeness)){
                 ret.add((long) i);
             }
@@ -79,10 +79,10 @@ class Pattern {
 
     private boolean vertHelper(int i, int closeness){
         boolean oneOff = false;
-        for (int j = 0; j < pattern[0].length; j++) {
-            if (i <= pattern.length / 2) {
+        for (int j = 0; j < grid[0].length; j++) {
+            if (i <= grid.length / 2) {
                 for (int k = 1; k <= i; k++) {
-                    if (pattern[k - 1][j] != pattern[(2 * i + 1) - k - 1][j]) {
+                    if (grid[k - 1][j] != grid[(2 * i + 1) - k - 1][j]) {
                         if(closeness == 0 || oneOff){
                             return false;
                         }
@@ -90,8 +90,8 @@ class Pattern {
                     }
                 }
             } else {
-                for (int k = pattern.length; k > i; k--) {
-                    if (pattern[k - 1][j] != pattern[(2 * i + 1) - k - 1][j]) {
+                for (int k = grid.length; k > i; k--) {
+                    if (grid[k - 1][j] != grid[(2 * i + 1) - k - 1][j]) {
                         if(closeness == 0 || oneOff){
                             return false;
                         }
@@ -106,7 +106,7 @@ class Pattern {
 
     private List<Long> horiz(int closeness) {
         List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < pattern[0].length; i++) {
+        for (int i = 1; i < grid[0].length; i++) {
             if(horizHelper(i, closeness)){
                 ret.add((long) i);
             }
@@ -116,10 +116,10 @@ class Pattern {
 
     private boolean horizHelper(int i, int closeness){
         boolean oneOff = false;
-        for (int j = 0; j < pattern.length; j++) {
-            if (i <= pattern[0].length / 2) {
+        for (int j = 0; j < grid.length; j++) {
+            if (i <= grid[0].length / 2) {
                 for (int k = 1; k <= i; k++) {
-                    if (pattern[j][k - 1] != pattern[j][(2 * i + 1) - k - 1]) {
+                    if (grid[j][k - 1] != grid[j][(2 * i + 1) - k - 1]) {
                         if(closeness == 0 || oneOff){
                             return false;
                         }
@@ -127,8 +127,8 @@ class Pattern {
                     }
                 }
             } else {
-                for (int k = pattern[0].length; k > i; k--) {
-                    if (pattern[j][k - 1] != pattern[j][(2 * i + 1) - k - 1]) {
+                for (int k = grid[0].length; k > i; k--) {
+                    if (grid[j][k - 1] != grid[j][(2 * i + 1) - k - 1]) {
                         if(closeness == 0 || oneOff){
                             return false;
                         }

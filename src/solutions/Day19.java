@@ -4,9 +4,9 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-public class Day19 extends DayTemplate {
+public class Day19 implements DayTemplate {
 
-    public static String[] allCategories = new String[]{"x", "m", "a", "s"};
+    protected static final String[] allCategories = new String[]{"x", "m", "a", "s"};
 
     /**
      * Main solving method.
@@ -110,21 +110,21 @@ class Workflow {
 
 class Condition {
 
-    private static final String regex = "[<>:]";
-    String var;
+    private static final String REGEX = "[<>:]";
+    String variable;
     boolean greater;
     int threshold;
     String ifYes;
 
     public Condition(String l) {
         greater = l.contains(">");
-        var = l.split(regex)[0];
-        threshold = Integer.parseInt(l.split(regex)[1]);
-        ifYes = l.split(regex)[2];
+        variable = l.split(REGEX)[0];
+        threshold = Integer.parseInt(l.split(REGEX)[1]);
+        ifYes = l.split(REGEX)[2];
     }
 
     public String process(Part p) {
-        int value = p.vals.get(var);
+        int value = p.vals.get(variable);
         if (greater) {
             return (value > threshold) ? ifYes : null;
         } else {
@@ -136,22 +136,22 @@ class Condition {
         SubRangeTuple newTuple = new SubRangeTuple(tuple);
         SubRangeTuple currTuple = new SubRangeTuple(tuple);
         if (greater) {
-            if (currTuple.upper.get(var) <= threshold) {
+            if (currTuple.upper.get(variable) <= threshold) {
                 return newTuple;
             }
-            newTuple.upper.put(var, threshold);
-            currTuple.lower.put(var, threshold + 1);
-            if (newTuple.lower.get(var) >= threshold) {
-                newTuple.upper.put(var, newTuple.lower.get(var));
+            newTuple.upper.put(variable, threshold);
+            currTuple.lower.put(variable, threshold + 1);
+            if (newTuple.lower.get(variable) >= threshold) {
+                newTuple.upper.put(variable, newTuple.lower.get(variable));
             }
         } else {
-            if (currTuple.lower.get(var) >= threshold) {
+            if (currTuple.lower.get(variable) >= threshold) {
                 return newTuple;
             }
-            newTuple.lower.put(var, threshold);
-            currTuple.upper.put(var, threshold - 1);
-            if (newTuple.upper.get(var) <= threshold) {
-                newTuple.upper.put(var, newTuple.lower.get(var));
+            newTuple.lower.put(variable, threshold);
+            currTuple.upper.put(variable, threshold - 1);
+            if (newTuple.upper.get(variable) <= threshold) {
+                newTuple.upper.put(variable, newTuple.lower.get(variable));
             }
         }
         if (ifYes.equals("A") || ifYes.equals("R")) {
