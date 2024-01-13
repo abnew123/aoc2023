@@ -2,6 +2,9 @@
 
 Total run time of all 50 parts is roughly 1.5 seconds on my 2019 Macbook Pro. Days 12,16, 17 account for roughly half of the run time. 
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
+
 <!-- AOC TILES BEGIN -->
 <h1 align="center">
   2023 - 50 ⭐
