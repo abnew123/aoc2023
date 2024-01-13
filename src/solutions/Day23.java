@@ -245,13 +245,7 @@ public class Day23 extends DayTemplate {
     }
 
     private void conditionalPut(State possibility) {
-        boolean found = false;
-        for (State state : nextStates) {
-            if (state.state.equals(possibility.state)) {
-                found = true;
-            }
-        }
-        if (!found) {
+        if (!nextStates.contains(possibility)) {
             nextStates.add(possibility);
         } else {
             for (State state : nextStates) {
@@ -369,5 +363,18 @@ class State {
     public State(State original, String append) {
         state = original.state + append;
         val = original.val;
+    }
+
+    @Override
+    public boolean equals(Object other){
+        if(other instanceof State){
+            return state.equals(((State) other).state);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return state.hashCode();
     }
 }
