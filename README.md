@@ -1,5 +1,7 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
+Total run time of all 50 parts is roughly 1.5 seconds on my 2019 Macbook Pro. Days 12,16, 17 account for roughly half of the run time. 
+
 <!-- AOC TILES BEGIN -->
 <h1 align="center">
   2023 - 50 ⭐
