@@ -76,12 +76,12 @@ public class Day16 implements DayTemplate {
             }
         }
         return currBest;
-
     }
 
     private int tryFromLocation(int[][] graph, int x, int y, int dir) {
         Set<Beam> beams = new HashSet<>();
         Set<Beam> seen = new HashSet<>();
+        assert graph.length > 0;
         int[][] energized = new int[graph.length][graph[0].length];
         beams.add(new Beam(x, y, dir));
         while (!beams.isEmpty()) {
