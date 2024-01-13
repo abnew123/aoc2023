@@ -1,6 +1,11 @@
 .idea/
 data/
-out/**/!src
+/out/*
+!out/production
+/out/production/*
+!out/production/aoc2023
+/out/production/aoc2023/*
+!out/production/aoc2023/src
 
 # for https://github.com/LiquidFun/aoc_tiles
 .aoc_tiles/*
