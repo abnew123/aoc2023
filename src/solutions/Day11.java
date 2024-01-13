@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Day11 implements DayTemplate {
+    
+    List<Coordinate> galaxies;
+    List<Integer> emptyV;
+    List<Integer> emptyH;
 
     /**
      * Main solving method.
@@ -19,11 +23,41 @@ public class Day11 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
+        parse(in);
+        for (int i = 0; i < galaxies.size(); i++) {
+            for (int j = i + 1; j < galaxies.size(); j++) {
+                Coordinate g1 = galaxies.get(i);
+                Coordinate g2 = galaxies.get(j);
+                answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
+            }
+        }
+        for (Integer ind : emptyV) {
+            int left = 0;
+            for (Coordinate g : galaxies) {
+                if (g.x < ind) {
+                    left++;
+                }
+            }
+            answer += left * (galaxies.size() - left) * (part1 ? 1 : 999999L);
+        }
+        for (Integer ind : emptyH) {
+            int up = 0;
+            for (Coordinate g : galaxies) {
+                if (g.y < ind) {
+                    up++;
+                }
+            }
+            answer += up * (galaxies.size() - up) * (part1 ? 1 : 999999L);
+        }
+        return answer + "";
+    }
+
+    private void parse(Scanner in) {
         List<List<String>> space = new ArrayList<>();
         int index = 0;
-        List<Coordinate> galaxies = new ArrayList<>();
-        List<Integer> emptyV = new ArrayList<>();
-        List<Integer> emptyH = new ArrayList<>();
+        galaxies = new ArrayList<>();
+        emptyV = new ArrayList<>();
+        emptyH = new ArrayList<>();
         while (in.hasNext()) {
             List<String> tmp = new ArrayList<>();
             String[] line = in.nextLine().split("");
@@ -51,31 +85,6 @@ public class Day11 implements DayTemplate {
                 emptyV.add(i);
             }
         }
-        for (int i = 0; i < galaxies.size(); i++) {
-            for (int j = i + 1; j < galaxies.size(); j++) {
-                Coordinate g1 = galaxies.get(i);
-                Coordinate g2 = galaxies.get(j);
-                answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
-            }
-        }
-        for(Integer ind: emptyV){
-            int left = 0;
-            for(Coordinate g: galaxies){
-                if(g.x < ind){
-                    left++;
-                }
-            }
-            answer+= left * (galaxies.size() - left) * (part1 ? 1 : 999999L);
-        }
-        for(Integer ind: emptyH){
-            int up = 0;
-            for(Coordinate g: galaxies){
-                if(g.y < ind){
-                    up++;
-                }
-            }
-            answer+= up * (galaxies.size() - up) * (part1 ? 1 : 999999L);
-        }
-        return answer + "";
     }
+
 }

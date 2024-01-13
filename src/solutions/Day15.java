@@ -20,12 +20,12 @@ public class Day15 implements DayTemplate {
         Map<Integer, List<Lens>> map = new HashMap<>();
         if (part1) {
             for (String s : lines) {
-                answer += helper(s);
+                answer += hash(s);
             }
         } else {
             for (String s : lines) {
                 String[] parts = s.split("[-=]");
-                int hash = helper(parts[0]);
+                int hash = hash(parts[0]);
                 if (parts.length == 1) {
                     if (map.containsKey(hash)) {
                         List<Lens> current = map.get(hash);
@@ -68,7 +68,7 @@ public class Day15 implements DayTemplate {
         return answer + "";
     }
 
-    public int helper(String s) {
+    public int hash(String s) {
         int val = 0;
         for (int i = 0; i < s.length(); i++) {
             val += s.charAt(i);

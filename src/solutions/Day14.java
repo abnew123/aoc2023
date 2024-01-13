@@ -6,6 +6,9 @@ import java.util.*;
 
 public class Day14 implements DayTemplate {
 
+    Map<Integer, Integer> states;
+    int[][] stones;
+
     /**
      * Main solving method.
      *
@@ -15,26 +18,8 @@ public class Day14 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        List<String> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            tmp.add(in.nextLine());
-        }
-        Map<Integer, Integer> states = new HashMap<>();
-        int[][] stones = new int[tmp.get(0).length()][tmp.size()];
-        for (int i = 0; i < stones.length; i++) {
-            for (int j = 0; j < stones[0].length; j++) {
-                char s = tmp.get(j).charAt(i);
-                if (s == '.') {
-                    stones[i][j] = 0;
-                }
-                if (s == '#') {
-                    stones[i][j] = 1;
-                }
-                if (s == 'O') {
-                    stones[i][j] = 2;
-                }
-            }
-        }
+        parse(in);
+        states = new HashMap<>();
         if (part1) {
             shiftNorth(stones);
         } else {
@@ -64,6 +49,28 @@ public class Day14 implements DayTemplate {
 
         }
         return getSupportLoad(stones) + "";
+    }
+
+    private void parse(Scanner in){
+        List<String> tmp = new ArrayList<>();
+        while (in.hasNext()) {
+            tmp.add(in.nextLine());
+        }
+        stones = new int[tmp.get(0).length()][tmp.size()];
+        for (int i = 0; i < stones.length; i++) {
+            for (int j = 0; j < stones[0].length; j++) {
+                char s = tmp.get(j).charAt(i);
+                if (s == '.') {
+                    stones[i][j] = 0;
+                }
+                if (s == '#') {
+                    stones[i][j] = 1;
+                }
+                if (s == 'O') {
+                    stones[i][j] = 2;
+                }
+            }
+        }
     }
 
     private void shiftNorth(int[][] stones) {
