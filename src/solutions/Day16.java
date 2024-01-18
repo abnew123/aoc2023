@@ -11,6 +11,7 @@ public class Day16 implements DayTemplate {
     int[] xs = new int[]{-1, 1, 0, 0};
     int[] ys = new int[]{0, 0, -1, 1};
     Set<Coordinate> pointsOfInterest;
+    Set<Beam> exited;
 
     /**
      * Main solving method.
@@ -22,6 +23,7 @@ public class Day16 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         int answer;
+        exited = new HashSet<>();
         List<String[]> tmpGraph = new ArrayList<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split("");
@@ -51,11 +53,11 @@ public class Day16 implements DayTemplate {
         } else {
             answer = runFromAllPoints(graph);
         }
-
         return answer + "";
     }
 
     private int runFromAllPoints(int[][] graph){
+        exited = new HashSet<>();
         int currBest = 0;
         for (int i = 0; i < graph.length; i++) {
             int result1 = tryFromLocation(graph, -1, i, 1);
@@ -79,11 +81,15 @@ public class Day16 implements DayTemplate {
     }
 
     private int tryFromLocation(int[][] graph, int x, int y, int dir) {
+        Beam startingBeam = new Beam(x,y,dir);
+        if(exited.contains(startingBeam)){
+            return -1;
+        }
         Set<Beam> beams = new HashSet<>();
         Set<Beam> seen = new HashSet<>();
         assert graph.length > 0;
         int[][] energized = new int[graph.length][graph[0].length];
-        beams.add(new Beam(x, y, dir));
+        beams.add(startingBeam);
         while (!beams.isEmpty()) {
             beams = oneCycle(graph, energized, beams, seen);
         }
@@ -108,12 +114,16 @@ public class Day16 implements DayTemplate {
             int dir = beam.direction;
             int newx = beam.x + xs[dir];
             int newy = beam.y + ys[dir];
+            if(!inBounds(newx, newy, graph)){
+                exited.add(new Beam(newx, newy, 3 - ((dir + 2)%4)));
+            }
             while (!pointsOfInterest.contains(new Coordinate(newx, newy)) && inBounds(newx, newy, graph)) {
                 energized[newx][newy]++;
                 newx += xs[dir];
                 newy += ys[dir];
             }
             if (!inBounds(newx, newy, graph)) {
+                exited.add(new Beam(newx, newy, 3 - ((dir + 2)%4)));
                 continue;
             }
             energized[newx][newy]++;
@@ -157,5 +167,9 @@ class Beam {
     @Override
     public int hashCode() {
         return Objects.hash(x, y, direction);
+    }
+
+    public String toString(){
+        return x + " " + y + " " + direction;
     }
 }
