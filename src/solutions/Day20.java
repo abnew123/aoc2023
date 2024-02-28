@@ -18,32 +18,8 @@ public class Day20 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer;
-        Map<String, Module> modules = new HashMap<>();
-        while (in.hasNext()) {
-            String[] line = in.nextLine().split("->|,");
-            if (line[0].contains("%")) {
-                modules.put(line[0].substring(1).trim(), new FlipFlop(line));
-            }
-            if (line[0].contains("&")) {
-                modules.put(line[0].substring(1).trim(), new Conjunction(line));
-            }
-            if (line[0].startsWith(BROADCASTER)) {
-                modules.put(line[0].trim(), new Broadcaster(line));
-            }
-        }
-
-        String rxInput = null;
-        for (Map.Entry<String, Module> entry : modules.entrySet()) {
-            List<String> targets = entry.getValue().getTargets();
-            for (String t : targets) {
-                if (t.equals("rx")) {
-                    rxInput = entry.getKey();
-                }
-                if (modules.get(t) instanceof Conjunction conjunction) {
-                    conjunction.inputs.add(entry.getKey());
-                }
-            }
-        }
+        Map<String, Module> modules = buildModules(in);
+        String rxInput = findInputAndInitializeConjunctions(modules);
         List<Pulse> pulses;
         if (part1) {
             long highPulses = 0;
@@ -103,6 +79,39 @@ public class Day20 implements DayTemplate {
             }
         }
         return answer + "";
+    }
+
+    private Map<String, Module> buildModules(Scanner in){
+        Map<String, Module> modules = new HashMap<>();
+        while (in.hasNext()) {
+            String[] line = in.nextLine().split("->|,");
+            if (line[0].contains("%")) {
+                modules.put(line[0].substring(1).trim(), new FlipFlop(line));
+            }
+            if (line[0].contains("&")) {
+                modules.put(line[0].substring(1).trim(), new Conjunction(line));
+            }
+            if (line[0].startsWith(BROADCASTER)) {
+                modules.put(line[0].trim(), new Broadcaster(line));
+            }
+        }
+        return modules;
+    }
+
+    private String findInputAndInitializeConjunctions(Map<String, Module> modules){
+        String rxInput = null;
+        for (Map.Entry<String, Module> entry : modules.entrySet()) {
+            List<String> targets = entry.getValue().getTargets();
+            for (String t : targets) {
+                if (t.equals("rx")) {
+                    rxInput = entry.getKey();
+                }
+                if (modules.get(t) instanceof Conjunction conjunction) {
+                    conjunction.inputs.add(entry.getKey());
+                }
+            }
+        }
+        return rxInput;
     }
 }
 
