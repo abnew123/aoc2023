@@ -87,28 +87,18 @@ public class Day21 implements DayTemplate {
     }
 
     private long solvePart2(){
-        long oddParity = 0;
-        long evenParity = 0;
-        long largeOddParity = 0;
-        long largeEvenParity = 0;
+        long[] evenOddLarge = new long[4];
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
                 if (grid[i][j] != -1 && grid[i][j] != 9999) {
-                    if ((i + j) % 2 == 1) {
-                        oddParity++;
-                        if (grid[i][j] > grid.length / 2) {
-                            largeOddParity++;
-                        }
-                    } else {
-                        evenParity++;
-                        if (grid[i][j] > grid.length / 2) {
-                            largeEvenParity++;
-                        }
+                    evenOddLarge[(i + j) % 2]++;
+                    if(grid[i][j] > grid.length / 2){
+                        evenOddLarge[(i + j) % 2 + 2]++;
                     }
                 }
             }
         }
         long size = 26501365 / grid.length;
-        return ((size + 1) * (size + 1) * oddParity) + (size * size * evenParity) - ((size + 1) * largeOddParity) + (size * largeEvenParity);
+        return ((size + 1) * (size + 1) * evenOddLarge[1]) + (size * size * evenOddLarge[0]) - ((size + 1) * evenOddLarge[3]) + (size * evenOddLarge[2]);
     }
 }
