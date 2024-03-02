@@ -86,15 +86,8 @@ public class Day20 implements DayTemplate {
 
     private long part2(Map<String, Module> modules, String rxInput) {
         long answer = 1;
-        List<String> allInputs = new ArrayList<>();
-        for (Map.Entry<String, Module> entry : modules.entrySet()) {
-            List<String> targets = entry.getValue().getTargets();
-            for (String t : targets) {
-                if (t.equals(rxInput)) {
-                    allInputs.add(entry.getKey());
-                }
-            }
-        }
+        List<String> allInputs = findAllInputs(modules, rxInput);
+
         List<Integer> recordedSuccesses = new ArrayList<>();
         int totalRecorded = allInputs.size();
         int recordedSoFar = 0;
@@ -123,6 +116,19 @@ public class Day20 implements DayTemplate {
             answer *= success;
         }
         return answer;
+    }
+
+    private List<String> findAllInputs(Map<String, Module> modules, String rxInput){
+        List<String> allInputs = new ArrayList<>();
+        for (Map.Entry<String, Module> entry : modules.entrySet()) {
+            List<String> targets = entry.getValue().getTargets();
+            for (String t : targets) {
+                if (t.equals(rxInput)) {
+                    allInputs.add(entry.getKey());
+                }
+            }
+        }
+        return allInputs;
     }
 }
 
