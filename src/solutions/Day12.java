@@ -5,9 +5,7 @@ import src.meta.DayTemplate;
 import java.util.*;
 
 public class Day12 implements DayTemplate {
-    List<Integer> groups;
-    long[] hashesCount;
-    long[] questionsCount;
+    int[] possibleCount;
 
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
@@ -39,88 +37,59 @@ public class Day12 implements DayTemplate {
             vals = newGroups;
         }
         for (int i = 0; i < conditionRecords.size(); i++) {
-            groups = vals.get(i);
-            hashesCount = precomputeCounts(conditionRecords.get(i), '#');
-            questionsCount = precomputeCounts(conditionRecords.get(i), '?');
-            Map<List<Integer>, Long> memo = new HashMap<>();
-            answer += helper(conditionRecords.get(i), memo, 0, precomputeSums(groups));
+            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
+            answer += solveOne(conditionRecords.get(i) + ".", vals.get(i));
         }
         return answer + "";
     }
 
-    private long helper(String conditionRecord, Map<List<Integer>, Long> memo, int currGroup, int[] sums) {
-        long answer = 0;
-        if (groups.size() == currGroup) {
-            if (conditionRecord.contains("#")) {
-                return 0;
-            }
-            return 1;
+    private long solveOne(String conditionRecord, List<Integer> groups) {
+        int totalSprings = 0;
+        for (Integer group : groups) {
+            totalSprings += group;
         }
-        if (conditionRecord.length() == 0) {
-            return 0;
-        }
-        List<Integer> memoKey = Arrays.asList(currGroup, conditionRecord.length());
-        if (memo.containsKey(memoKey)) {
-            return memo.get(memoKey);
-        }
-        if (!check(groups, conditionRecord, currGroup, sums)) {
-            memo.put(memoKey, 0L);
-            return 0;
-        }
-
-        int current = groups.get(currGroup);
-        int index = 0;
-        if (conditionRecord.startsWith(".")) {
-            while (index < conditionRecord.length() && conditionRecord.charAt(index) == '.') {
-                index++;
-            }
-            answer = helper(conditionRecord.substring(index), memo, currGroup, sums);
-        } else if (conditionRecord.startsWith("#")) {
-            if (conditionRecord.length() == current) {
-                if (conditionRecord.contains(".")) {
-                    return 0;
-                } else {
-                    return 1;
+        int wiggle = conditionRecord.length() - totalSprings - groups.size() + 1;
+        long[][] dp = new long[conditionRecord.length()][groups.size()];
+        boolean noHashesToLeft = true;
+        long sum = 0;
+        for (int i = 0; i < wiggle; i++) {
+            if (conditionRecord.charAt(i + groups.get(0)) == '#') {
+                sum = 0;
+            } else {
+                if (noHashesToLeft && (possibleCount[i + groups.get(0)] - possibleCount[i]) == groups.get(0)) {
+                    sum++;
                 }
             }
-            if (conditionRecord.substring(0, current).contains(".") || conditionRecord.charAt(current) == '#') {
-                return 0;
-            } else {
-                answer = helper(conditionRecord.substring(current + 1), memo, currGroup + 1, sums);
+            dp[i + groups.get(0)][0] = sum;
+            noHashesToLeft &= (conditionRecord.charAt(i) != '#');
+        }
+
+        int start = groups.get(0) + 1;
+        for (int i = 1; i < groups.size(); i++) {
+            sum = 0;
+            for (int j = start; j < start + wiggle; j++) {
+                if (conditionRecord.charAt(j + groups.get(i)) == '#') {
+                    sum = 0;
+                } else {
+                    if (dp[j - 1][i - 1] > 0 && (conditionRecord.charAt(j - 1) != '#') && (possibleCount[j + groups.get(i)] - possibleCount[j]) == groups.get(i)) {
+                        sum += dp[j - 1][i - 1];
+                    }
+                }
+                dp[j + groups.get(i)][i] = sum;
             }
-        } else if (conditionRecord.startsWith("?")) {
-            String rec1 = "#" + conditionRecord.substring(1);
-            answer = helper(rec1, memo, currGroup, sums) + helper(conditionRecord.substring(1), memo, currGroup, sums);
+            start += groups.get(i) + 1;
         }
-
-        memo.put(memoKey, answer);
-        return answer;
+        return sum;
     }
 
-    private boolean check(List<Integer> groups, String conditionRecord, int currGroup, int[] sums) {
-        int sum = sums[currGroup];
-        int sum2 = sum + groups.size() - 1 - currGroup;
-        long hashes = (conditionRecord.charAt(0) == '#'?1:0) + hashesCount[hashesCount.length - conditionRecord.length()];
-        long questions = (conditionRecord.charAt(0) == '?'?1:0) +questionsCount[questionsCount.length - conditionRecord.length()];
-        return sum >= hashes && sum <= (hashes + questions) && conditionRecord.length() >= sum2;
-    }
-
-    private int[] precomputeSums(List<Integer> groups) {
-        int n = groups.size();
-        int[] sums = new int[n];
-        sums[n - 1] = groups.get(n - 1);
-        for (int i = n - 2; i >= 0; i--) {
-            sums[i] = sums[i + 1] + groups.get(i);
-        }
-        return sums;
-    }
-
-    private long[] precomputeCounts(String conditionRecord, char target) {
-        long[] counts = new long[conditionRecord.length() + 1];
-        long count = 0;
-        for (int i = conditionRecord.length() - 1; i >= 0; i--) {
-            count += conditionRecord.charAt(i) == target ? 1 : 0;
-            counts[i] = count;
+    private int[] precomputePossible(String conditionRecord) {
+        int[] counts = new int[conditionRecord.length() + 1];
+        int count = 0;
+        for (int i = 0; i < conditionRecord.length(); i++) {
+            if (conditionRecord.charAt(i) == '#' || conditionRecord.charAt(i) == '?') {
+                count++;
+            }
+            counts[i + 1] = count;
         }
         return counts;
     }
