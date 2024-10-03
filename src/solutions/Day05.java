@@ -12,28 +12,7 @@ public class Day05 implements DayTemplate {
     List<RangeMap> rangeMaps;
 
     public String[] fullSolve(Scanner in) {
-        List<Range> tmp = new ArrayList<>();
-        rangeMaps = new ArrayList<>();
-        String[] stringSeeds = in.nextLine().split(" ");
-        seeds = new long[stringSeeds.length - 1];
-        for (int i = 1; i < stringSeeds.length; i++) {
-            seeds[i - 1] = Long.parseLong(stringSeeds[i]);
-        }
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.equals("")) {
-                continue;
-            }
-            if (line.contains("map")) {
-                if (!tmp.isEmpty()) {
-                    rangeMaps.add(new RangeMap(tmp));
-                }
-                tmp = new ArrayList<>();
-            } else {
-                tmp.add(new Range(line));
-            }
-        }
-        rangeMaps.add(new RangeMap(tmp));
+        initialize(in);
         return new String[]{solvePart1()+"", solvePart2()+""};
     }
 
@@ -46,6 +25,11 @@ public class Day05 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
+        initialize(in);
+        return (part1?solvePart1():solvePart2()) + "";
+    }
+
+    private void initialize(Scanner in){
         List<Range> tmp = new ArrayList<>();
         rangeMaps = new ArrayList<>();
         String[] stringSeeds = in.nextLine().split(" ");
@@ -68,7 +52,6 @@ public class Day05 implements DayTemplate {
             }
         }
         rangeMaps.add(new RangeMap(tmp));
-        return (part1?solvePart1():solvePart2()) + "";
     }
 
     private long solvePart1(){

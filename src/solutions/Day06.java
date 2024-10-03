@@ -23,13 +23,13 @@ public class Day06 implements DayTemplate {
         for (int i = 0; i < times1.length; i++) {
             long time = times1[i];
             long dist = dists1[i];
-            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4 * dist)) / 2);
+            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4.0 * dist)) / 2);
             answer1 *= time - threshold * 2 + 1;
         }
         for (int i = 0; i < times2.length; i++) {
             long time = times2[i];
             long dist = dists2[i];
-            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4 * dist)) / 2);
+            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4.0 * dist)) / 2);
             answer2 *= time - threshold * 2 + 1;
         }
         return new String[]{answer1 + "", answer2 + ""};
@@ -52,7 +52,7 @@ public class Day06 implements DayTemplate {
         for (int i = 0; i < times.length; i++) {
             long time = times[i];
             long dist = dists[i];
-            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4 * dist)) / 2);
+            long threshold = (long) Math.ceil((time -Math.sqrt(time * time - 4.0 * dist)) / 2);
             answer *= time - threshold * 2 + 1;
         }
         return answer + "";
