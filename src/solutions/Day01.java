@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 public class Day01 implements DayTemplate {
 
+    @Override
     public String[] fullSolve(Scanner in){
         int answer1 = 0;
         int answer2 = 0;

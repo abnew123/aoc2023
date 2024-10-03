@@ -11,6 +11,7 @@ public class Day03 implements DayTemplate {
     Map<Integer, List<Integer>> gears = new HashMap<>();
     Map<Integer, List<Integer>> symbols = new HashMap<>();
 
+    @Override
     public String[] fullSolve(Scanner in) {
         long answer1;
         long answer2;

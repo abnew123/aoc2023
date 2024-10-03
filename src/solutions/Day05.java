@@ -11,6 +11,7 @@ public class Day05 implements DayTemplate {
     long[] seeds;
     List<RangeMap> rangeMaps;
 
+    @Override
     public String[] fullSolve(Scanner in) {
         initialize(in);
         return new String[]{solvePart1()+"", solvePart2()+""};

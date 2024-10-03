@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Day04 implements DayTemplate {
 
+    @Override
     public String[] fullSolve(Scanner in) {
         long answer1 = 0;
         long answer2 = 0;

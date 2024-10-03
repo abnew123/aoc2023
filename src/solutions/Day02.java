@@ -10,6 +10,7 @@ public class Day02 implements DayTemplate {
     static final String GREEN = "green";
     static final String BLUE = "blue";
 
+    @Override
     public String[] fullSolve(Scanner in) {
         int answer1 = 0;
         int answer2 = 0;
