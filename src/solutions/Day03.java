@@ -11,6 +11,15 @@ public class Day03 implements DayTemplate {
     Map<Integer, List<Integer>> gears = new HashMap<>();
     Map<Integer, List<Integer>> symbols = new HashMap<>();
 
+    public String[] fullSolve(Scanner in) {
+        long answer1;
+        long answer2;
+        int index = initialize(in);
+        answer1 = part1(index);
+        answer2 = part2(index);
+        return new String[]{answer1+"", answer2+""};
+    }
+
     /**
      * Main solving method.
      *

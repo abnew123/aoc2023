@@ -8,6 +8,22 @@ import java.util.Scanner;
 
 public class Day01 implements DayTemplate {
 
+    public String[] fullSolve(Scanner in){
+        int answer1 = 0;
+        int answer2 = 0;
+        List<String> lines = new ArrayList<>();
+        while (in.hasNext()) {
+            lines.add(in.nextLine());
+        }
+        for (String line : lines) {
+            answer1 += 10 * findFirstDigit(line, true, true);
+            answer1 += findFirstDigit(line, false, true);
+            answer2 += 10 * findFirstDigit(line, true, false);
+            answer2 += findFirstDigit(line, false, false);
+        }
+        return new String[]{answer1 + "", answer2+ ""};
+    }
+
     /**
      * Main solving method.
      *

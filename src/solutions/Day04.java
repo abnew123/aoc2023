@@ -6,6 +6,31 @@ import java.util.*;
 
 public class Day04 implements DayTemplate {
 
+    public String[] fullSolve(Scanner in) {
+        long answer1 = 0;
+        long answer2 = 0;
+        int index = 0;
+        Map<Integer, Integer> cards = new HashMap<>();
+        List<Integer> matches = new ArrayList<>();
+        while (in.hasNext()) {
+            matches.add(numMatches(in.nextLine()));
+            cards.put(index, 1);
+            index++;
+        }
+        for (Integer card : matches) {
+            if (card > 0) {
+                answer1 += 1 << (card - 1);
+            }
+        }
+        for (int i = 0; i < cards.size(); i++) {
+            for (int j = 0; j < matches.get(i); j++) {
+                cards.put(i + j + 1, cards.get(i + j + 1) + cards.get(i));
+            }
+            answer2 += cards.get(i);
+        }
+        return new String[]{answer1+"", answer2+""};
+    }
+
     /**
      * Main solving method.
      *

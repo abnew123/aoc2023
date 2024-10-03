@@ -11,6 +11,32 @@ public class Day05 implements DayTemplate {
     long[] seeds;
     List<RangeMap> rangeMaps;
 
+    public String[] fullSolve(Scanner in) {
+        List<Range> tmp = new ArrayList<>();
+        rangeMaps = new ArrayList<>();
+        String[] stringSeeds = in.nextLine().split(" ");
+        seeds = new long[stringSeeds.length - 1];
+        for (int i = 1; i < stringSeeds.length; i++) {
+            seeds[i - 1] = Long.parseLong(stringSeeds[i]);
+        }
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            if (line.equals("")) {
+                continue;
+            }
+            if (line.contains("map")) {
+                if (!tmp.isEmpty()) {
+                    rangeMaps.add(new RangeMap(tmp));
+                }
+                tmp = new ArrayList<>();
+            } else {
+                tmp.add(new Range(line));
+            }
+        }
+        rangeMaps.add(new RangeMap(tmp));
+        return new String[]{solvePart1()+"", solvePart2()+""};
+    }
+
     /**
      * Main solving method.
      *
