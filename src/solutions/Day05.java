@@ -11,6 +11,12 @@ public class Day05 implements DayTemplate {
     long[] seeds;
     List<RangeMap> rangeMaps;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        initialize(in);
+        return new String[]{solvePart1()+"", solvePart2()+""};
+    }
+
     /**
      * Main solving method.
      *
@@ -20,6 +26,11 @@ public class Day05 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
+        initialize(in);
+        return (part1?solvePart1():solvePart2()) + "";
+    }
+
+    private void initialize(Scanner in){
         List<Range> tmp = new ArrayList<>();
         rangeMaps = new ArrayList<>();
         String[] stringSeeds = in.nextLine().split(" ");
@@ -42,7 +53,6 @@ public class Day05 implements DayTemplate {
             }
         }
         rangeMaps.add(new RangeMap(tmp));
-        return (part1?solvePart1():solvePart2()) + "";
     }
 
     private long solvePart1(){
