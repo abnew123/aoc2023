@@ -11,17 +11,18 @@ public abstract class BaseTest {
     }
 
     protected String[] getExpectedSolutions(int day) throws FileNotFoundException {
-        Scanner scanner = new Scanner(new File("data/expectedResults.txt"));
-        String[] solutions = new String[2];
-        int lineNumber = (day - 1) * 2; // Day 1 -> lines 0 and 1, Day 2 -> lines 2 and 3, etc.
+        try ( Scanner scanner = new Scanner(new File("data/expectedResults.txt"))) {
+            String[] solutions = new String[2];
+            int lineNumber = (day - 1) * 2; // Day 1 -> lines 0 and 1, Day 2 -> lines 2 and 3, etc.
 
-        for (int i = 0; i < lineNumber; i++) {
-            scanner.nextLine();
+            for (int i = 0; i < lineNumber; i++) {
+                scanner.nextLine();
+            }
+
+            solutions[0] = scanner.nextLine();
+            solutions[1] = scanner.nextLine();
+            return solutions;
         }
-
-        solutions[0] = scanner.nextLine();
-        solutions[1] = scanner.nextLine();
-        return solutions;
     }
 
     protected boolean isUnimplementedSolve(String result) {
