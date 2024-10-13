@@ -4,6 +4,7 @@ import src.meta.DayTemplate;
 import src.objects.Coordinate;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -12,6 +13,18 @@ public class Day11 implements DayTemplate {
     List<Coordinate> galaxies;
     List<Integer> emptyV;
     List<Integer> emptyH;
+
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        long answer1 = addNonStretched();
+        long answer2 = answer1;
+        long stretched = addStretched();
+        answer1 += stretched;
+        answer2 += 999999L * stretched;
+
+        return new String[]{answer1 + "", answer2 + ""};
+    }
 
     /**
      * Main solving method.
@@ -22,8 +35,14 @@ public class Day11 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
         parse(in);
+        long answer = addNonStretched();
+        answer += addStretched() * (part1?1:999999L);
+        return answer + "";
+    }
+
+    private long addNonStretched(){
+        long answer = 0;
         for (int i = 0; i < galaxies.size(); i++) {
             for (int j = i + 1; j < galaxies.size(); j++) {
                 Coordinate g1 = galaxies.get(i);
@@ -31,6 +50,11 @@ public class Day11 implements DayTemplate {
                 answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
             }
         }
+        return answer;
+    }
+
+    private long addStretched(){
+        long answer = 0;
         for (Integer ind : emptyV) {
             int left = 0;
             for (Coordinate g : galaxies) {
@@ -38,7 +62,7 @@ public class Day11 implements DayTemplate {
                     left++;
                 }
             }
-            answer += left * (galaxies.size() - left) * (part1 ? 1 : 999999L);
+            answer += (long) left * (galaxies.size() - left);
         }
         for (Integer ind : emptyH) {
             int up = 0;
@@ -47,9 +71,9 @@ public class Day11 implements DayTemplate {
                     up++;
                 }
             }
-            answer += up * (galaxies.size() - up) * (part1 ? 1 : 999999L);
+            answer += (long) up * (galaxies.size() - up);
         }
-        return answer + "";
+        return answer;
     }
 
     private void parse(Scanner in) {
