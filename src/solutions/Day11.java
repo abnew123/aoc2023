@@ -4,7 +4,6 @@ import src.meta.DayTemplate;
 import src.objects.Coordinate;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -17,12 +16,10 @@ public class Day11 implements DayTemplate {
     @Override
     public String[] fullSolve(Scanner in) {
         parse(in);
-        long answer1 = addNonStretched();
-        long answer2 = answer1;
-        long stretched = addStretched();
-        answer1 += stretched;
-        answer2 += 999999L * stretched;
-
+        long unstretched = getUnstretched();
+        long stretched = getStretched();
+        long answer1 = unstretched + stretched;
+        long answer2 = unstretched + 999999L * stretched;
         return new String[]{answer1 + "", answer2 + ""};
     }
 
@@ -36,12 +33,12 @@ public class Day11 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         parse(in);
-        long answer = addNonStretched();
-        answer += addStretched() * (part1?1:999999L);
+        long answer = getUnstretched();
+        answer += getStretched() * (part1?1:999999L);
         return answer + "";
     }
 
-    private long addNonStretched(){
+    private long getUnstretched(){
         long answer = 0;
         for (int i = 0; i < galaxies.size(); i++) {
             for (int j = i + 1; j < galaxies.size(); j++) {
@@ -53,7 +50,7 @@ public class Day11 implements DayTemplate {
         return answer;
     }
 
-    private long addStretched(){
+    private long getStretched(){
         long answer = 0;
         for (Integer ind : emptyV) {
             int left = 0;
