@@ -6,6 +6,26 @@ import java.util.*;
 
 public class Day07 implements DayTemplate {
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        long answer1 = 0;
+        long answer2 = 0;
+        List<Hand> hands1 = new ArrayList<>();
+        List<Hand> hands2 = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            hands1.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), true));
+            hands2.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), false));
+        }
+        Collections.sort(hands1);
+        Collections.sort(hands2);
+        for (int i = 0; i < hands1.size(); i++) {
+            answer1 += hands1.get(i).bid * (i + 1);
+            answer2 += hands2.get(i).bid * (i + 1);
+        }
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *

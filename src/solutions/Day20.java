@@ -9,12 +9,7 @@ public class Day20 implements DayTemplate {
     protected static final String BROADCASTER = "broadcaster";
 
     /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
+     * This solution assumes the input has distinct chains, and each chain's value is coprime.
      */
     public String solve(boolean part1, Scanner in) {
         long answer;
@@ -24,7 +19,6 @@ public class Day20 implements DayTemplate {
             answer = part1(modules);
         } else {
             answer = part2(modules, rxInput);
-
         }
         return answer + "";
     }

@@ -40,7 +40,7 @@ public interface DayTemplate {
      * @param in    The solver will read data from this Scanner.
      * @return Returns answer in string format.
      */
-    String solve(boolean part1, Scanner in);
+    default String solve(boolean part1, Scanner in) {return null;}
 
     /**
      * Solves both parts of the day.

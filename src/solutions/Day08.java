@@ -15,7 +15,6 @@ public class Day08 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
         List<String> currSteps = new ArrayList<>();
         Map<String, Step> map = new HashMap<>();
         String[] instructions = in.nextLine().split("");
@@ -40,7 +39,7 @@ public class Day08 implements DayTemplate {
             }
             index++;
         }
-        answer = lcm(loops);
+        long answer = lcm(loops);
         return answer + "";
     }
 
