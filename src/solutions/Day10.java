@@ -12,6 +12,31 @@ public class Day10 implements DayTemplate {
     Coordinate prev;
     Set<Coordinate> been;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        long answer1 = 0;
+        long answer2 = 0;
+        parse(in);
+        //next five lines are a manual step, since S is unknown.
+        been.add(prev);
+        assert prev != null;
+        Coordinate curr = new Coordinate(prev.x, prev.y + 1);
+        distances[curr.x * 2 + 1][curr.y * 2 + 1] = 1;
+        distances[curr.x + prev.x + 1][curr.y + prev.y + 1] = 1;
+        answer1++;
+        answer1 += traverseGrid(curr);
+        answer1 /= 2;
+        floodFill();
+        for (int i = 1; i < distances.length; i += 2) {
+            for (int j = 1; j < distances[i].length; j += 2) {
+                if (distances[i][j] == 2) {
+                    answer2 += 1;
+                }
+            }
+        }
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *

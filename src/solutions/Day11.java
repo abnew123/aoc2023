@@ -13,6 +13,16 @@ public class Day11 implements DayTemplate {
     List<Integer> emptyV;
     List<Integer> emptyH;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        long unstretched = getUnstretched();
+        long stretched = getStretched();
+        long answer1 = unstretched + stretched;
+        long answer2 = unstretched + 999999L * stretched;
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -22,8 +32,14 @@ public class Day11 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
         parse(in);
+        long answer = getUnstretched();
+        answer += getStretched() * (part1?1:999999L);
+        return answer + "";
+    }
+
+    private long getUnstretched(){
+        long answer = 0;
         for (int i = 0; i < galaxies.size(); i++) {
             for (int j = i + 1; j < galaxies.size(); j++) {
                 Coordinate g1 = galaxies.get(i);
@@ -31,6 +47,11 @@ public class Day11 implements DayTemplate {
                 answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
             }
         }
+        return answer;
+    }
+
+    private long getStretched(){
+        long answer = 0;
         for (Integer ind : emptyV) {
             int left = 0;
             for (Coordinate g : galaxies) {
@@ -38,7 +59,7 @@ public class Day11 implements DayTemplate {
                     left++;
                 }
             }
-            answer += left * (galaxies.size() - left) * (part1 ? 1 : 999999L);
+            answer += (long) left * (galaxies.size() - left);
         }
         for (Integer ind : emptyH) {
             int up = 0;
@@ -47,9 +68,9 @@ public class Day11 implements DayTemplate {
                     up++;
                 }
             }
-            answer += up * (galaxies.size() - up) * (part1 ? 1 : 999999L);
+            answer += (long) up * (galaxies.size() - up);
         }
-        return answer + "";
+        return answer;
     }
 
     private void parse(Scanner in) {

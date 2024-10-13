@@ -9,6 +9,19 @@ import java.util.Scanner;
 
 public class Day09 implements DayTemplate {
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        long answer1 = 0;
+        long answer2 = 0;
+        List<List<Integer>> sequences = parse(in);
+        for(List<Integer> sequence: sequences){
+            answer1 += helper(sequence);
+            Collections.reverse(sequence);
+            answer2 += helper(sequence);
+        }
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -19,18 +32,27 @@ public class Day09 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            List<Integer> sequence = new ArrayList<>();
-            for (String item : line.split(" ")) {
-                sequence.add(Integer.parseInt(item));
-            }
+        List<List<Integer>> sequences = parse(in);
+        for(List<Integer> sequence: sequences){
             if (!part1) {
                 Collections.reverse(sequence);
             }
             answer += helper(sequence);
         }
         return answer + "";
+    }
+
+    private List<List<Integer>> parse(Scanner in){
+        List<List<Integer>> sequences = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            List<Integer> sequence = new ArrayList<>();
+            for (String item : line.split(" ")) {
+                sequence.add(Integer.parseInt(item));
+            }
+            sequences.add(sequence);
+        }
+        return sequences;
     }
 
     private int helper(List<Integer> sequence) {
