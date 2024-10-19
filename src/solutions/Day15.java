@@ -6,6 +6,18 @@ import java.util.*;
 
 public class Day15 implements DayTemplate {
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        long answer1 = 0;
+        List<String> lines = Arrays.stream(in.nextLine().split(",")).toList();
+        for (String s : lines) {
+            answer1 += hash(s);
+        }
+        Map<Integer, List<Lens>> map = buildMap(lines);
+        long answer2 = sumMap(map);
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -17,35 +29,44 @@ public class Day15 implements DayTemplate {
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
         List<String> lines = Arrays.stream(in.nextLine().split(",")).toList();
-        Map<Integer, List<Lens>> map = new HashMap<>();
         if (part1) {
             for (String s : lines) {
                 answer += hash(s);
             }
         } else {
-            for (String s : lines) {
-                String[] parts = s.split("[-=]");
-                int hash = hash(parts[0]);
-                if (parts.length == 1) {
-                    removeKey(map, hash, parts[0]);
+            return sumMap(buildMap(lines)) + "";
+        }
+        return answer + "";
+    }
+
+    private Map<Integer, List<Lens>> buildMap(List<String> lines){
+        Map<Integer, List<Lens>> map = new HashMap<>();
+        for (String s : lines) {
+            String[] parts = s.split("[-=]");
+            int hash = hash(parts[0]);
+            if (parts.length == 1) {
+                removeKey(map, hash, parts[0]);
+            } else {
+                if (map.containsKey(hash)) {
+                    replaceKey(map, hash, parts);
                 } else {
-                    if (map.containsKey(hash)) {
-                        replaceKey(map, hash, parts);
-                    } else {
-                        addKey(map, hash, parts);
-                    }
-                }
-            }
-            for (Map.Entry<Integer, List<Lens>> entry : map.entrySet()) {
-                int index = 0;
-                for (Lens lens : entry.getValue()) {
-                    index++;
-                    answer += (entry.getKey() + 1) * index * lens.length;
+                    addKey(map, hash, parts);
                 }
             }
         }
+        return map;
+    }
 
-        return answer + "";
+    private long sumMap( Map<Integer, List<Lens>> map){
+        long answer = 0;
+        for (Map.Entry<Integer, List<Lens>> entry : map.entrySet()) {
+            int index = 0;
+            for (Lens lens : entry.getValue()) {
+                index++;
+                answer += (entry.getKey() + 1) * index * (long)lens.length;
+            }
+        }
+        return answer;
     }
 
     private void replaceKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
