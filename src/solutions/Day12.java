@@ -12,12 +12,23 @@ public class Day12 implements DayTemplate {
     @Override
     public String[] fullSolve(Scanner in) {
         parse(in);
-        long answer1 = 0;
-        long answer2 = 0;
-        for (int i = 0; i < conditionRecords.size(); i++) {
-            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
-            answer1 += solveOne(conditionRecords.get(i) + ".", vals.get(i));
+        long answer1 = solveRecords();
+        generateNewRecords();
+        long answer2 = solveRecords();
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
+    public String solve(boolean part1, Scanner in) {
+        long answer = 0;
+        parse(in);
+        if (!part1) {
+            generateNewRecords();
         }
+        answer = solveRecords();
+        return answer + "";
+    }
+
+    private void generateNewRecords(){
         List<String> newRecords = new ArrayList<>();
         List<List<Integer>> newGroups = new ArrayList<>();
         for (int i = 0; i < conditionRecords.size(); i++) {
@@ -32,37 +43,15 @@ public class Day12 implements DayTemplate {
         }
         conditionRecords = newRecords;
         vals = newGroups;
-        for (int i = 0; i < conditionRecords.size(); i++) {
-            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
-            answer2 += solveOne(conditionRecords.get(i) + ".", vals.get(i));
-        }
-        return new String[]{answer1 + "", answer2 + ""};
     }
 
-    public String solve(boolean part1, Scanner in) {
+    private long solveRecords(){
         long answer = 0;
-        parse(in);
-        if (!part1) {
-            List<String> newRecords = new ArrayList<>();
-            List<List<Integer>> newGroups = new ArrayList<>();
-            for (int i = 0; i < conditionRecords.size(); i++) {
-                String a = conditionRecords.get(i);
-                List<Integer> b = vals.get(i);
-                newRecords.add(a + "?" + a + "?" + a + "?" + a + "?" + a);
-                List<Integer> tmp = new ArrayList<>();
-                for (int j = 0; j < 5; j++) {
-                    tmp.addAll(b);
-                }
-                newGroups.add(tmp);
-            }
-            conditionRecords = newRecords;
-            vals = newGroups;
-        }
         for (int i = 0; i < conditionRecords.size(); i++) {
             possibleCount = precomputePossible(conditionRecords.get(i) + ".");
             answer += solveOne(conditionRecords.get(i) + ".", vals.get(i));
         }
-        return answer + "";
+        return answer;
     }
 
     private void parse(Scanner in){
