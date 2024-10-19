@@ -6,20 +6,42 @@ import java.util.*;
 
 public class Day12 implements DayTemplate {
     int[] possibleCount;
+    List<String> conditionRecords;
+    List<List<Integer>> vals;
+
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        long answer1 = 0;
+        long answer2 = 0;
+        for (int i = 0; i < conditionRecords.size(); i++) {
+            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
+            answer1 += solveOne(conditionRecords.get(i) + ".", vals.get(i));
+        }
+        List<String> newRecords = new ArrayList<>();
+        List<List<Integer>> newGroups = new ArrayList<>();
+        for (int i = 0; i < conditionRecords.size(); i++) {
+            String a = conditionRecords.get(i);
+            List<Integer> b = vals.get(i);
+            newRecords.add(a + "?" + a + "?" + a + "?" + a + "?" + a);
+            List<Integer> tmp = new ArrayList<>();
+            for (int j = 0; j < 5; j++) {
+                tmp.addAll(b);
+            }
+            newGroups.add(tmp);
+        }
+        conditionRecords = newRecords;
+        vals = newGroups;
+        for (int i = 0; i < conditionRecords.size(); i++) {
+            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
+            answer2 += solveOne(conditionRecords.get(i) + ".", vals.get(i));
+        }
+        return new String[]{answer1 + "", answer2 + ""};
+    }
 
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        List<String> conditionRecords = new ArrayList<>();
-        List<List<Integer>> vals = new ArrayList<>();
-        while (in.hasNext()) {
-            List<Integer> tmp = new ArrayList<>();
-            String line = in.nextLine();
-            conditionRecords.add(line.split(" ")[0]);
-            for (String v : line.split(" ")[1].split(",")) {
-                tmp.add(Integer.parseInt(v));
-            }
-            vals.add(tmp);
-        }
+        parse(in);
         if (!part1) {
             List<String> newRecords = new ArrayList<>();
             List<List<Integer>> newGroups = new ArrayList<>();
@@ -41,6 +63,20 @@ public class Day12 implements DayTemplate {
             answer += solveOne(conditionRecords.get(i) + ".", vals.get(i));
         }
         return answer + "";
+    }
+
+    private void parse(Scanner in){
+        conditionRecords = new ArrayList<>();
+        vals = new ArrayList<>();
+        while (in.hasNext()) {
+            List<Integer> tmp = new ArrayList<>();
+            String line = in.nextLine();
+            conditionRecords.add(line.split(" ")[0]);
+            for (String v : line.split(" ")[1].split(",")) {
+                tmp.add(Integer.parseInt(v));
+            }
+            vals.add(tmp);
+        }
     }
 
     private long solveOne(String conditionRecord, List<Integer> groups) {

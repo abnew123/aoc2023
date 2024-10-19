@@ -8,6 +8,37 @@ import java.util.Scanner;
 
 public class Day13 implements DayTemplate {
 
+    List<String> tmp = new ArrayList<>();
+    List<Pattern> patterns = new ArrayList<>();
+
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        long answer1 = 0;
+        long answer2 = 0;
+        for (Pattern pattern : patterns) {
+            List<Long> vals1 = pattern.reflections(0);
+            List<Long> vals2 = pattern.reflections(1);
+            for (Long val : vals1) {
+                if(val < 0){
+                    answer1+= -100 * val;
+                }
+                else{
+                    answer1 += val;
+                }
+            }
+            for (Long val : vals2) {
+                if(val < 0){
+                    answer2+= -100 * val;
+                }
+                else{
+                    answer2 += val;
+                }
+            }
+        }
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -18,18 +49,7 @@ public class Day13 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
-        List<String> tmp = new ArrayList<>();
-        List<Pattern> patterns = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.equals("")) {
-                patterns.add(new Pattern(tmp));
-                tmp = new ArrayList<>();
-            } else {
-                tmp.add(line);
-            }
-        }
-        patterns.add(new Pattern(tmp));
+        parse(in);
         for (Pattern pattern : patterns) {
             List<Long> vals = pattern.reflections(part1 ? 0 : 1);
             for (Long val : vals) {
@@ -42,6 +62,21 @@ public class Day13 implements DayTemplate {
             }
         }
         return answer + "";
+    }
+
+    private void parse(Scanner in){
+        tmp = new ArrayList<>();
+        patterns = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            if (line.isEmpty()) {
+                patterns.add(new Pattern(tmp));
+                tmp = new ArrayList<>();
+            } else {
+                tmp.add(line);
+            }
+        }
+        patterns.add(new Pattern(tmp));
     }
 
 }

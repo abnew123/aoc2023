@@ -13,6 +13,14 @@ public class Day16 implements DayTemplate {
     Set<Coordinate> pointsOfInterest;
     Set<Beam> exited;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        int[][] graph = generateGraph(in);
+        long answer1 = tryFromLocation(graph, -1, 0, 1);
+        long answer2 = runFromAllPoints(graph);
+        return new String[]{answer1 + "", answer2 + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -23,6 +31,16 @@ public class Day16 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         int answer;
+        int[][] graph = generateGraph(in);
+        if (part1) {
+            answer = tryFromLocation(graph, -1, 0, 1);
+        } else {
+            answer = runFromAllPoints(graph);
+        }
+        return answer + "";
+    }
+
+    private int[][] generateGraph(Scanner in){
         exited = new HashSet<>();
         List<String[]> tmpGraph = new ArrayList<>();
         while (in.hasNext()) {
@@ -48,12 +66,7 @@ public class Day16 implements DayTemplate {
                 }
             }
         }
-        if (part1) {
-            answer = tryFromLocation(graph, -1, 0, 1);
-        } else {
-            answer = runFromAllPoints(graph);
-        }
-        return answer + "";
+        return graph;
     }
 
     private int runFromAllPoints(int[][] graph){
