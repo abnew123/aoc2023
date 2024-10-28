@@ -15,6 +15,10 @@ public class Day24 implements DayTemplate {
     boolean[] invalidY;
     boolean[] invalidZ;
 
+    List<Integer> possibleX = new ArrayList<>();
+    List<Integer> possibleY = new ArrayList<>();
+    List<Integer> possibleZ = new ArrayList<>();
+
     @Override
     public String[] fullSolve(Scanner in) {
         List<Hailstone> stones = parse(in);
@@ -44,21 +48,13 @@ public class Day24 implements DayTemplate {
                 adjustInvalids(first,second);
             }
         }
+        determinePossibleTriples();
 
         // a smarter search would be to start at 0,0,0 and come up with increasingly larger vectors by magnitude
-        for (int i = 0; i < invalidX.length; i++) {
-            if (invalidX[i]) {
-                continue;
-            }
-            for (int j = 0; j < invalidY.length; j++) {
-                if (invalidY[j]) {
-                    continue;
-                }
-                for (int k = 0; k < invalidZ.length; k++) {
-                    if (invalidZ[k]) {
-                        continue;
-                    }
-                    long[] positions = helper(new Coordinate(i + mins[0], j + mins[1], k + mins[2]), stones);
+        for(Integer x: possibleX){
+            for(Integer y: possibleY){
+                for(Integer z: possibleZ){
+                    long[] positions = helper(new Coordinate(x,y,z), stones);
                     if (positions[0] != -1) {
                         return (positions[0] + positions[1] + positions[2]);
                     }
@@ -66,6 +62,27 @@ public class Day24 implements DayTemplate {
             }
         }
         return answer;
+    }
+
+    private void determinePossibleTriples(){
+        for (int i = 0; i < invalidX.length; i++) {
+            if (invalidX[i]) {
+                continue;
+            }
+            possibleX.add(i + mins[0]);
+        }
+        for (int i = 0; i < invalidY.length; i++) {
+            if (invalidY[i]) {
+                continue;
+            }
+            possibleY.add(i + mins[1]);
+        }
+        for (int i = 0; i < invalidZ.length; i++) {
+            if (invalidZ[i]) {
+                continue;
+            }
+            possibleZ.add(i + mins[2]);
+        }
     }
 
     private void adjustInvalids(Hailstone first, Hailstone second){

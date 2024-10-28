@@ -1,7 +1,6 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-
 import java.util.*;
 
 public class Day17 implements DayTemplate {
@@ -61,30 +60,52 @@ public class Day17 implements DayTemplate {
         while (!queue.isEmpty()) {
             Location c = queue.poll();
             allSeen.add(c);
-            if (c.x == grid.length - 1 && c.y == grid[0].length - 1) {
+
+            if (isAtBottomRightCorner(c, grid)) {
                 answer = Math.min(answer, c.currBest);
             }
-            for (int k = 0; k < turns[c.direction].length; k++) {
-                int i = turns[c.direction][k];
-                int path = c.currBest;
-                for (int j = 1; j <= max; j++) {
-                    int newx = c.x + j * xs[i - 1];
-                    int newy = c.y + j * ys[i - 1];
-                    if (newx < 0 || newy < 0 || newx >= grid.length || newy >= grid[0].length) {
-                        break;
-                    }
-                    path += grid[newx][newy];
-                    if (j >= min && path < debug[newx][newy][i]) {
-                        debug[newx][newy][i] = path;
-                        Location tmp2 = new Location(newx, newy, i, path);
-                        if (!allSeen.contains(tmp2)) {
-                            queue.add(tmp2);
-                        }
+            tryDirection(max, c, grid, min, allSeen, queue);
+
+        }
+        return answer;
+    }
+
+    private void tryDirection(int max, Location c, int[][] grid, int min, Set<Location> allSeen, Queue<Location> queue){
+        for (int k = 0; k < turns[c.direction].length; k++) {
+            int direction = turns[c.direction][k];
+            int path = c.currBest;
+            for (int j = 1; j <= max; j++) {
+                int newx = c.x + j * xs[direction - 1];
+                int newy = c.y + j * ys[direction - 1];
+
+                if (isOutOfBounds(newx, newy, grid)) {
+                    break;
+                }
+
+                path += grid[newx][newy];
+
+                if (isBetterPath(j, path, newx, newy, direction, debug, min)) {
+                    debug[newx][newy][direction] = path;
+                    Location location = new Location(newx, newy, direction, path);
+
+                    if (!allSeen.contains(location)) {
+                        queue.add(location);
                     }
                 }
             }
         }
-        return answer;
+
+    }
+    private boolean isAtBottomRightCorner(Location c, int[][] grid) {
+        return c.x == grid.length - 1 && c.y == grid[0].length - 1;
+    }
+
+    private boolean isOutOfBounds(int x, int y, int[][] grid) {
+        return x < 0 || y < 0 || x >= grid.length || y >= grid[0].length;
+    }
+
+    private boolean isBetterPath(int j, int path, int x, int y, int direction, int[][][] debug, int min) {
+        return j >= min && path < debug[x][y][direction];
     }
 
 }
