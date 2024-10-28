@@ -10,6 +10,12 @@ public class Day19 implements DayTemplate {
     Map<String, Workflow> workflows;
     List<Part> parts;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        return new String[]{solvePart1() + "", solvePart2() + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -19,31 +25,37 @@ public class Day19 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long answer;
         parse(in);
         if (!part1) {
             answer = solvePart2();
         } else {
-            List<Part> accepted = new ArrayList<>();
-            for (Part p : parts) {
-                Workflow w = workflows.get("in");
-                String result;
-                while (true) {
-                    result = w.process(p);
-                    if (result.equals("A") || result.equals("R")) {
-                        if (result.equals("A")) {
-                            accepted.add(p);
-                        }
-                        break;
-                    }
-                    w = workflows.get(result);
-                }
-            }
-            for (Part p : accepted) {
-                answer += p.vals.get("x") + p.vals.get("m") + p.vals.get("a") + p.vals.get("s");
-            }
+            answer = solvePart1();
         }
         return answer + "";
+    }
+
+    private long solvePart1(){
+        long answer = 0;
+        List<Part> accepted = new ArrayList<>();
+        for (Part p : parts) {
+            Workflow w = workflows.get("in");
+            String result;
+            while (true) {
+                result = w.process(p);
+                if (result.equals("A") || result.equals("R")) {
+                    if (result.equals("A")) {
+                        accepted.add(p);
+                    }
+                    break;
+                }
+                w = workflows.get(result);
+            }
+        }
+        for (Part p : accepted) {
+            answer += p.vals.get("x") + p.vals.get("m") + p.vals.get("a") + p.vals.get("s");
+        }
+        return answer;
     }
 
     private long solvePart2() {

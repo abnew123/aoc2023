@@ -11,10 +11,29 @@ import java.util.*;
 
 public class Day25 implements DayTemplate {
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        Map<String, List<String>> graph = parse(in);
+        List<String> verticesList = new ArrayList<>(graph.keySet());
+        String start = bfs(verticesList.getFirst(), graph);
+        String end = bfs(start, graph);
+        int size = getSize(start, end, graph);
+        return new String[]{size * (verticesList.size() - size) + "", "Merry Christmas!"};
+    }
+
     public String solve(boolean part1, Scanner in) {
         if (!part1) {
             return "Merry Christmas!";
         }
+        Map<String, List<String>> graph = parse(in);
+        List<String> verticesList = new ArrayList<>(graph.keySet());
+        String start = bfs(verticesList.getFirst(), graph);
+        String end = bfs(start, graph);
+        int size = getSize(start, end, graph);
+        return size * (verticesList.size() - size) + "";
+    }
+
+    private Map<String, List<String>> parse(Scanner in){
         Map<String, List<String>> graph = new HashMap<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split(":");
@@ -25,11 +44,7 @@ public class Day25 implements DayTemplate {
                 graph.get(s).add(line[0]);
             }
         }
-        List<String> verticesList = new ArrayList<>(graph.keySet());
-        String start = bfs(verticesList.get(0), graph);
-        String end = bfs(start, graph);
-        int size = getSize(start, end, graph);
-        return size * (verticesList.size() - size) + "";
+        return graph;
     }
 
     private String bfs(String node, Map<String, List<String>> graph) {
