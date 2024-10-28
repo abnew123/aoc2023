@@ -6,7 +6,7 @@ data/
 !out/production/aoc2023
 /out/production/aoc2023/*
 !out/production/aoc2023/src
-out/production/aoc2023/src/tests
+/out/production/aoc2023/src/tests/*
 
 # for https://github.com/LiquidFun/aoc_tiles
 .aoc_tiles/*
