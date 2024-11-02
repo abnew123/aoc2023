@@ -8,6 +8,16 @@ public class Day20 implements DayTemplate {
 
     protected static final String BROADCASTER = "broadcaster";
 
+    Map<String, Module> modules2 = new HashMap<>();
+
+    @Override
+    public String[] fullSolve(Scanner in) {
+        Map<String, Module> modules = buildModules(in);
+        String rxInput = findInputAndInitializeConjunctions(modules);
+        findInputAndInitializeConjunctions(modules2);
+        return new String[]{part1(modules) + "", part2(modules2, rxInput) + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -24,7 +34,6 @@ public class Day20 implements DayTemplate {
             answer = part1(modules);
         } else {
             answer = part2(modules, rxInput);
-
         }
         return answer + "";
     }
@@ -35,12 +44,15 @@ public class Day20 implements DayTemplate {
             String[] line = in.nextLine().split("->|,");
             if (line[0].contains("%")) {
                 modules.put(line[0].substring(1).trim(), new FlipFlop(line));
+                modules2.put(line[0].substring(1).trim(), new FlipFlop(line));
             }
             if (line[0].contains("&")) {
                 modules.put(line[0].substring(1).trim(), new Conjunction(line));
+                modules2.put(line[0].substring(1).trim(), new Conjunction(line));
             }
             if (line[0].startsWith(BROADCASTER)) {
                 modules.put(line[0].trim(), new Broadcaster(line));
+                modules2.put(line[0].trim(), new Broadcaster(line));
             }
         }
         return modules;
@@ -87,7 +99,6 @@ public class Day20 implements DayTemplate {
     private long part2(Map<String, Module> modules, String rxInput) {
         long answer = 1;
         List<String> allInputs = findAllInputs(modules, rxInput);
-
         List<Integer> recordedSuccesses = new ArrayList<>();
         int totalRecorded = allInputs.size();
         int recordedSoFar = 0;
