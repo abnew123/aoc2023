@@ -7,7 +7,7 @@ import java.util.*;
 public class Day12 implements DayTemplate {
     int[] possibleCount;
     List<String> conditionRecords;
-    List<List<Integer>> vals;
+    List<int[]> vals;
 
     @Override
     public String[] fullSolve(Scanner in) {
@@ -15,31 +15,40 @@ public class Day12 implements DayTemplate {
         long answer1 = solveRecords();
         generateNewRecords();
         long answer2 = solveRecords();
-        return new String[]{answer1 + "", answer2 + ""};
+        return new String[]{String.valueOf(answer1), String.valueOf(answer2)};
     }
 
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
         parse(in);
         if (!part1) {
             generateNewRecords();
         }
-        answer = solveRecords();
-        return answer + "";
+        long answer = solveRecords();
+        return String.valueOf(answer);
     }
 
     private void generateNewRecords(){
-        List<String> newRecords = new ArrayList<>();
-        List<List<Integer>> newGroups = new ArrayList<>();
+        List<String> newRecords = new ArrayList<>(conditionRecords.size());
+        List<int[]> newGroups = new ArrayList<>(vals.size());
+
         for (int i = 0; i < conditionRecords.size(); i++) {
-            String a = conditionRecords.get(i);
-            List<Integer> b = vals.get(i);
-            newRecords.add(a + "?" + a + "?" + a + "?" + a + "?" + a);
-            List<Integer> tmp = new ArrayList<>();
-            for (int j = 0; j < 5; j++) {
-                tmp.addAll(b);
+            String record = conditionRecords.get(i);
+            int[] groups = vals.get(i);
+
+            // Use StringBuilder for efficient string concatenation
+            StringBuilder sb = new StringBuilder(record.length() * 5 + 4);
+            sb.append(record);
+            for (int j = 1; j < 5; j++) {
+                sb.append('?').append(record);
             }
-            newGroups.add(tmp);
+            newRecords.add(sb.toString());
+
+            // Create new array with 5x the groups
+            int[] newGroupArray = new int[groups.length * 5];
+            for (int j = 0; j < 5; j++) {
+                System.arraycopy(groups, 0, newGroupArray, j * groups.length, groups.length);
+            }
+            newGroups.add(newGroupArray);
         }
         conditionRecords = newRecords;
         vals = newGroups;
@@ -48,8 +57,9 @@ public class Day12 implements DayTemplate {
     private long solveRecords(){
         long answer = 0;
         for (int i = 0; i < conditionRecords.size(); i++) {
-            possibleCount = precomputePossible(conditionRecords.get(i) + ".");
-            answer += solveOne(conditionRecords.get(i) + ".", vals.get(i));
+            String recordWithDot = conditionRecords.get(i) + ".";
+            possibleCount = precomputePossible(recordWithDot);
+            answer += solveOne(recordWithDot, vals.get(i));
         }
         return answer;
     }
@@ -57,52 +67,62 @@ public class Day12 implements DayTemplate {
     private void parse(Scanner in){
         conditionRecords = new ArrayList<>();
         vals = new ArrayList<>();
+
         while (in.hasNext()) {
-            List<Integer> tmp = new ArrayList<>();
             String line = in.nextLine();
-            conditionRecords.add(line.split(" ")[0]);
-            for (String v : line.split(" ")[1].split(",")) {
-                tmp.add(Integer.parseInt(v));
+            String[] parts = line.split(" ");
+            conditionRecords.add(parts[0]);
+
+            String[] groupStrings = parts[1].split(",");
+            int[] groups = new int[groupStrings.length];
+            for (int i = 0; i < groupStrings.length; i++) {
+                groups[i] = Integer.parseInt(groupStrings[i]);
             }
-            vals.add(tmp);
+            vals.add(groups);
         }
     }
 
-    private long solveOne(String conditionRecord, List<Integer> groups) {
+    private long solveOne(String conditionRecord, int[] groups) {
         int totalSprings = 0;
-        for (Integer group : groups) {
+        for (int group : groups) {
             totalSprings += group;
         }
-        int wiggle = conditionRecord.length() - totalSprings - groups.size() + 1;
-        long[][] dp = new long[conditionRecord.length()][groups.size()];
+        int wiggle = conditionRecord.length() - totalSprings - groups.length + 1;
+        long[][] dp = new long[conditionRecord.length()][groups.length];
+
         boolean noHashesToLeft = true;
         long sum = 0;
+        int firstGroup = groups[0];
+
         for (int i = 0; i < wiggle; i++) {
-            if (conditionRecord.charAt(i + groups.get(0)) == '#') {
+            if (conditionRecord.charAt(i + firstGroup) == '#') {
                 sum = 0;
             } else {
-                if (noHashesToLeft && (possibleCount[i + groups.get(0)] - possibleCount[i]) == groups.get(0)) {
+                if (noHashesToLeft && (possibleCount[i + firstGroup] - possibleCount[i]) == firstGroup) {
                     sum++;
                 }
             }
-            dp[i + groups.get(0)][0] = sum;
+            dp[i + firstGroup][0] = sum;
             noHashesToLeft &= (conditionRecord.charAt(i) != '#');
         }
 
-        int start = groups.get(0) + 1;
-        for (int i = 1; i < groups.size(); i++) {
+        int start = firstGroup + 1;
+        for (int i = 1; i < groups.length; i++) {
             sum = 0;
+            int currentGroup = groups[i];
+
             for (int j = start; j < start + wiggle; j++) {
-                if (conditionRecord.charAt(j + groups.get(i)) == '#') {
+                if (conditionRecord.charAt(j + currentGroup) == '#') {
                     sum = 0;
                 } else {
-                    if (dp[j - 1][i - 1] > 0 && (conditionRecord.charAt(j - 1) != '#') && (possibleCount[j + groups.get(i)] - possibleCount[j]) == groups.get(i)) {
+                    if (dp[j - 1][i - 1] > 0 && (conditionRecord.charAt(j - 1) != '#') &&
+                            (possibleCount[j + currentGroup] - possibleCount[j]) == currentGroup) {
                         sum += dp[j - 1][i - 1];
                     }
                 }
-                dp[j + groups.get(i)][i] = sum;
+                dp[j + currentGroup][i] = sum;
             }
-            start += groups.get(i) + 1;
+            start += currentGroup + 1;
         }
         return sum;
     }
@@ -111,7 +131,8 @@ public class Day12 implements DayTemplate {
         int[] counts = new int[conditionRecord.length() + 1];
         int count = 0;
         for (int i = 0; i < conditionRecord.length(); i++) {
-            if (conditionRecord.charAt(i) == '#' || conditionRecord.charAt(i) == '?') {
+            char c = conditionRecord.charAt(i);
+            if (c == '#' || c == '?') {
                 count++;
             }
             counts[i + 1] = count;
