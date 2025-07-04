@@ -65,19 +65,23 @@ public class Day24 implements DayTemplate {
     }
 
     private void determinePossibleTriples(){
-        for (int i = 0; i < invalidX.length; i++) {
+        int invalidXLength = invalidX.length;
+        int invalidYLength = invalidY.length;
+        int invalidZLength = invalidZ.length;
+        
+        for (int i = 0; i < invalidXLength; i++) {
             if (invalidX[i]) {
                 continue;
             }
             possibleX.add(i + mins[0]);
         }
-        for (int i = 0; i < invalidY.length; i++) {
+        for (int i = 0; i < invalidYLength; i++) {
             if (invalidY[i]) {
                 continue;
             }
             possibleY.add(i + mins[1]);
         }
-        for (int i = 0; i < invalidZ.length; i++) {
+        for (int i = 0; i < invalidZLength; i++) {
             if (invalidZ[i]) {
                 continue;
             }
