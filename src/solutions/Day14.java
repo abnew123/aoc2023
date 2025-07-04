@@ -74,9 +74,11 @@ public class Day14 implements DayTemplate {
     }
 
     private void shiftNorth(int[][] stones) {
-        for (int i = 0; i < stones.length; i++) {
+        int rows = stones.length;
+        int cols = stones[0].length;
+        for (int i = 0; i < rows; i++) {
             int lastObstacle = -1;
-            for (int j = 0; j < stones[0].length; j++) {
+            for (int j = 0; j < cols; j++) {
                 if (stones[i][j] == 1) {
                     lastObstacle = j;
                     continue;
@@ -91,16 +93,19 @@ public class Day14 implements DayTemplate {
     }
 
     private void shiftSouth(int[][] stones) {
-        for (int i = 0; i < stones.length; i++) {
+        int rows = stones.length;
+        int cols = stones[0].length;
+        for (int i = 0; i < rows; i++) {
             int lastObstacle = -1;
-            for (int j = 0; j < stones[0].length; j++) {
-                if (stones[i][stones.length - 1-j] == 1) {
+            for (int j = 0; j < cols; j++) {
+                int rowIndex = cols - 1 - j;
+                if (stones[i][rowIndex] == 1) {
                     lastObstacle = j;
                     continue;
                 }
-                if (stones[i][stones.length - 1-j] == 2) {
-                    stones[i][stones.length - 1-j] = 0;
-                    stones[i][stones.length - 1-(lastObstacle + 1)] = 2;
+                if (stones[i][rowIndex] == 2) {
+                    stones[i][rowIndex] = 0;
+                    stones[i][cols - 1 - (lastObstacle + 1)] = 2;
                     lastObstacle++;
                 }
             }
@@ -108,9 +113,11 @@ public class Day14 implements DayTemplate {
     }
 
     private void shiftWest(int[][] stones) {
-        for (int i = 0; i < stones.length; i++) {
+        int rows = stones.length;
+        int cols = stones[0].length;
+        for (int i = 0; i < cols; i++) {
             int lastObstacle = -1;
-            for (int j = 0; j < stones[0].length; j++) {
+            for (int j = 0; j < rows; j++) {
                 if (stones[j][i] == 1) {
                     lastObstacle = j;
                     continue;
@@ -125,16 +132,19 @@ public class Day14 implements DayTemplate {
     }
 
     private void shiftEast(int[][] stones) {
-        for (int i = 0; i < stones.length; i++) {
+        int rows = stones.length;
+        int cols = stones[0].length;
+        for (int i = 0; i < cols; i++) {
             int lastObstacle = -1;
-            for (int j = 0; j < stones[0].length; j++) {
-                if (stones[stones.length - 1-j][i] == 1) {
+            for (int j = 0; j < rows; j++) {
+                int colIndex = rows - 1 - j;
+                if (stones[colIndex][i] == 1) {
                     lastObstacle = j;
                     continue;
                 }
-                if (stones[stones.length - 1-j][i] == 2) {
-                    stones[stones.length - 1-j][i] = 0;
-                    stones[stones.length - 1-(lastObstacle + 1)][i] = 2;
+                if (stones[colIndex][i] == 2) {
+                    stones[colIndex][i] = 0;
+                    stones[rows - 1 - (lastObstacle + 1)][i] = 2;
                     lastObstacle++;
                 }
             }
