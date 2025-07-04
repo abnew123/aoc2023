@@ -83,11 +83,15 @@ public class Day13 implements DayTemplate {
 
 class Pattern {
     int[][] grid;
+    int rows;
+    int cols;
 
     public Pattern(List<String> tmp) {
-        grid = new int[tmp.get(0).length()][tmp.size()];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
+        rows = tmp.size();
+        cols = tmp.get(0).length();
+        grid = new int[cols][rows];
+        for (int i = 0; i < cols; i++) {
+            for (int j = 0; j < rows; j++) {
                 grid[i][j] = tmp.get(j).charAt(i) == '.' ? 0 : 1;
             }
         }
@@ -104,7 +108,7 @@ class Pattern {
 
     private List<Long> vert(int closeness) {
         List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < grid.length; i++) {
+        for (int i = 1; i < cols; i++) {
             if(vertHelper(i, closeness)){
                 ret.add((long) i);
             }
@@ -114,17 +118,17 @@ class Pattern {
 
     private boolean vertHelper(int i, int closeness){
         boolean oneOff = false;
-        for (int j = 0; j < grid[0].length; j++) {
-            boolean firstHalf = i <= grid.length / 2;
-            int column = firstHalf?1:grid.length;
-            while(column != (firstHalf?i+1:i)){
+        for (int j = 0; j < rows; j++) {
+            boolean firstHalf = i <= cols / 2;
+            int column = firstHalf ? 1 : cols;
+            while(column != (firstHalf ? i + 1 : i)){
                 if (grid[column - 1][j] != grid[(2 * i + 1) - column - 1][j]) {
                     if(closeness == 0 || oneOff){
                         return false;
                     }
                     oneOff = true;
                 }
-                column+= firstHalf?1:-1;
+                column += firstHalf ? 1 : -1;
             }
         }
         return closeness == 0 || oneOff;
@@ -132,7 +136,7 @@ class Pattern {
 
     private List<Long> horiz(int closeness) {
         List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < grid[0].length; i++) {
+        for (int i = 1; i < rows; i++) {
             if(horizHelper(i, closeness)){
                 ret.add((long) i);
             }
@@ -142,17 +146,17 @@ class Pattern {
 
     private boolean horizHelper(int i, int closeness){
         boolean oneOff = false;
-        for (int j = 0; j < grid.length; j++) {
-            boolean firstHalf = i <= grid[0].length / 2;
-            int row = firstHalf?1:grid[0].length;
-            while(row != (firstHalf?i+1:i)){
+        for (int j = 0; j < cols; j++) {
+            boolean firstHalf = i <= rows / 2;
+            int row = firstHalf ? 1 : rows;
+            while(row != (firstHalf ? i + 1 : i)){
                 if (grid[j][row - 1] != grid[j][(2 * i + 1) - row - 1]) {
                     if(closeness == 0 || oneOff){
                         return false;
                     }
                     oneOff = true;
                 }
-                row+= firstHalf?1:-1;
+                row += firstHalf ? 1 : -1;
             }
         }
         return closeness == 0 || oneOff;
