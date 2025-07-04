@@ -101,9 +101,12 @@ public class Day22 implements DayTemplate {
 
     private int[][][] initializeGrid(){
         grid = new int[maxX][maxY][maxZ];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                for (int k = 0; k < grid[0][0].length; k++) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        int depth = grid[0][0].length;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                for (int k = 0; k < depth; k++) {
                     grid[i][j][k] = -1;
                 }
             }
