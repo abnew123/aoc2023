@@ -35,7 +35,7 @@ public class Day12 implements DayTemplate {
             String record = conditionRecords.get(i);
             int[] groups = vals.get(i);
 
-            // Use StringBuilder for efficient string concatenation
+            // Use StringBuilder for efficient string concatenation with pre-allocated capacity
             StringBuilder sb = new StringBuilder(record.length() * 5 + 4);
             sb.append(record);
             for (int j = 1; j < 5; j++) {
@@ -43,7 +43,7 @@ public class Day12 implements DayTemplate {
             }
             newRecords.add(sb.toString());
 
-            // Create new array with 5x the groups
+            // Create new array with 5x the groups using System.arraycopy for efficiency
             int[] newGroupArray = new int[groups.length * 5];
             for (int j = 0; j < 5; j++) {
                 System.arraycopy(groups, 0, newGroupArray, j * groups.length, groups.length);
@@ -87,8 +87,9 @@ public class Day12 implements DayTemplate {
         for (int group : groups) {
             totalSprings += group;
         }
-        int wiggle = conditionRecord.length() - totalSprings - groups.length + 1;
-        long[][] dp = new long[conditionRecord.length()][groups.length];
+        int recordLength = conditionRecord.length();
+        int wiggle = recordLength - totalSprings - groups.length + 1;
+        long[][] dp = new long[recordLength][groups.length];
 
         boolean noHashesToLeft = true;
         long sum = 0;
