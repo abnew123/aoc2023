@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 public class OptimizationBenchmark {
     
-    private static final int WARMUP_RUNS = 50;
-    private static final int BENCHMARK_RUNS = 1000;
+    private static final int WARMUP_RUNS = 10;
+    private static final int BENCHMARK_RUNS = 100;
     private static final String DATA_DIR = "data/";
     
     // Focus on the files we actually optimized
@@ -42,13 +42,14 @@ public class OptimizationBenchmark {
         
         try {
             // Test Part 1
-            String fileName = dayName.toLowerCase().replace("day", "") + ".txt";
+            String fileName = dayName.toLowerCase() + ".txt";
             Scanner input = new Scanner(new File(DATA_DIR + fileName));
             
             // Warmup
             for (int i = 0; i < WARMUP_RUNS; i++) {
                 input = new Scanner(new File(DATA_DIR + fileName));
                 solution.solve(true, input);
+                if (i % 5 == 0) System.gc(); // Garbage collect periodically
             }
             
             // Benchmark Part 1
@@ -59,12 +60,15 @@ public class OptimizationBenchmark {
                 solution.solve(true, input);
                 long endTime = System.nanoTime();
                 part1Times.add(endTime - startTime);
+                
+                if (i % 20 == 0) System.gc(); // Garbage collect periodically
             }
             
             // Warmup for Part 2
             for (int i = 0; i < WARMUP_RUNS; i++) {
                 input = new Scanner(new File(DATA_DIR + fileName));
                 solution.solve(false, input);
+                if (i % 5 == 0) System.gc(); // Garbage collect periodically
             }
             
             // Benchmark Part 2
@@ -75,13 +79,17 @@ public class OptimizationBenchmark {
                 solution.solve(false, input);
                 long endTime = System.nanoTime();
                 part2Times.add(endTime - startTime);
+                
+                if (i % 20 == 0) System.gc(); // Garbage collect periodically
             }
             
             result.setPart1Stats(calculateStats(part1Times));
             result.setPart2Stats(calculateStats(part2Times));
             
         } catch (FileNotFoundException e) {
-            System.out.println("  Data file not found for " + dayName);
+            System.out.println("  Data file not found for " + dayName + " (looking for " + DATA_DIR + dayName.toLowerCase() + ".txt)");
+        } catch (OutOfMemoryError e) {
+            System.out.println("  Out of memory for " + dayName + " - skipping");
         } catch (Exception e) {
             System.out.println("  Error testing " + dayName + ": " + e.getMessage());
         }
