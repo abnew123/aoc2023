@@ -89,8 +89,14 @@ public class Day20 implements DayTemplate {
                 }
                 index++;
             }
-            highPulses += pulses.stream().map(x -> x.high).filter(x -> x).count();
-            lowPulses += pulses.stream().map(x -> x.high).filter(x -> !x).count();
+            // Replace stream operations with simple counters for better performance
+            for (Pulse pulse : pulses) {
+                if (pulse.high) {
+                    highPulses++;
+                } else {
+                    lowPulses++;
+                }
+            }
         }
         answer = highPulses * lowPulses;
         return answer;
