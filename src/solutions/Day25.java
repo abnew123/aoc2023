@@ -37,11 +37,17 @@ public class Day25 implements DayTemplate {
         Map<String, List<String>> graph = new HashMap<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split(":");
-            graph.putIfAbsent(line[0], new ArrayList<>());
-            for (String s : line[1].trim().split(" ")) {
-                graph.putIfAbsent(s, new ArrayList<>());
-                graph.get(line[0]).add(s);
-                graph.get(s).add(line[0]);
+            String source = line[0];
+            String[] targets = line[1].trim().split(" ");
+            
+            // Ensure source exists in graph
+            graph.putIfAbsent(source, new ArrayList<>());
+            
+            // Process all targets at once
+            for (String target : targets) {
+                graph.putIfAbsent(target, new ArrayList<>());
+                graph.get(source).add(target);
+                graph.get(target).add(source);
             }
         }
         return graph;
