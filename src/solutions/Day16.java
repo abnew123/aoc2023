@@ -56,10 +56,12 @@ public class Day16 implements DayTemplate {
                 dirChart[i][j] = Integer.parseInt(precomputedDirChart.substring(4 * i + j, 4 * i + j + 1));
             }
         }
-        int[][] graph = new int[tmpGraph.size()][tmpGraph.get(0).length];
+        int rows = tmpGraph.size();
+        int cols = tmpGraph.get(0).length;
+        int[][] graph = new int[cols][rows];
         Map<String, Integer> graphConvert = Map.of(".", 1, "/", 2, "\\", 3, "|", 4, "-", 5);
-        for (int i = 0; i < graph.length; i++) {
-            for (int j = 0; j < graph[0].length; j++) {
+        for (int i = 0; i < cols; i++) {
+            for (int j = 0; j < rows; j++) {
                 graph[i][j] = graphConvert.get(tmpGraph.get(j)[i]);
                 if (graph[i][j] != 1) {
                     pointsOfInterest.add(new Coordinate(i, j));
@@ -72,12 +74,14 @@ public class Day16 implements DayTemplate {
     private int runFromAllPoints(int[][] graph){
         exited = new HashSet<>();
         int currBest = 0;
-        for (int i = 0; i < graph.length; i++) {
+        int rows = graph.length;
+        int cols = graph[0].length;
+        for (int i = 0; i < rows; i++) {
             int result1 = tryFromLocation(graph, -1, i, 1);
             if (result1 > currBest) {
                 currBest = result1;
             }
-            int result2 = tryFromLocation(graph, graph.length, i, 0);
+            int result2 = tryFromLocation(graph, rows, i, 0);
             if (result2 > currBest) {
                 currBest = result2;
             }
@@ -85,7 +89,7 @@ public class Day16 implements DayTemplate {
             if (result3 > currBest) {
                 currBest = result3;
             }
-            int result4 = tryFromLocation(graph, i, graph.length, 2);
+            int result4 = tryFromLocation(graph, i, cols, 2);
             if (result4 > currBest) {
                 currBest = result4;
             }
@@ -111,8 +115,10 @@ public class Day16 implements DayTemplate {
 
     private int totalEnergized(int[][] energized) {
         int answer = 0;
-        for (int i = 0; i < energized.length; i++) {
-            for (int j = 0; j < energized[0].length; j++) {
+        int rows = energized.length;
+        int cols = energized[0].length;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 if (energized[i][j] > 0) {
                     answer++;
                 }
