@@ -9,6 +9,9 @@ import java.util.*;
 
 public class Day23 implements DayTemplate {
 
+    private static final int[] DX = new int[]{1, 0, -1, 0};
+    private static final int[] DY = new int[]{0, 1, 0, -1};
+
     Coordinate[][] nodeGrid = new Coordinate[6][6];
 
     Set<State> nextStates = new HashSet<>();
@@ -110,16 +113,14 @@ public class Day23 implements DayTemplate {
     }
 
     private Set<Coordinate> findIntersections(int[][] grid) {
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
         Set<Coordinate> intersections = new HashSet<>();
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
                 int numNeighbors = 0;
-                if (grid[i][j] != 2) {
+                if (isOpenTile(grid, i, j)) {
                     for (int k = 0; k < 4; k++) {
-                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
+                        Coordinate next = new Coordinate(i + DX[k], j + DY[k]);
+                        if (isOpenTile(grid, next.x, next.y)) {
                             numNeighbors++;
                         }
                     }
@@ -130,6 +131,14 @@ public class Day23 implements DayTemplate {
             }
         }
         return intersections;
+    }
+
+    private boolean isOpenTile(int[][] grid, int x, int y) {
+        return inBounds(grid, x, y) && grid[x][y] != 2;
+    }
+
+    private boolean inBounds(int[][] grid, int x, int y) {
+        return x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
     }
 
     private void connectIntersections(int[][] grid, Set<Coordinate> intersections) {
@@ -364,8 +373,6 @@ public class Day23 implements DayTemplate {
     }
 
     private void bfs(Coordinate start, Map<Coordinate, Set<Coordinate>> neighbors, int[][] grid, Set<Coordinate> intersections) {
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
         Queue<Coordinate> queue = new LinkedList<>();
         Set<Coordinate> visited = new HashSet<>();
         queue.add(start);
@@ -376,13 +383,13 @@ public class Day23 implements DayTemplate {
                 if (grid[curr.x][curr.y] > 2 && k != grid[curr.x][curr.y] - 3) {
                     continue;
                 }
-                Coordinate next = new Coordinate(curr.x + xs[k], curr.y + ys[k]);
-                if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && !visited.contains(next)) {
+                Coordinate next = new Coordinate(curr.x + DX[k], curr.y + DY[k]);
+                if (inBounds(grid, next.x, next.y) && !visited.contains(next)) {
                     next.weight = curr.weight + 1;
                     if (intersections.contains(next) && !next.equals(start)) {
                         neighbors.get(start).add(next);
                     } else {
-                        if (grid[next.x][next.y] != 2) {
+                        if (isOpenTile(grid, next.x, next.y)) {
                             queue.add(next);
                             visited.add(next);
                         }
