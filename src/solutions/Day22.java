@@ -25,9 +25,11 @@ public class Day22 implements DayTemplate {
         assignBricksToGrid();
         simulateBricks();
         addDependencies();
+        int[][] dependencies = dependencyArrays(true);
+        int[][] dependents = dependencyArrays(false);
         int[] hardDependencies = generateHardDependencies();
         long answer1 = part1(hardDependencies);
-        long answer2 = part2();
+        long answer2 = part2(dependencies, dependents);
         return new String[]{answer1 + "", answer2 + ""};
     }
 
@@ -43,7 +45,7 @@ public class Day22 implements DayTemplate {
             answer = part1(hardDependencies);
         }
         else{
-            answer = part2();
+            answer = part2(dependencyArrays(true), dependencyArrays(false));
         }
 
         return answer + "";
@@ -59,31 +61,43 @@ public class Day22 implements DayTemplate {
         return answer;
     }
 
-    private long part2(){
+    private long part2(int[][] dependencies, int[][] dependents){
         long answer = 0;
+        int[] deadStamp = new int[bricks.size()];
+        int[] queue = new int[bricks.size() * 4];
         for (int i = 0; i < bricks.size(); i++) {
-            Set<Integer> deadBricks = new HashSet<>();
-            deadBricks.add(i);
-            Set<Integer> bricksToCheck = bricks.get(i).dependents;
-            while (!bricksToCheck.isEmpty()) {
-                Set<Integer> tmp = new HashSet<>();
-                for (Integer j : bricksToCheck) {
-                    Set<Integer> dependencies = bricks.get(j).dependencies;
-                    boolean allDeps = true;
-                    for (Integer b : dependencies) {
-                        if (!deadBricks.contains(b)) {
-                            allDeps = false;
-                            break;
+            int stamp = i + 1;
+            int fallen = 1;
+            int head = 0;
+            int tail = 0;
+            deadStamp[i] = stamp;
+            for (int dependent : dependents[i]) {
+                queue[tail++] = dependent;
+            }
+            while (head < tail) {
+                int brick = queue[head++];
+                if (deadStamp[brick] == stamp) {
+                    continue;
+                }
+                boolean allDependenciesFallen = true;
+                for (int dependency : dependencies[brick]) {
+                    if (deadStamp[dependency] != stamp) {
+                        allDependenciesFallen = false;
+                        break;
+                    }
+                }
+                if (allDependenciesFallen) {
+                    deadStamp[brick] = stamp;
+                    fallen++;
+                    for (int dependent : dependents[brick]) {
+                        if (tail == queue.length) {
+                            queue = Arrays.copyOf(queue, queue.length * 2);
                         }
+                        queue[tail++] = dependent;
                     }
-                    if (allDeps) {
-                        deadBricks.add(j);
-                        tmp.addAll(bricks.get(j).dependents);
-                    }
-                    bricksToCheck = tmp;
                 }
             }
-            answer += deadBricks.size() - 1;
+            answer += fallen - 1;
         }
         return answer;
     }
@@ -187,6 +201,19 @@ public class Day22 implements DayTemplate {
             }
         }
         return hardDependencies;
+    }
+
+    private int[][] dependencyArrays(boolean dependency) {
+        int[][] arrays = new int[bricks.size()][];
+        for (int i = 0; i < bricks.size(); i++) {
+            Set<Integer> source = dependency ? bricks.get(i).dependencies : bricks.get(i).dependents;
+            arrays[i] = new int[source.size()];
+            int index = 0;
+            for (int brick : source) {
+                arrays[i][index++] = brick;
+            }
+        }
+        return arrays;
     }
 }
 
