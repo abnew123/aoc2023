@@ -4,12 +4,12 @@ Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, an
 
 ## Local verification
 
-There is no checked-in build tool configuration. A lightweight compile smoke can be run without writing class files into the repository:
+There is no checked-in build tool configuration. A lightweight compile smoke can be run against the same ignored bytecode path used by SonarCloud:
 
 ```sh
-rm -rf /tmp/aoc2023-classes
-mkdir -p /tmp/aoc2023-classes
-javac -d /tmp/aoc2023-classes $(git ls-files 'src/**/*.java' ':!src/tests/**')
+rm -rf build/sonar/classes
+mkdir -p build/sonar/classes
+javac -d build/sonar/classes $(git ls-files 'src/*.java' 'src/**/*.java' ':!src/tests/**')
 ```
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
