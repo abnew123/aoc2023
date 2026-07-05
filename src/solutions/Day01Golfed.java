@@ -1,0 +1,1 @@
+class A{String[]d="one two three four five six seven eight nine".split(" ");String s(boolean p,String I){int a=0;for(String s:I.split("\\s+")){a+=10*f(s,p,1)+f(s,p,0);}return a+"";}int f(String s,boolean p,int q){for(int i=0;i<s.length();i++){int x=q>0?i:s.length()+~i,c=s.charAt(x)-48;if(c>=0&c<10)return c;if(!p)for(int j=0;j<9;j++)if(s.startsWith(d[j],x))return j+1;}return 0;}}

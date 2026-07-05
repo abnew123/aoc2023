@@ -1,0 +1,1 @@
+class I{String s(boolean p,String I){long r=0;for(String L:I.split("\\R")){String[] q=L.split(" ");int n=q.length,a[]=new int[n];for(int i=0;i<n;)a[i]=Integer.parseInt(q[i++]);for(long x=0;;){x=p?x+a[n-1]:a[0]-x;if(--n<1){r+=x;break;}for(int i=0;i<n;)a[i]=a[i+1]-a[i++];}}return r+"";}}
