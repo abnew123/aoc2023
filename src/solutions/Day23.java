@@ -9,6 +9,9 @@ import java.util.*;
 
 public class Day23 implements DayTemplate {
 
+    private static final int[] DX = new int[]{1, 0, -1, 0};
+    private static final int[] DY = new int[]{0, 1, 0, -1};
+
     Coordinate[][] nodeGrid = new Coordinate[6][6];
 
     Set<State> nextStates = new HashSet<>();
@@ -17,6 +20,80 @@ public class Day23 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         int answer = 0;
+        int[][] grid = parseGrid(in, part1);
+        Set<Coordinate> intersections = findIntersections(grid);
+        connectIntersections(grid, intersections);
+        Coordinate[] endpoints = findEndpoints(grid);
+        Coordinate start = endpoints[0];
+        Coordinate end = endpoints[1];
+        if (part1) {
+            answer = longestPathBetweenIntersections(start, end);
+        } else {
+            answer = longestCondensedPath(start, end);
+        }
+        return answer + "";
+    }
+
+    private int longestPathBetweenIntersections(Coordinate start, Coordinate end) {
+        int answer = 0;
+        Path path = new Path();
+        path.coordsOnPath.add(start);
+        path.latest = start;
+        Deque<Path> stack = new LinkedList<>();
+        stack.push(path);
+        while (!stack.isEmpty()) {
+            Path p = stack.pop();
+            Coordinate current = p.latest;
+            for (Coordinate next : neighbors.get(current)) {
+                if (next.equals(end)) {
+                    answer = Math.max(answer, p.pathLength + next.weight);
+                    break;
+                }
+                if (!p.coordsOnPath.contains(next)) {
+                    Path newPath = new Path(p);
+                    newPath.latest = next;
+                    newPath.coordsOnPath.add(next);
+                    newPath.pathLength += next.weight;
+                    stack.push(newPath);
+                }
+            }
+        }
+        return answer;
+    }
+
+    private int longestCondensedPath(Coordinate start, Coordinate end) {
+        int answer = 0;
+        answer += neighbors.get(start).iterator().next().weight;
+        answer += neighbors.get(end).iterator().next().weight;
+        constructGrid(neighbors, start);
+        Set<State> states = new HashSet<>();
+        states.add(new State("+      ", 0));
+        for (int i = 0; i < 6; i++) {
+            for (State state : states) {
+                addNextRow(state, i, 0, " ", new State("", state.val));
+            }
+            states = nextStates;
+            nextStates = new HashSet<>();
+        }
+        for (State state : states) {
+            if (endsAtExit(state)) {
+                answer += state.val;
+            }
+        }
+        return answer;
+    }
+
+    private boolean endsAtExit(State state) {
+        return state.dpState.length >= 6 &&
+                state.dpState[state.dpState.length - 6] == ' ' &&
+                state.dpState[state.dpState.length - 5] == ' ' &&
+                state.dpState[state.dpState.length - 4] == ' ' &&
+                state.dpState[state.dpState.length - 3] == ' ' &&
+                state.dpState[state.dpState.length - 2] == ' ' &&
+                state.dpState[state.dpState.length - 1] == '+';
+    }
+
+    private int[][] parseGrid(Scanner in, boolean part1) {
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {
             String line = in.nextLine();
@@ -32,16 +109,18 @@ public class Day23 implements DayTemplate {
                 }
             }
         }
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
+        return grid;
+    }
+
+    private Set<Coordinate> findIntersections(int[][] grid) {
         Set<Coordinate> intersections = new HashSet<>();
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
                 int numNeighbors = 0;
-                if (grid[i][j] != 2) {
+                if (isOpenTile(grid, i, j)) {
                     for (int k = 0; k < 4; k++) {
-                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
+                        Coordinate next = new Coordinate(i + DX[k], j + DY[k]);
+                        if (isOpenTile(grid, next.x, next.y)) {
                             numNeighbors++;
                         }
                     }
@@ -51,9 +130,24 @@ public class Day23 implements DayTemplate {
                 }
             }
         }
+        return intersections;
+    }
+
+    private boolean isOpenTile(int[][] grid, int x, int y) {
+        return inBounds(grid, x, y) && grid[x][y] != 2;
+    }
+
+    private boolean inBounds(int[][] grid, int x, int y) {
+        return x >= 0 && y >= 0 && x < grid.length && y < grid[0].length;
+    }
+
+    private void connectIntersections(int[][] grid, Set<Coordinate> intersections) {
         for (Coordinate intersection : intersections) {
             bfs(intersection, neighbors, grid, intersections);
         }
+    }
+
+    private Coordinate[] findEndpoints(int[][] grid) {
         Coordinate start = null;
         Coordinate end = null;
         for (int i = 0; i < grid.length; i++) {
@@ -64,58 +158,7 @@ public class Day23 implements DayTemplate {
                 end = new Coordinate(i, grid.length - 1);
             }
         }
-        if (part1) {
-            Path path = new Path();
-            path.coordsOnPath.add(start);
-            path.latest = start;
-            Deque<Path> stack = new LinkedList<>();
-            stack.push(path);
-            while (!stack.isEmpty()) {
-                Path p = stack.pop();
-                Coordinate current = p.latest;
-                for (Coordinate next : neighbors.get(current)) {
-                    if (next.equals(end)) {
-                        if (p.pathLength + next.weight > answer) {
-                            answer = p.pathLength + next.weight;
-                        }
-                        break;
-                    }
-                    if (!p.coordsOnPath.contains(next)) {
-                        Path newPath = new Path(p);
-                        newPath.latest = next;
-                        newPath.coordsOnPath.add(next);
-                        newPath.pathLength += next.weight;
-                        stack.push(newPath);
-                    }
-                }
-            }
-        } else {
-            answer += neighbors.get(start).iterator().next().weight;
-            answer += neighbors.get(end).iterator().next().weight;
-            constructGrid(neighbors, start);
-            Set<State> states = new HashSet<>();
-            states.add(new State("+      ", 0));
-            for (int i = 0; i < 6; i++) {
-                for (State state : states) {
-                    addNextRow(state, i, 0, " ", new State("", state.val));
-                }
-                states = nextStates;
-                nextStates = new HashSet<>();
-            }
-            for (State state : states) {
-                // Check if the state ends with "     +"
-                if (state.dpState.length >= 6 && 
-                    state.dpState[state.dpState.length - 6] == ' ' &&
-                    state.dpState[state.dpState.length - 5] == ' ' &&
-                    state.dpState[state.dpState.length - 4] == ' ' &&
-                    state.dpState[state.dpState.length - 3] == ' ' &&
-                    state.dpState[state.dpState.length - 2] == ' ' &&
-                    state.dpState[state.dpState.length - 1] == '+') {
-                    answer += state.val;
-                }
-            }
-        }
-        return answer + "";
+        return new Coordinate[]{start, end};
     }
 
     private void addNextRow(State state, int row, int column, String left, State possibility) {
@@ -330,8 +373,6 @@ public class Day23 implements DayTemplate {
     }
 
     private void bfs(Coordinate start, Map<Coordinate, Set<Coordinate>> neighbors, int[][] grid, Set<Coordinate> intersections) {
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
         Queue<Coordinate> queue = new LinkedList<>();
         Set<Coordinate> visited = new HashSet<>();
         queue.add(start);
@@ -342,13 +383,13 @@ public class Day23 implements DayTemplate {
                 if (grid[curr.x][curr.y] > 2 && k != grid[curr.x][curr.y] - 3) {
                     continue;
                 }
-                Coordinate next = new Coordinate(curr.x + xs[k], curr.y + ys[k]);
-                if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && !visited.contains(next)) {
+                Coordinate next = new Coordinate(curr.x + DX[k], curr.y + DY[k]);
+                if (inBounds(grid, next.x, next.y) && !visited.contains(next)) {
                     next.weight = curr.weight + 1;
                     if (intersections.contains(next) && !next.equals(start)) {
                         neighbors.get(start).add(next);
                     } else {
-                        if (grid[next.x][next.y] != 2) {
+                        if (isOpenTile(grid, next.x, next.y)) {
                             queue.add(next);
                             visited.add(next);
                         }

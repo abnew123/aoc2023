@@ -122,7 +122,7 @@ public class Day22 implements DayTemplate {
         }
         for (Brick b : bricks) {
             for (int i = 0; i < b.size; i++) {
-                grid[b.x + i * xs[b.dir]][b.y + i * ys[b.dir]][b.z + i * zs[b.dir]] = b.id;
+                setBrickCell(b, i, b.z, b.id);
             }
         }
     }
@@ -134,8 +134,8 @@ public class Day22 implements DayTemplate {
                 supported = supported(b);
                 if (!supported) {
                     for (int k = 0; k < b.size; k++) {
-                        grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + k * zs[b.dir] - 1] = b.id;
-                        grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + k * zs[b.dir]] = -1;
+                        setBrickCell(b, k, b.z - 1, b.id);
+                        setBrickCell(b, k, b.z, -1);
                     }
                     b.z = b.z - 1;
                 }
@@ -151,7 +151,7 @@ public class Day22 implements DayTemplate {
             }
         } else {
             for (int k = 0; k < b.size; k++) {
-                if (grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z - 1] != -1) {
+                if (grid[cellX(b, k)][cellY(b, k)][b.z - 1] != -1) {
                     supported = true;
                     break;
                 }
@@ -159,13 +159,27 @@ public class Day22 implements DayTemplate {
         }
         return supported;
     }
+
+    private void setBrickCell(Brick b, int offset, int z, int value) {
+        grid[cellX(b, offset)][cellY(b, offset)][z + offset * zs[b.dir]] = value;
+    }
+
+    private int cellX(Brick b, int offset) {
+        return b.x + offset * xs[b.dir];
+    }
+
+    private int cellY(Brick b, int offset) {
+        return b.y + offset * ys[b.dir];
+    }
+
     private void addDependencies(){
         for (Brick b : bricks) {
             if (b.dir != 2) {
                 for (int k = 0; k < b.size; k++) {
-                    if (grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1] != -1) {
-                        bricks.get(grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1]).dependencies.add(b.id);
-                        bricks.get(b.id).dependents.add(grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1]);
+                    int above = grid[cellX(b, k)][cellY(b, k)][b.z + 1];
+                    if (above != -1) {
+                        bricks.get(above).dependencies.add(b.id);
+                        bricks.get(b.id).dependents.add(above);
                     }
                 }
             } else {

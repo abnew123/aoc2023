@@ -42,20 +42,27 @@ public class Day20 implements DayTemplate {
         Map<String, Module> modules = new HashMap<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split("->|,");
-            if (line[0].contains("%")) {
-                modules.put(line[0].substring(1).trim(), new FlipFlop(line));
-                modules2.put(line[0].substring(1).trim(), new FlipFlop(line));
-            }
-            if (line[0].contains("&")) {
-                modules.put(line[0].substring(1).trim(), new Conjunction(line));
-                modules2.put(line[0].substring(1).trim(), new Conjunction(line));
-            }
-            if (line[0].startsWith(BROADCASTER)) {
-                modules.put(line[0].trim(), new Broadcaster(line));
-                modules2.put(line[0].trim(), new Broadcaster(line));
-            }
+            modules.put(moduleName(line), createModule(line));
+            modules2.put(moduleName(line), createModule(line));
         }
         return modules;
+    }
+
+    private String moduleName(String[] line) {
+        if (line[0].startsWith(BROADCASTER)) {
+            return line[0].trim();
+        }
+        return line[0].substring(1).trim();
+    }
+
+    private Module createModule(String[] line) {
+        if (line[0].contains("%")) {
+            return new FlipFlop(line);
+        }
+        if (line[0].contains("&")) {
+            return new Conjunction(line);
+        }
+        return new Broadcaster(line);
     }
 
     private String findInputAndInitializeConjunctions(Map<String, Module> modules) {
@@ -79,17 +86,12 @@ public class Day20 implements DayTemplate {
         long highPulses = 0;
         long lowPulses = 0;
         for (int i = 0; i < 1000; i++) {
-            List<Pulse> pulses = new ArrayList<>();
-            pulses.add(new Pulse(false, BROADCASTER, "button"));
+            List<Pulse> pulses = initialButtonPress();
             int index = 0;
             while (pulses.size() > index) {
-                Module m = modules.get(pulses.get(index).target);
-                if (m != null) {
-                    pulses.addAll(m.sendPulse(modules, pulses.get(index)));
-                }
+                sendQueuedPulse(modules, pulses, index);
                 index++;
             }
-            // Replace stream operations with simple counters for better performance
             for (Pulse pulse : pulses) {
                 if (pulse.high) {
                     highPulses++;
@@ -112,20 +114,13 @@ public class Day20 implements DayTemplate {
             recordedSuccesses.add(0);
         }
         for (int i = 1; (i < 10000 && recordedSoFar < totalRecorded); i++) {
-            List<Pulse> pulses = new ArrayList<>();
-            pulses.add(new Pulse(false, BROADCASTER, "button"));
+            List<Pulse> pulses = initialButtonPress();
             int index = 0;
             while (pulses.size() > index) {
-                for (int j = 0; j < allInputs.size(); j++) {
-                    if (pulses.get(index).input.equals(allInputs.get(j)) && pulses.get(index).high && recordedSuccesses.get(j) == 0) {
-                        recordedSuccesses.set(j, i);
-                        recordedSoFar++;
-                    }
+                if (recordFirstHighPulse(pulses.get(index), allInputs, recordedSuccesses, i)) {
+                    recordedSoFar++;
                 }
-                Module m = modules.get(pulses.get(index).target);
-                if (m != null) {
-                    pulses.addAll(m.sendPulse(modules, pulses.get(index)));
-                }
+                sendQueuedPulse(modules, pulses, index);
                 index++;
             }
         }
@@ -133,6 +128,30 @@ public class Day20 implements DayTemplate {
             answer *= success;
         }
         return answer;
+    }
+
+    private List<Pulse> initialButtonPress() {
+        List<Pulse> pulses = new ArrayList<>();
+        pulses.add(new Pulse(false, BROADCASTER, "button"));
+        return pulses;
+    }
+
+    private void sendQueuedPulse(Map<String, Module> modules, List<Pulse> pulses, int index) {
+        Pulse pulse = pulses.get(index);
+        Module module = modules.get(pulse.target);
+        if (module != null) {
+            pulses.addAll(module.sendPulse(modules, pulse));
+        }
+    }
+
+    private boolean recordFirstHighPulse(Pulse pulse, List<String> allInputs, List<Integer> recordedSuccesses, int buttonPress) {
+        for (int j = 0; j < allInputs.size(); j++) {
+            if (pulse.input.equals(allInputs.get(j)) && pulse.high && recordedSuccesses.get(j) == 0) {
+                recordedSuccesses.set(j, buttonPress);
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> findAllInputs(Map<String, Module> modules, String rxInput){

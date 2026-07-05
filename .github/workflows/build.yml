@@ -13,6 +13,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile Java bytecode for SonarCloud
+        run: |
+          mkdir -p build/sonar/classes
+          javac -d build/sonar/classes $(git ls-files 'src/*.java' 'src/**/*.java' ':!src/tests/**')
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
