@@ -1,6 +1,8 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 210ms after optimization. Benchmark times below are 10-run averages per part using the existing `DayTemplate.timer` convention.
+Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 195ms for a one-pass `MasterSolver` run after optimization. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are useful for comparing individual solver changes, but they understate the first-run cost someone sees when running all parts once.
+
+See [performance notes](PERFORMANCE.md) for visual before/after examples and benchmark caveats.
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
