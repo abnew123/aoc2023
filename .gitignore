@@ -1,12 +1,16 @@
+# Java build output
+*.class
+out/
+build/
+target/
+
+# IDE and local files
 .idea/
+*.iml
+*.log
+.env
+.env.*
 data/
-/out/*
-!out/production
-/out/production/*
-!out/production/aoc2023
-/out/production/aoc2023/*
-!out/production/aoc2023/src
-/out/production/aoc2023/src/tests/*
 
 # for https://github.com/LiquidFun/aoc_tiles
 .aoc_tiles/*
