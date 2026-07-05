@@ -17,53 +17,12 @@ public class Day23 implements DayTemplate {
 
     public String solve(boolean part1, Scanner in) {
         int answer = 0;
-        List<String[]> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            tmp.add(line.split(""));
-        }
-        int[][] grid = new int[tmp.get(0).length][tmp.size()];
-        Map<String, Integer> gridBuilder = Map.of(".", 1, "#", 2, ">", 3, "v", 4, "<", 5, "^", 6);
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                grid[i][j] = gridBuilder.get(tmp.get(j)[i]);
-                if (grid[i][j] > 2 && !part1) {
-                    grid[i][j] = 1;
-                }
-            }
-        }
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
-        Set<Coordinate> intersections = new HashSet<>();
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                int numNeighbors = 0;
-                if (grid[i][j] != 2) {
-                    for (int k = 0; k < 4; k++) {
-                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
-                            numNeighbors++;
-                        }
-                    }
-                }
-                if (numNeighbors == 1 || numNeighbors > 2) {
-                    intersections.add(new Coordinate(i, j));
-                }
-            }
-        }
-        for (Coordinate intersection : intersections) {
-            bfs(intersection, neighbors, grid, intersections);
-        }
-        Coordinate start = null;
-        Coordinate end = null;
-        for (int i = 0; i < grid.length; i++) {
-            if (grid[i][0] == 1) {
-                start = new Coordinate(i, 0);
-            }
-            if (grid[i][grid.length - 1] == 1) {
-                end = new Coordinate(i, grid.length - 1);
-            }
-        }
+        int[][] grid = parseGrid(in, part1);
+        Set<Coordinate> intersections = findIntersections(grid);
+        connectIntersections(grid, intersections);
+        Coordinate[] endpoints = findEndpoints(grid);
+        Coordinate start = endpoints[0];
+        Coordinate end = endpoints[1];
         if (part1) {
             Path path = new Path();
             path.coordsOnPath.add(start);
@@ -116,6 +75,68 @@ public class Day23 implements DayTemplate {
             }
         }
         return answer + "";
+    }
+
+    private int[][] parseGrid(Scanner in, boolean part1) {
+        List<String[]> tmp = new ArrayList<>();
+        while (in.hasNext()) {
+            String line = in.nextLine();
+            tmp.add(line.split(""));
+        }
+        int[][] grid = new int[tmp.get(0).length][tmp.size()];
+        Map<String, Integer> gridBuilder = Map.of(".", 1, "#", 2, ">", 3, "v", 4, "<", 5, "^", 6);
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                grid[i][j] = gridBuilder.get(tmp.get(j)[i]);
+                if (grid[i][j] > 2 && !part1) {
+                    grid[i][j] = 1;
+                }
+            }
+        }
+        return grid;
+    }
+
+    private Set<Coordinate> findIntersections(int[][] grid) {
+        int[] xs = new int[]{1, 0, -1, 0};
+        int[] ys = new int[]{0, 1, 0, -1};
+        Set<Coordinate> intersections = new HashSet<>();
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                int numNeighbors = 0;
+                if (grid[i][j] != 2) {
+                    for (int k = 0; k < 4; k++) {
+                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
+                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
+                            numNeighbors++;
+                        }
+                    }
+                }
+                if (numNeighbors == 1 || numNeighbors > 2) {
+                    intersections.add(new Coordinate(i, j));
+                }
+            }
+        }
+        return intersections;
+    }
+
+    private void connectIntersections(int[][] grid, Set<Coordinate> intersections) {
+        for (Coordinate intersection : intersections) {
+            bfs(intersection, neighbors, grid, intersections);
+        }
+    }
+
+    private Coordinate[] findEndpoints(int[][] grid) {
+        Coordinate start = null;
+        Coordinate end = null;
+        for (int i = 0; i < grid.length; i++) {
+            if (grid[i][0] == 1) {
+                start = new Coordinate(i, 0);
+            }
+            if (grid[i][grid.length - 1] == 1) {
+                end = new Coordinate(i, grid.length - 1);
+            }
+        }
+        return new Coordinate[]{start, end};
     }
 
     private void addNextRow(State state, int row, int column, String left, State possibility) {
