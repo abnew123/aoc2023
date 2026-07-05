@@ -6,8 +6,13 @@ import java.util.*;
 
 public class Day14 implements DayTemplate {
 
-    Map<Integer, Integer> states;
-    int[][] stones;
+    private static final byte EMPTY = 0;
+    private static final byte BLOCK = 1;
+    private static final byte ROUND = 2;
+
+    private byte[][] stones;
+    private int rows;
+    private int cols;
 
     /**
      * Main solving method.
@@ -19,147 +24,130 @@ public class Day14 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         parse(in);
-        states = new HashMap<>();
         if (part1) {
-            shiftNorth(stones);
+            shiftNorth();
         } else {
+            Map<Integer, Integer> states = new HashMap<>();
             int index = 0;
             int offset = 0;
             while (index < 1000000000) {
-                shiftNorth(stones);
-                shiftWest(stones);
-                shiftSouth(stones);
-                shiftEast(stones);
-                int tmpVal = getSupportLoad(stones);
+                cycle();
                 index++;
-                if (states.containsKey(Arrays.deepHashCode(stones) + tmpVal)) {
-                    int cycle = index - states.get(Arrays.deepHashCode(stones) + tmpVal);
+                int key = gridHash() * 31 + getSupportLoad();
+                Integer previous = states.putIfAbsent(key, index);
+                if (previous != null) {
+                    int cycle = index - previous;
                     offset = (1000000000 - index) % cycle;
                     break;
-                } else {
-                    states.put(Arrays.deepHashCode(stones) + tmpVal, index);
                 }
             }
             for (int i = 0; i < offset; i++) {
-                shiftNorth(stones);
-                shiftWest(stones);
-                shiftSouth(stones);
-                shiftEast(stones);
+                cycle();
             }
-
         }
-        return getSupportLoad(stones) + "";
+        return getSupportLoad() + "";
     }
 
-    private void parse(Scanner in){
-        List<String> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            tmp.add(in.nextLine());
+    private void parse(Scanner in) {
+        List<String> lines = new ArrayList<>();
+        while (in.hasNextLine()) {
+            lines.add(in.nextLine());
         }
-        stones = new int[tmp.get(0).length()][tmp.size()];
-        for (int i = 0; i < stones.length; i++) {
-            for (int j = 0; j < stones[0].length; j++) {
-                char s = tmp.get(j).charAt(i);
-                if (s == '.') {
-                    stones[i][j] = 0;
-                }
-                if (s == '#') {
-                    stones[i][j] = 1;
-                }
-                if (s == 'O') {
-                    stones[i][j] = 2;
-                }
+        rows = lines.size();
+        cols = lines.get(0).length();
+        stones = new byte[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            String line = lines.get(r);
+            for (int c = 0; c < cols; c++) {
+                char ch = line.charAt(c);
+                stones[r][c] = ch == '#' ? BLOCK : ch == 'O' ? ROUND : EMPTY;
             }
         }
     }
 
-    private void shiftNorth(int[][] stones) {
-        int rows = stones.length;
-        int cols = stones[0].length;
-        for (int i = 0; i < rows; i++) {
-            int lastObstacle = -1;
-            for (int j = 0; j < cols; j++) {
-                if (stones[i][j] == 1) {
-                    lastObstacle = j;
-                    continue;
-                }
-                if (stones[i][j] == 2) {
-                    stones[i][j] = 0;
-                    stones[i][lastObstacle + 1] = 2;
-                    lastObstacle++;
+    private void cycle() {
+        shiftNorth();
+        shiftWest();
+        shiftSouth();
+        shiftEast();
+    }
+
+    private void shiftNorth() {
+        for (int c = 0; c < cols; c++) {
+            int target = 0;
+            for (int r = 0; r < rows; r++) {
+                if (stones[r][c] == BLOCK) {
+                    target = r + 1;
+                } else if (stones[r][c] == ROUND) {
+                    stones[r][c] = EMPTY;
+                    stones[target++][c] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftSouth(int[][] stones) {
-        int rows = stones.length;
-        int cols = stones[0].length;
-        for (int i = 0; i < rows; i++) {
-            int lastObstacle = -1;
-            for (int j = 0; j < cols; j++) {
-                int rowIndex = cols - 1 - j;
-                if (stones[i][rowIndex] == 1) {
-                    lastObstacle = j;
-                    continue;
-                }
-                if (stones[i][rowIndex] == 2) {
-                    stones[i][rowIndex] = 0;
-                    stones[i][cols - 1 - (lastObstacle + 1)] = 2;
-                    lastObstacle++;
+    private void shiftSouth() {
+        for (int c = 0; c < cols; c++) {
+            int target = rows - 1;
+            for (int r = rows - 1; r >= 0; r--) {
+                if (stones[r][c] == BLOCK) {
+                    target = r - 1;
+                } else if (stones[r][c] == ROUND) {
+                    stones[r][c] = EMPTY;
+                    stones[target--][c] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftWest(int[][] stones) {
-        int rows = stones.length;
-        int cols = stones[0].length;
-        for (int i = 0; i < cols; i++) {
-            int lastObstacle = -1;
-            for (int j = 0; j < rows; j++) {
-                if (stones[j][i] == 1) {
-                    lastObstacle = j;
-                    continue;
-                }
-                if (stones[j][i] == 2) {
-                    stones[j][i] = 0;
-                    stones[lastObstacle + 1][i] = 2;
-                    lastObstacle++;
+    private void shiftWest() {
+        for (int r = 0; r < rows; r++) {
+            int target = 0;
+            for (int c = 0; c < cols; c++) {
+                if (stones[r][c] == BLOCK) {
+                    target = c + 1;
+                } else if (stones[r][c] == ROUND) {
+                    stones[r][c] = EMPTY;
+                    stones[r][target++] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftEast(int[][] stones) {
-        int rows = stones.length;
-        int cols = stones[0].length;
-        for (int i = 0; i < cols; i++) {
-            int lastObstacle = -1;
-            for (int j = 0; j < rows; j++) {
-                int colIndex = rows - 1 - j;
-                if (stones[colIndex][i] == 1) {
-                    lastObstacle = j;
-                    continue;
-                }
-                if (stones[colIndex][i] == 2) {
-                    stones[colIndex][i] = 0;
-                    stones[rows - 1 - (lastObstacle + 1)][i] = 2;
-                    lastObstacle++;
+    private void shiftEast() {
+        for (int r = 0; r < rows; r++) {
+            int target = cols - 1;
+            for (int c = cols - 1; c >= 0; c--) {
+                if (stones[r][c] == BLOCK) {
+                    target = c - 1;
+                } else if (stones[r][c] == ROUND) {
+                    stones[r][c] = EMPTY;
+                    stones[r][target--] = ROUND;
                 }
             }
         }
     }
 
-    private int getSupportLoad(int[][] stones) {
+    private int getSupportLoad() {
         int answer = 0;
-        for (int i = 0; i < stones[0].length; i++) {
-            for (int j = 0; j < stones.length; j++) {
-                if (stones[i][j] == 2) {
-                    answer += stones.length - j;
+        for (int r = 0; r < rows; r++) {
+            int rowLoad = rows - r;
+            for (int c = 0; c < cols; c++) {
+                if (stones[r][c] == ROUND) {
+                    answer += rowLoad;
                 }
             }
         }
         return answer;
+    }
+
+    private int gridHash() {
+        int hash = 1;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                hash = 31 * hash + stones[r][c];
+            }
+        }
+        return hash;
     }
 }

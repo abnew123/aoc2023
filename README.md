@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 195ms for a one-pass `MasterSolver` run after optimization. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are useful for comparing individual solver changes, but they understate the first-run cost someone sees when running all parts once.
+Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 247ms for a standardized one-pass `MasterSolver` run after optimization. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are useful for comparing individual solver changes, but they understate the first-run cost someone sees when running all parts once.
 
 See [performance notes](PERFORMANCE.md) for visual before/after examples and benchmark caveats.
 
@@ -99,17 +99,17 @@ See [performance notes](PERFORMANCE.md) for visual before/after examples and ben
 | 7 | [Camel Cards](https://adventofcode.com/2023/day/7) | [Source](src/solutions/Day07.java) | 3.418 | 3.318 |
 | 8 | [Haunted Wasteland](https://adventofcode.com/2023/day/8) | [Source](src/solutions/Day08.java) | 3.894 | 7.632 |
 | 9 | [Mirage Maintenance](https://adventofcode.com/2023/day/9) | [Source](src/solutions/Day09.java) | 2.123 | 2.174 |
-| 10 | [Pipe Maze](https://adventofcode.com/2023/day/10) | [Source](src/solutions/Day10.java) | 5.629 | 6.595 |
+| 10 | [Pipe Maze](https://adventofcode.com/2023/day/10) | [Source](src/solutions/Day10.java) | 1.747 | 2.316 |
 | 11 | [Cosmic Expansion](https://adventofcode.com/2023/day/11) | [Source](src/solutions/Day11.java) | 3.555 | 3.539 |
 | 12 | [Hot Springs](https://adventofcode.com/2023/day/12) | [Source](src/solutions/Day12.java) | 2.577 | 6.584 |
 | 13 | [Point of Incidence](https://adventofcode.com/2023/day/13) | [Source](src/solutions/Day13.java) | 1.900 | 1.836 |
-| 14 | [Parabolic Reflector Dish](https://adventofcode.com/2023/day/14) | [Source](src/solutions/Day14.java) | 1.291 | 7.510 |
+| 14 | [Parabolic Reflector Dish](https://adventofcode.com/2023/day/14) | [Source](src/solutions/Day14.java) | 1.083 | 6.950 |
 | 15 | [Lens Library](https://adventofcode.com/2023/day/15) | [Source](src/solutions/Day15.java) | 2.499 | 4.944 |
 | 16 | [The Floor Will Be Lava](https://adventofcode.com/2023/day/16) | [Source](src/solutions/Day16.java) | 1.207 | 12.652 |
 | 17 | [Clumsy Crucible](https://adventofcode.com/2023/day/17) | [Source](src/solutions/Day17.java) | 8.955 | 12.633 |
 | 18 | [Lavaduct Lagoon](https://adventofcode.com/2023/day/18) | [Source](src/solutions/Day18.java) | 1.800 | 2.149 |
 | 19 | [Aplenty](https://adventofcode.com/2023/day/19) | [Source](src/solutions/Day19.java) | 3.888 | 4.643 |
-| 20 | [Pulse Propagation](https://adventofcode.com/2023/day/20) | [Source](src/solutions/Day20.java) | 4.481 | 13.548 |
+| 20 | [Pulse Propagation](https://adventofcode.com/2023/day/20) | [Source](src/solutions/Day20.java) | 1.892 | 4.096 |
 | 21 | [Step Counter](https://adventofcode.com/2023/day/21) | [Source](src/solutions/Day21.java) | 3.424 | 3.397 |
 | 22 | [Sand Slabs](https://adventofcode.com/2023/day/22) | [Source](src/solutions/Day22.java) | 5.588 | 6.383 |
 | 23 | [A Long Walk](https://adventofcode.com/2023/day/23) | [Source](src/solutions/Day23.java) | 6.997 | 11.799 |

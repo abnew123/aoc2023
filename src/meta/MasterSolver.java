@@ -17,9 +17,7 @@ public class MasterSolver {
         // inputs.
         boolean runTimer = true;
         boolean totalTimer = false;
-        boolean exclusionTimer = true;
         boolean correctnessCheck = true;
-        boolean timePartsSeparately = false;
         int[] days = new int[]{};
         boolean[] parts = new boolean[]{true, false};
         // Do not change anything in the method below this comment
@@ -38,7 +36,7 @@ public class MasterSolver {
             }
         }
         if (runTimer) {
-            timer(totalTimer, exclusionTimer, timePartsSeparately);
+            timer(totalTimer);
         }
         if (correctnessCheck) {
             correctnessCheck();
@@ -52,45 +50,20 @@ public class MasterSolver {
      *                  true. Timer will give individual days times by part if param
      *                  is set to false. Note that even if param is set to false,
      *                  total time will be given.
-     * @param exclusion Timer will exclude days that return exceptions if param is
-     *                  set to true. Timer will execute all days if param is set to
-     *                  false.
      * @throws Exception
      */
 
-    public static void timer(boolean total, boolean exclusion, boolean parts) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, FileNotFoundException {
+    public static void timer(boolean total) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, FileNotFoundException {
         Double totalTime = 0.0;
         for (int day = 1; day <= 25; day++) {
             String zeroFilledDay = (day < 10 ? "0" : "") + day;
-            if(parts){
-                for (int part = 1; part <= 2; part++) {
-                    boolean exclude = (boolean) Class.forName(SOLUTIONS_DAY + zeroFilledDay).getMethod("exclude")
-                            .invoke(Class.forName(SOLUTIONS_DAY + zeroFilledDay).getDeclaredConstructor().newInstance());
-                    if (exclusion && exclude) {
-                        continue;
-                    }
-                    Double time = (Double) Class.forName(SOLUTIONS_DAY + zeroFilledDay)
-                            .getMethod("timer", boolean.class, Scanner.class)
-                            .invoke(Class.forName(SOLUTIONS_DAY + zeroFilledDay).getDeclaredConstructor().newInstance(),
-                                    part == 1, new Scanner(new File(DATA_DAY + zeroFilledDay + ".txt")));
-                    if (!total) {
-                        System.out.println("Day " + zeroFilledDay + PART + part + " execution time: " + time);
-                    }
-                    totalTime += time;
-                }
-            }
-            else{
-                boolean exclude = (boolean) Class.forName(SOLUTIONS_DAY + zeroFilledDay).getMethod("exclude")
-                        .invoke(Class.forName(SOLUTIONS_DAY + zeroFilledDay).getDeclaredConstructor().newInstance());
-                if (exclusion && exclude) {
-                    continue;
-                }
+            for (int part = 1; part <= 2; part++) {
                 Double time = (Double) Class.forName(SOLUTIONS_DAY + zeroFilledDay)
-                        .getMethod("dayTimer", Scanner.class)
+                        .getMethod("timer", boolean.class, Scanner.class)
                         .invoke(Class.forName(SOLUTIONS_DAY + zeroFilledDay).getDeclaredConstructor().newInstance(),
-                                 new Scanner(new File(DATA_DAY + zeroFilledDay + ".txt")));
+                                part == 1, new Scanner(new File(DATA_DAY + zeroFilledDay + ".txt")));
                 if (!total) {
-                    System.out.println("Day " + zeroFilledDay + " execution time: " + time);
+                    System.out.println("Day " + zeroFilledDay + PART + part + " execution time: " + time);
                 }
                 totalTime += time;
             }
