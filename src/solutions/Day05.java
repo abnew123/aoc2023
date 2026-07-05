@@ -2,152 +2,63 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Day05 implements DayTemplate {
-
     long[] seeds;
-    List<RangeMap> rangeMaps;
+    List<long[][]> maps = new ArrayList<>();
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        initialize(in);
-        return new String[]{solvePart1()+"", solvePart2()+""};
-    }
-
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
     public String solve(boolean part1, Scanner in) {
-        initialize(in);
-        return (part1?solvePart1():solvePart2()) + "";
-    }
-
-    private void initialize(Scanner in){
-        List<Range> tmp = new ArrayList<>();
-        rangeMaps = new ArrayList<>();
-        String[] stringSeeds = in.nextLine().split(" ");
-        seeds = new long[stringSeeds.length - 1];
-        for (int i = 1; i < stringSeeds.length; i++) {
-            seeds[i - 1] = Long.parseLong(stringSeeds[i]);
-        }
-        while (in.hasNext()) {
+        String[] s = in.nextLine().split(" ");
+        seeds = new long[s.length - 1];
+        for (int i = 1; i < s.length; i++) seeds[i - 1] = Long.parseLong(s[i]);
+        List<long[]> cur = new ArrayList<>();
+        while (in.hasNextLine()) {
             String line = in.nextLine();
-            if (line.equals("")) {
-                continue;
-            }
             if (line.contains("map")) {
-                if (!tmp.isEmpty()) {
-                    rangeMaps.add(new RangeMap(tmp));
-                }
-                tmp = new ArrayList<>();
-            } else {
-                tmp.add(new Range(line));
+                if (!cur.isEmpty()) maps.add(cur.toArray(long[][]::new));
+                cur.clear();
+            } else if (!line.isEmpty()) {
+                cur.add(Arrays.stream(line.split(" ")).mapToLong(Long::parseLong).toArray());
             }
         }
-        rangeMaps.add(new RangeMap(tmp));
+        maps.add(cur.toArray(long[][]::new));
+        return "" + (part1 ? one() : two());
     }
 
-    private long solvePart1(){
-        long answer = 1L<<40;
-        for (Long seed : seeds) {
-            long val = seed;
-            for (RangeMap rangeMap : rangeMaps) {
-                val = rangeMap.convert(val);
-            }
-            if (val < answer) {
-                answer = val;
-            }
+    long one() {
+        long best = Long.MAX_VALUE;
+        for (long seed : seeds) {
+            long v = seed;
+            for (long[][] m : maps) v = conv(v, m)[0];
+            best = Math.min(best, v);
         }
-        return answer;
+        return best;
     }
 
-    private long solvePart2(){
-        long answer = 1L<<40;
+    long two() {
+        long best = Long.MAX_VALUE;
         for (int i = 0; i < seeds.length; i += 2) {
-            long index = seeds[i];
-            while(index < seeds[i] + seeds[i+1]){
-                long[] ret = returnValAndBound(index, rangeMaps);
-                if (ret[0] < answer) {
-                    answer = ret[0];
+            for (long seed = seeds[i]; seed < seeds[i] + seeds[i + 1];) {
+                long v = seed, skip = 10_000_000_000L;
+                for (long[][] m : maps) {
+                    long[] c = conv(v, m);
+                    v = c[0];
+                    skip = Math.min(skip, c[1]);
                 }
-                index += ret[1] + 1;
+                best = Math.min(best, v);
+                seed += skip + 1;
             }
         }
-        return answer;
+        return best;
     }
 
-    private long[] returnValAndBound(long val, List<RangeMap> rangeMaps) {
-        long bound = 10000000000L;
-        for (RangeMap rangeMap : rangeMaps) {
-            bound = Math.min(bound, rangeMap.convert2(val)[1]);
-            val = rangeMap.convert2(val)[0];
+    long[] conv(long v, long[][] map) {
+        long next = 10_000_000_000L;
+        for (long[] r : map) {
+            if (r[1] > v) next = Math.min(next, r[1] - v - 1);
+            if (r[1] <= v && v < r[1] + r[2]) return new long[]{r[0] + v - r[1], r[2] - (v - r[1]) - 1};
         }
-        return new long[]{val, bound};
-    }
-}
-
-class Range {
-    long destination;
-    long source;
-    long specificRange;
-
-    public Range(long des, long src, long r) {
-        destination = des;
-        source = src;
-        specificRange = r;
-    }
-
-    public Range(String line) {
-        String[] pieces = line.split(" ");
-        destination = Long.parseLong(pieces[0]);
-        source = Long.parseLong(pieces[1]);
-        specificRange = Long.parseLong(pieces[2]);
-    }
-}
-
-class RangeMap {
-    List<Long> starts;
-    List<Long> ends;
-    List<Long> betweens;
-
-    public RangeMap(List<Range> ranges) {
-        starts = new ArrayList<>();
-        ends = new ArrayList<>();
-        betweens = new ArrayList<>();
-        for (Range range : ranges) {
-            starts.add(range.source);
-            ends.add(range.destination);
-            betweens.add(range.specificRange);
-        }
-    }
-
-    public long convert(long val) {
-        for (int i = 0; i < starts.size(); i++) {
-            if (starts.get(i) <= val && starts.get(i) + betweens.get(i) > val) {
-                return ends.get(i) + (val - starts.get(i));
-            }
-        }
-        return val;
-    }
-
-    public long[] convert2(long val) {
-        long nextStart = 10000000000L;
-        for (int i = 0; i < starts.size(); i++) {
-            if (starts.get(i) > val) {
-                nextStart = Math.min(nextStart, starts.get(i) - val - 1);
-            }
-            if (starts.get(i) <= val && starts.get(i) + betweens.get(i) > val) {
-                return new long[]{ends.get(i) + (val - starts.get(i)), betweens.get(i) - (val - starts.get(i)) - 1};
-            }
-        }
-        return new long[]{val, nextStart == 10000000000L ? 0 : nextStart};
+        return new long[]{v, next == 10_000_000_000L ? 0 : next};
     }
 }

@@ -11,16 +11,9 @@ public class Day21 implements DayTemplate {
 
     int[][] grid;
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long ans = 0;
         List<Coordinate> reachablePoints = new ArrayList<>();
         reachablePoints.add(buildGridAndGetStart(in));
         int[] xs = new int[]{-1, 1, 0, 0};
@@ -43,15 +36,15 @@ public class Day21 implements DayTemplate {
             reachablePoints = tmp2;
         }
         if (part1) {
-            answer = solvePart1();
+            ans = solvePart1();
         }
         if (!part1) {
-            answer = solvePart2();
+            ans = solvePart2();
         }
-        return answer + "";
+        return ans + "";
     }
 
-    private Coordinate buildGridAndGetStart(Scanner in){
+    Coordinate buildGridAndGetStart(Scanner in){
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {
             String line = in.nextLine();
@@ -76,21 +69,21 @@ public class Day21 implements DayTemplate {
         return new Coordinate(x,y);
     }
 
-    private long solvePart1(){
-        long answer = 0;
+    long solvePart1(){
+        long ans = 0;
         int rows = grid.length;
         int cols = grid[0].length;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (grid[i][j] % 2 == 0 && grid[i][j] <= 64) {
-                    answer++;
+                    ans++;
                 }
             }
         }
-        return answer;
+        return ans;
     }
 
-    private long solvePart2(){
+    long solvePart2(){
         long[] evenOddLarge = new long[4];
         int rows = grid.length;
         int cols = grid[0].length;

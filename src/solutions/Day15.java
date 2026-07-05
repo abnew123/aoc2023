@@ -6,40 +6,22 @@ import java.util.*;
 
 public class Day15 implements DayTemplate {
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        long answer1 = 0;
-        List<String> lines = Arrays.stream(in.nextLine().split(",")).toList();
-        for (String s : lines) {
-            answer1 += hash(s);
-        }
-        Map<Integer, List<Lens>> map = buildMap(lines);
-        long answer2 = sumMap(map);
-        return new String[]{answer1 + "", answer2 + ""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long ans = 0;
         List<String> lines = Arrays.stream(in.nextLine().split(",")).toList();
         if (part1) {
             for (String s : lines) {
-                answer += hash(s);
+                ans += hash(s);
             }
         } else {
             return sumMap(buildMap(lines)) + "";
         }
-        return answer + "";
+        return ans + "";
     }
 
-    private Map<Integer, List<Lens>> buildMap(List<String> lines){
+    Map<Integer, List<Lens>> buildMap(List<String> lines){
         Map<Integer, List<Lens>> map = new HashMap<>();
         for (String s : lines) {
             String[] parts = s.split("[-=]");
@@ -57,51 +39,51 @@ public class Day15 implements DayTemplate {
         return map;
     }
 
-    private long sumMap( Map<Integer, List<Lens>> map){
-        long answer = 0;
+    long sumMap( Map<Integer, List<Lens>> map){
+        long ans = 0;
         for (Map.Entry<Integer, List<Lens>> entry : map.entrySet()) {
             int index = 0;
             for (Lens lens : entry.getValue()) {
                 index++;
-                answer += (entry.getKey() + 1) * index * (long)lens.length;
+                ans += (entry.getKey() + 1) * index * (long)lens.length;
             }
         }
-        return answer;
+        return ans;
     }
 
-    private void replaceKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
+    void replaceKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
         boolean present = false;
-        List<Lens> current = map.get(hash);
-        for (int i = current.size() - 1; i >= 0; i--) {
-            if (current.get(i).name.equals(parts[0])) {
-                current.get(i).length = Integer.parseInt(parts[1]);
+        List<Lens> cur = map.get(hash);
+        for (int i = cur.size() - 1; i >= 0; i--) {
+            if (cur.get(i).name.equals(parts[0])) {
+                cur.get(i).length = Integer.parseInt(parts[1]);
                 present = true;
             }
         }
         if (!present) {
-            current.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
+            cur.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
         }
-        map.put(hash, current);
+        map.put(hash, cur);
     }
 
-    private void addKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
+    void addKey(Map<Integer, List<Lens>> map, int hash, String[] parts) {
         List<Lens> tmp = new ArrayList<>();
         tmp.add(new Lens(Integer.parseInt(parts[1]), parts[0]));
         map.put(hash, tmp);
     }
 
-    private void removeKey(Map<Integer, List<Lens>> map, int hash, String part) {
+    void removeKey(Map<Integer, List<Lens>> map, int hash, String part) {
         if (map.containsKey(hash)) {
-            List<Lens> current = map.get(hash);
-            for (int i = current.size() - 1; i >= 0; i--) {
-                if (current.get(i).name.equals(part)) {
-                    current.remove(i);
+            List<Lens> cur = map.get(hash);
+            for (int i = cur.size() - 1; i >= 0; i--) {
+                if (cur.get(i).name.equals(part)) {
+                    cur.remove(i);
                 }
             }
         }
     }
 
-    private int hash(String s) {
+    int hash(String s) {
         int val = 0;
         for (int i = 0; i < s.length(); i++) {
             val += s.charAt(i);

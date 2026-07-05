@@ -6,19 +6,12 @@ import java.util.*;
 
 public class Day08 implements DayTemplate {
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long ans = 0;
         List<String> currSteps = new ArrayList<>();
         Map<String, Step> map = new HashMap<>();
-        String[] instructions = in.nextLine().split("");
+        String[] ins = in.nextLine().split("");
         in.nextLine();
         while (in.hasNext()) {
             Step step = new Step(in.nextLine());
@@ -32,7 +25,7 @@ public class Day08 implements DayTemplate {
         while (!check(currSteps, index, loops, part1)) {
             for (int i = 0; i < currSteps.size(); i++) {
                 Step step = map.get(currSteps.get(i));
-                if (instructions[index % instructions.length].equals("L")) {
+                if (ins[index % ins.length].equals("L")) {
                     currSteps.set(i, step.left);
                 } else {
                     currSteps.set(i, step.right);
@@ -40,11 +33,11 @@ public class Day08 implements DayTemplate {
             }
             index++;
         }
-        answer = lcm(loops);
-        return answer + "";
+        ans = lcm(loops);
+        return ans + "";
     }
 
-    private boolean check(List<String> currSteps, int index, int[] loops, boolean part1) {
+    boolean check(List<String> currSteps, int index, int[] loops, boolean part1) {
         boolean ret = true;
         for (int i = 0; i < currSteps.size(); i++) {
             if (loops[i] != 0) {
@@ -59,7 +52,7 @@ public class Day08 implements DayTemplate {
         return ret;
     }
 
-    private long lcm(int[] loops) {
+    long lcm(int[] loops) {
         long lcm = 1;
         for (int loop : loops) {
             lcm = lcm * loop / gcd(lcm, loop);
@@ -67,7 +60,7 @@ public class Day08 implements DayTemplate {
         return lcm;
     }
 
-    private long gcd(long a, long b) {
+    long gcd(long a, long b) {
         return (b == 0) ? a : gcd(b, a % b);
     }
 }

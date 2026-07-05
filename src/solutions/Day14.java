@@ -6,22 +6,15 @@ import java.util.*;
 
 public class Day14 implements DayTemplate {
 
-    private static final byte EMPTY = 0;
-    private static final byte BLOCK = 1;
-    private static final byte ROUND = 2;
+    static byte EMPTY = 0;
+    static byte BLOCK = 1;
+    static byte ROUND = 2;
 
-    private byte[][] stones;
-    private int rows;
-    private int cols;
+    byte[][] stones;
+    int rows;
+    int cols;
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
         parse(in);
         if (part1) {
@@ -48,7 +41,7 @@ public class Day14 implements DayTemplate {
         return getSupportLoad() + "";
     }
 
-    private void parse(Scanner in) {
+    void parse(Scanner in) {
         List<String> lines = new ArrayList<>();
         while (in.hasNextLine()) {
             lines.add(in.nextLine());
@@ -65,83 +58,83 @@ public class Day14 implements DayTemplate {
         }
     }
 
-    private void cycle() {
+    void cycle() {
         shiftNorth();
         shiftWest();
         shiftSouth();
         shiftEast();
     }
 
-    private void shiftNorth() {
+    void shiftNorth() {
         for (int c = 0; c < cols; c++) {
-            int target = 0;
+            int tar = 0;
             for (int r = 0; r < rows; r++) {
                 if (stones[r][c] == BLOCK) {
-                    target = r + 1;
+                    tar = r + 1;
                 } else if (stones[r][c] == ROUND) {
                     stones[r][c] = EMPTY;
-                    stones[target++][c] = ROUND;
+                    stones[tar++][c] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftSouth() {
+    void shiftSouth() {
         for (int c = 0; c < cols; c++) {
-            int target = rows - 1;
+            int tar = rows - 1;
             for (int r = rows - 1; r >= 0; r--) {
                 if (stones[r][c] == BLOCK) {
-                    target = r - 1;
+                    tar = r - 1;
                 } else if (stones[r][c] == ROUND) {
                     stones[r][c] = EMPTY;
-                    stones[target--][c] = ROUND;
+                    stones[tar--][c] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftWest() {
+    void shiftWest() {
         for (int r = 0; r < rows; r++) {
-            int target = 0;
+            int tar = 0;
             for (int c = 0; c < cols; c++) {
                 if (stones[r][c] == BLOCK) {
-                    target = c + 1;
+                    tar = c + 1;
                 } else if (stones[r][c] == ROUND) {
                     stones[r][c] = EMPTY;
-                    stones[r][target++] = ROUND;
+                    stones[r][tar++] = ROUND;
                 }
             }
         }
     }
 
-    private void shiftEast() {
+    void shiftEast() {
         for (int r = 0; r < rows; r++) {
-            int target = cols - 1;
+            int tar = cols - 1;
             for (int c = cols - 1; c >= 0; c--) {
                 if (stones[r][c] == BLOCK) {
-                    target = c - 1;
+                    tar = c - 1;
                 } else if (stones[r][c] == ROUND) {
                     stones[r][c] = EMPTY;
-                    stones[r][target--] = ROUND;
+                    stones[r][tar--] = ROUND;
                 }
             }
         }
     }
 
-    private int getSupportLoad() {
-        int answer = 0;
+    int getSupportLoad() {
+        int ans = 0;
         for (int r = 0; r < rows; r++) {
             int rowLoad = rows - r;
             for (int c = 0; c < cols; c++) {
                 if (stones[r][c] == ROUND) {
-                    answer += rowLoad;
+                    ans += rowLoad;
                 }
             }
         }
-        return answer;
+        return ans;
     }
 
-    private int gridHash() {
+    int gridHash() {
         int hash = 1;
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {

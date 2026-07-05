@@ -1,420 +1,94 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-import src.objects.Coordinate;
 
 import java.util.*;
 
-//Heavily inspired by https://gist.github.com/Voltara/ae028b17ba5cd69fa9b8b912e41e853b
-
 public class Day23 implements DayTemplate {
-
-    Coordinate[][] nodeGrid = new Coordinate[6][6];
-
-    Set<State> nextStates = new HashSet<>();
-
-    Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
+    static int[] DR = {0, 1, 0, -1}, DC = {1, 0, -1, 0};
+    List<int[]>[] graph;
+    char[][] grid;
+    int rows, cols, end;
 
     public String solve(boolean part1, Scanner in) {
-        int answer = 0;
-        List<String[]> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            tmp.add(line.split(""));
-        }
-        int[][] grid = new int[tmp.get(0).length][tmp.size()];
-        Map<String, Integer> gridBuilder = Map.of(".", 1, "#", 2, ">", 3, "v", 4, "<", 5, "^", 6);
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                grid[i][j] = gridBuilder.get(tmp.get(j)[i]);
-                if (grid[i][j] > 2 && !part1) {
-                    grid[i][j] = 1;
-                }
+        List<String> lines = new ArrayList<>();
+        while (in.hasNextLine()) lines.add(in.nextLine());
+        rows = lines.size();
+        cols = lines.get(0).length();
+        grid = new char[rows][];
+        for (int r = 0; r < rows; r++) grid[r] = lines.get(r).toCharArray();
+        int startCell = cell(0, lines.get(0).indexOf('.'));
+        int endCell = cell(rows - 1, lines.get(rows - 1).indexOf('.'));
+        Map<Integer, Integer> id = new HashMap<>();
+        for (int r = 0; r < rows; r++) for (int c = 0; c < cols; c++) {
+            if (grid[r][c] != '#' && (cell(r, c) == startCell || cell(r, c) == endCell || degree(r, c) != 2)) {
+                id.put(cell(r, c), id.size());
             }
         }
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
-        Set<Coordinate> intersections = new HashSet<>();
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                int numNeighbors = 0;
-                if (grid[i][j] != 2) {
-                    for (int k = 0; k < 4; k++) {
-                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
-                            numNeighbors++;
-                        }
-                    }
-                }
-                if (numNeighbors == 1 || numNeighbors > 2) {
-                    intersections.add(new Coordinate(i, j));
-                }
-            }
+        graph = new List[id.size()];
+        for (int i = 0; i < graph.length; i++) graph[i] = new ArrayList<>();
+        end = id.get(endCell);
+        for (int p : id.keySet()) {
+            int from = id.get(p), r = p / cols, c = p % cols;
+            for (int d : dirs(grid[r][c], part1)) addEdge(id, from, r, c, d, part1);
         }
-        for (Coordinate intersection : intersections) {
-            bfs(intersection, neighbors, grid, intersections);
-        }
-        Coordinate start = null;
-        Coordinate end = null;
-        for (int i = 0; i < grid.length; i++) {
-            if (grid[i][0] == 1) {
-                start = new Coordinate(i, 0);
-            }
-            if (grid[i][grid.length - 1] == 1) {
-                end = new Coordinate(i, grid.length - 1);
-            }
-        }
-        if (part1) {
-            Path path = new Path();
-            path.coordsOnPath.add(start);
-            path.latest = start;
-            Deque<Path> stack = new LinkedList<>();
-            stack.push(path);
-            while (!stack.isEmpty()) {
-                Path p = stack.pop();
-                Coordinate current = p.latest;
-                for (Coordinate next : neighbors.get(current)) {
-                    if (next.equals(end)) {
-                        if (p.pathLength + next.weight > answer) {
-                            answer = p.pathLength + next.weight;
-                        }
-                        break;
-                    }
-                    if (!p.coordsOnPath.contains(next)) {
-                        Path newPath = new Path(p);
-                        newPath.latest = next;
-                        newPath.coordsOnPath.add(next);
-                        newPath.pathLength += next.weight;
-                        stack.push(newPath);
-                    }
-                }
-            }
-        } else {
-            answer += neighbors.get(start).iterator().next().weight;
-            answer += neighbors.get(end).iterator().next().weight;
-            constructGrid(neighbors, start);
-            Set<State> states = new HashSet<>();
-            states.add(new State("+      ", 0));
-            for (int i = 0; i < 6; i++) {
-                for (State state : states) {
-                    addNextRow(state, i, 0, " ", new State("", state.val));
-                }
-                states = nextStates;
-                nextStates = new HashSet<>();
-            }
-            for (State state : states) {
-                // Check if the state ends with "     +"
-                if (state.dpState.length >= 6 && 
-                    state.dpState[state.dpState.length - 6] == ' ' &&
-                    state.dpState[state.dpState.length - 5] == ' ' &&
-                    state.dpState[state.dpState.length - 4] == ' ' &&
-                    state.dpState[state.dpState.length - 3] == ' ' &&
-                    state.dpState[state.dpState.length - 2] == ' ' &&
-                    state.dpState[state.dpState.length - 1] == '+') {
-                    answer += state.val;
-                }
-            }
-        }
-        return answer + "";
+        return "" + dfs(id.get(startCell), 1L << id.get(startCell));
     }
 
-    private void addNextRow(State state, int row, int column, String left, State possibility) {
-        if (column == nodeGrid[row].length) {
-            if (validSigns(possibility)) {
-                conditionalPut(possibility);
+    void addEdge(Map<Integer, Integer> id, int from, int r, int c, int d, boolean part1) {
+        int steps = 0;
+        for (;;) {
+            r += DR[d];
+            c += DC[d];
+            steps++;
+            if (!ok(r, c)) return;
+            Integer to = id.get(cell(r, c));
+            if (to != null) {
+                graph[from].add(new int[]{to, steps});
+                return;
             }
-            return;
-        }
-        List<String> nextConnections = new ArrayList<>();
-        char above = state.dpState[column];
-        String newState = null;
-        if (above == ' ') {
-            if (left.equals(" ")) {
-                // node has no connections from above or left. It can either not have any connections at all, or start a new sub loop
-                nextConnections.add("  ");
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's not enough room to start a new loop
-                    nextConnections.add("+-");
-                }
-            } else {
-                // node has connection from the left but not from above. It can either pass its connection down or to the right
-                nextConnections.add(left + above);
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(above + left);
-                }
+            int next = -1;
+            for (int nd : dirs(grid[r][c], part1)) {
+                int nr = r + DR[nd], nc = c + DC[nd];
+                if (ok(nr, nc) && nd != (d + 2) % 4) next = nd;
             }
-        }
-        if (above == '+') {
-            if (left.equals(" ")) {
-                // node has connection from above but not from the eft. It can either pass its connection down or to the right
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(" +");
-                }
-                nextConnections.add("+ ");
-            }
-            if (left.equals("+")) {
-                // node is joining two loops together with different polarity. It cannot take more connections
-                // to correct the polarity issue, find the original - that matches with the current + that's being turned into a -. Set that - to a + to keep balance.
-                int index = possibility.dpState.length;
-                int amount = 1;
-                while (amount != 0) {
-                    index++;
-                    if (state.dpState[index] == '+') {
-                        amount++;
-                    }
-                    if (state.dpState[index] == '-') {
-                        amount--;
-                    }
-                }
-                // Create new state with corrected polarity
-                char[] newStateArray = new char[state.dpState.length];
-                System.arraycopy(state.dpState, 0, newStateArray, 0, state.dpState.length);
-                newStateArray[index] = '+';
-                State fixedState = new State("", 0);
-                fixedState.dpState = newStateArray;
-                newState = new String(newStateArray);
-                nextConnections.add("  !");
-            }
-            if (left.equals("-")) {
-                // node is joining two loops together with correct polarity. It cannot take more connections
-                nextConnections.add("  ");
-            }
-        }
-        if (above == '-') {
-            // node has connection from above but not from the eft. It can either pass its connection down or to the right
-            if (left.equals(" ")) {
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(" -");
-                }
-                nextConnections.add("- ");
-            }
-            if (left.equals("+")) {
-                // The path has split into disparate loops. The case should be rejected
-            }
-            if (left.equals("-")) {
-                // node is joining two loops together with different polarity. It cannot take more connections
-                // to correct the polarity issue, find the original + that matches with the current - that's being turned into a +. Set that + to a - to keep balance.
-                int index = possibility.dpState.length;
-                int amount = 1;
-                while (amount != 0) {
-                    index--;
-                    if (possibility.dpState[index] == '+') {
-                        amount--;
-                    }
-                    if (possibility.dpState[index] == '-') {
-                        amount++;
-                    }
-                }
-                possibility.dpState[index] = '-';
-                nextConnections.add("  ");
-            }
-        }
-        for (String nextConnection : nextConnections) {
-            State next = new State(possibility, nextConnection.charAt(0));
-            if (nextConnection.charAt(1) != ' ') {
-                Coordinate node = nodeGrid[row][column];
-                Coordinate rightNode = nodeGrid[row][column + 1];
-                if (node != null) {
-                    if (rightNode == null) {
-                        rightNode = nodeGrid[row + 1][column + 1];
-                    }
-                    for (Coordinate neighbor : neighbors.get(node)) {
-                        if (neighbor.equals(rightNode)) {
-                            next.val += neighbor.weight;
-                        }
-                    }
-                }
-
-            }
-            if (nextConnection.charAt(0) != ' ' && row < nodeGrid.length - 1) {
-                Coordinate node = nodeGrid[row][column];
-                Coordinate underNode = nodeGrid[row + 1][column];
-                if (node != null) {
-                    if (underNode == null) {
-                        underNode = nodeGrid[row + 1][column + 1];
-                    }
-                    for (Coordinate neighbor : neighbors.get(node)) {
-                        if (neighbor.equals(underNode)) {
-                            next.val += neighbor.weight;
-                        }
-                    }
-                }
-            }
-            if (nextConnection.length() > 2) {
-                State fixedState = new State("", 0);
-                fixedState.dpState = new char[state.dpState.length];
-                System.arraycopy(state.dpState, 0, fixedState.dpState, 0, state.dpState.length);
-                // Apply the newState correction
-                if (newState != null) {
-                    fixedState.dpState = newState.toCharArray();
-                }
-                addNextRow(fixedState, row, column + 1, nextConnection.substring(1, 2), next);
-            } else {
-                addNextRow(state, row, column + 1, nextConnection.substring(1, 2), next);
-            }
+            if (next < 0) return;
+            d = next;
         }
     }
 
-    private void conditionalPut(State possibility) {
-        if (!nextStates.contains(possibility)) {
-            nextStates.add(possibility);
-        } else {
-            for (State state : nextStates) {
-                if (state.dpState.length == possibility.dpState.length) {
-                    boolean equal = true;
-                    for (int i = 0; i < state.dpState.length; i++) {
-                        if (state.dpState[i] != possibility.dpState[i]) {
-                            equal = false;
-                            break;
-                        }
-                    }
-                    if (equal && possibility.val > state.val) {
-                        state.val = possibility.val;
-                    }
-                }
-            }
+    int dfs(int at, long seen) {
+        if (at == end) return 0;
+        int best = -1_000_000;
+        for (int[] e : graph[at]) {
+            long bit = 1L << e[0];
+            if ((seen & bit) == 0) best = Math.max(best, e[1] + dfs(e[0], seen | bit));
         }
+        return best;
     }
 
-    private boolean validSigns(State possibility) {
-        int sign = 0;
-        for (char c : possibility.dpState) {
-            if (c == '+') {
-                sign++;
-            }
-            if (c == '-') {
-                sign--;
-            }
-        }
-        return sign == 1;
+    int[] dirs(char ch, boolean part1) {
+        if (!part1) return new int[]{0, 1, 2, 3};
+        return switch (ch) {
+            case '>' -> new int[]{0};
+            case 'v' -> new int[]{1};
+            case '<' -> new int[]{2};
+            case '^' -> new int[]{3};
+            default -> new int[]{0, 1, 2, 3};
+        };
     }
 
-    private void constructGrid(Map<Coordinate, Set<Coordinate>> neighbors, Coordinate start) {
-        Set<Coordinate> used = new HashSet<>();
-        nodeGrid[0][0] = neighbors.get(start).iterator().next();
-        used.add(nodeGrid[0][0]);
-        for (int i = 1; i < nodeGrid[0].length - 1; i++) {
-            for (Coordinate neighbor : neighbors.get(nodeGrid[0][i - 1])) {
-                if (neighbors.get(neighbor).size() == 3 && !used.contains(neighbor)) {
-                    used.add(neighbor);
-                    nodeGrid[0][i] = neighbor;
-                    break;
-                }
-            }
-        }
-        for (int i = 1; i < nodeGrid.length; i++) {
-            for (int j = 0; j < nodeGrid[0].length; j++) {
-                if (i == 5 && j == 0) {
-                    continue;
-                }
-                for (Coordinate neighbor : neighbors.get(nodeGrid[i - 1][(i == 1) ? Math.min(j, 4) : j])) {
-                    if (nodeGrid[i][j] == null && !used.contains(neighbor)) {
-                        if (i == 1 && j == 4) {
-                            if (neighbors.get(neighbor).size() > 3) {
-                                used.add(neighbor);
-                                nodeGrid[i][j] = neighbor;
-                            }
-                        } else {
-                            if (neighbors.get(neighbor).size() > 1) {
-                                used.add(neighbor);
-                                nodeGrid[i][j] = neighbor;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    int degree(int r, int c) {
+        int n = 0;
+        for (int d = 0; d < 4; d++) if (ok(r + DR[d], c + DC[d])) n++;
+        return n;
     }
 
-    private void bfs(Coordinate start, Map<Coordinate, Set<Coordinate>> neighbors, int[][] grid, Set<Coordinate> intersections) {
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
-        Queue<Coordinate> queue = new LinkedList<>();
-        Set<Coordinate> visited = new HashSet<>();
-        queue.add(start);
-        neighbors.putIfAbsent(start, new HashSet<>());
-        while (!queue.isEmpty()) {
-            Coordinate curr = queue.poll();
-            for (int k = 0; k < 4; k++) {
-                if (grid[curr.x][curr.y] > 2 && k != grid[curr.x][curr.y] - 3) {
-                    continue;
-                }
-                Coordinate next = new Coordinate(curr.x + xs[k], curr.y + ys[k]);
-                if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && !visited.contains(next)) {
-                    next.weight = curr.weight + 1;
-                    if (intersections.contains(next) && !next.equals(start)) {
-                        neighbors.get(start).add(next);
-                    } else {
-                        if (grid[next.x][next.y] != 2) {
-                            queue.add(next);
-                            visited.add(next);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-class Path {
-    Set<Coordinate> coordsOnPath = new HashSet<>();
-    Coordinate latest;
-    int pathLength = 0;
-
-    public Path(Path root) {
-        coordsOnPath.addAll(root.coordsOnPath);
-        pathLength = root.pathLength;
+    boolean ok(int r, int c) {
+        return r >= 0 && c >= 0 && r < rows && c < cols && grid[r][c] != '#';
     }
 
-    public Path() {
-
-    }
-}
-
-class State {
-    char[] dpState;
-    int val;
-
-    public State(String dpState, int val) {
-        this.dpState = dpState.toCharArray();
-        this.val = val;
-    }
-
-    public State(State original, String append) {
-        this.dpState = new char[original.dpState.length + 1];
-        System.arraycopy(original.dpState, 0, this.dpState, 0, original.dpState.length);
-        this.dpState[original.dpState.length] = append.charAt(0);
-        this.val = original.val;
-    }
-
-    public State(State original, char append) {
-        this.dpState = new char[original.dpState.length + 1];
-        System.arraycopy(original.dpState, 0, this.dpState, 0, original.dpState.length);
-        this.dpState[original.dpState.length] = append;
-        this.val = original.val;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof State other) {
-            if (dpState.length != other.dpState.length) return false;
-            for (int i = 0; i < dpState.length; i++) {
-                if (dpState[i] != other.dpState[i]) return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = 1;
-        for (char c : dpState) {
-            result = 31 * result + c;
-        }
-        return result;
+    int cell(int r, int c) {
+        return r * cols + c;
     }
 }

@@ -13,45 +13,29 @@ public class Day11 implements DayTemplate {
     List<Integer> emptyV;
     List<Integer> emptyH;
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        parse(in);
-        long unstretched = getUnstretched();
-        long stretched = getStretched();
-        long answer1 = unstretched + stretched;
-        long answer2 = unstretched + 999999L * stretched;
-        return new String[]{answer1 + "", answer2 + ""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
         parse(in);
-        long answer = getUnstretched();
-        answer += getStretched() * (part1?1:999999L);
-        return answer + "";
+        long ans = getUnstretched();
+        ans += getStretched() * (part1?1:999999L);
+        return ans + "";
     }
 
-    private long getUnstretched(){
-        long answer = 0;
+    long getUnstretched(){
+        long ans = 0;
         for (int i = 0; i < galaxies.size(); i++) {
             for (int j = i + 1; j < galaxies.size(); j++) {
                 Coordinate g1 = galaxies.get(i);
                 Coordinate g2 = galaxies.get(j);
-                answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
+                ans += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
             }
         }
-        return answer;
+        return ans;
     }
 
-    private long getStretched(){
-        long answer = 0;
+    long getStretched(){
+        long ans = 0;
         for (Integer ind : emptyV) {
             int left = 0;
             for (Coordinate g : galaxies) {
@@ -59,7 +43,7 @@ public class Day11 implements DayTemplate {
                     left++;
                 }
             }
-            answer += (long) left * (galaxies.size() - left);
+            ans += (long) left * (galaxies.size() - left);
         }
         for (Integer ind : emptyH) {
             int up = 0;
@@ -68,12 +52,12 @@ public class Day11 implements DayTemplate {
                     up++;
                 }
             }
-            answer += (long) up * (galaxies.size() - up);
+            ans += (long) up * (galaxies.size() - up);
         }
-        return answer;
+        return ans;
     }
 
-    private void parse(Scanner in) {
+    void parse(Scanner in) {
         List<List<String>> space = new ArrayList<>();
         int index = 0;
         galaxies = new ArrayList<>();

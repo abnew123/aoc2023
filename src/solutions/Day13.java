@@ -11,60 +11,26 @@ public class Day13 implements DayTemplate {
     List<String> tmp = new ArrayList<>();
     List<Pattern> patterns = new ArrayList<>();
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        parse(in);
-        long answer1 = 0;
-        long answer2 = 0;
-        for (Pattern pattern : patterns) {
-            List<Long> vals1 = pattern.reflections(0);
-            List<Long> vals2 = pattern.reflections(1);
-            for (Long val : vals1) {
-                if(val < 0){
-                    answer1+= -100 * val;
-                }
-                else{
-                    answer1 += val;
-                }
-            }
-            for (Long val : vals2) {
-                if(val < 0){
-                    answer2+= -100 * val;
-                }
-                else{
-                    answer2 += val;
-                }
-            }
-        }
-        return new String[]{answer1 + "", answer2 + ""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long ans = 0;
         parse(in);
         for (Pattern pattern : patterns) {
             List<Long> vals = pattern.reflections(part1 ? 0 : 1);
             for (Long val : vals) {
                 if(val < 0){
-                    answer+= -100 * val;
+                    ans+= -100 * val;
                 }
                 else{
-                    answer += val;
+                    ans += val;
                 }
             }
         }
-        return answer + "";
+        return ans + "";
     }
 
-    private void parse(Scanner in){
+    void parse(Scanner in){
         tmp = new ArrayList<>();
         patterns = new ArrayList<>();
         while (in.hasNext()) {
@@ -106,7 +72,7 @@ class Pattern {
         return ret;
     }
 
-    private List<Long> vert(int closeness) {
+    List<Long> vert(int closeness) {
         List<Long> ret = new ArrayList<>();
         for (int i = 1; i < cols; i++) {
             if(vertHelper(i, closeness)){
@@ -116,7 +82,7 @@ class Pattern {
         return ret;
     }
 
-    private boolean vertHelper(int i, int closeness){
+    boolean vertHelper(int i, int closeness){
         boolean oneOff = false;
         for (int j = 0; j < rows; j++) {
             boolean firstHalf = i <= cols / 2;
@@ -134,7 +100,7 @@ class Pattern {
         return closeness == 0 || oneOff;
     }
 
-    private List<Long> horiz(int closeness) {
+    List<Long> horiz(int closeness) {
         List<Long> ret = new ArrayList<>();
         for (int i = 1; i < rows; i++) {
             if(horizHelper(i, closeness)){
@@ -144,7 +110,7 @@ class Pattern {
         return ret;
     }
 
-    private boolean horizHelper(int i, int closeness){
+    boolean horizHelper(int i, int closeness){
         boolean oneOff = false;
         for (int j = 0; j < cols; j++) {
             boolean firstHalf = i <= rows / 2;

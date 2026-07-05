@@ -11,40 +11,24 @@ public class Day03 implements DayTemplate {
     Map<Integer, List<Integer>> gears = new HashMap<>();
     Map<Integer, List<Integer>> symbols = new HashMap<>();
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        long answer1;
-        long answer2;
-        int index = initialize(in);
-        answer1 = part1(index);
-        answer2 = part2(index);
-        return new String[]{answer1+"", answer2+""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer;
+        long ans;
         int index = initialize(in);
         if (part1) {
-            answer = part1(index);
+            ans = part1(index);
         } else {
-            answer = part2(index);
+            ans = part2(index);
         }
-        return answer + "";
+        return ans + "";
     }
 
-    private boolean matches(SchematicNum num, int coord) {
+    boolean matches(SchematicNum num, int coord) {
         return (coord >= num.start - 1 && coord <= num.end + 1);
     }
 
-    private List<SchematicNum> addNums(String line) {
+    List<SchematicNum> addNums(String line) {
         List<SchematicNum> tmp = new ArrayList<>();
         int index = 0;
         while (index < line.length()) {
@@ -60,7 +44,7 @@ public class Day03 implements DayTemplate {
         return tmp;
     }
 
-    private List<Integer> addSymbols(String line, boolean justGears) {
+    List<Integer> addSymbols(String line, boolean justGears) {
         List<Integer> tmp = new ArrayList<>();
         for (int i = 0; i < line.length(); i++) {
             if (!Character.isDigit(line.charAt(i)) && line.charAt(i) != '.') {
@@ -73,7 +57,7 @@ public class Day03 implements DayTemplate {
         return tmp;
     }
 
-    private int initialize(Scanner in) {
+    int initialize(Scanner in) {
         int index = 0;
         while (in.hasNext()) {
             String line = in.nextLine();
@@ -86,24 +70,24 @@ public class Day03 implements DayTemplate {
         return index;
     }
 
-    private long part1(int index) {
-        long answer = 0;
+    long part1(int index) {
+        long ans = 0;
         for (int i = 0; i < index; i++) {
             for (SchematicNum num : nums.get(i)) {
                 for (int j = Math.max(0, i - 1); j <= Math.min(i + 1, index - 1); j++) {
                     for (Integer symbol : symbols.get(j)) {
                         if (matches(num, symbol)) {
-                            answer += Integer.parseInt(lines.get(i).substring(num.start, num.end + 1));
+                            ans += Integer.parseInt(lines.get(i).substring(num.start, num.end + 1));
                         }
                     }
                 }
             }
         }
-        return answer;
+        return ans;
     }
 
-    private long part2(int index) {
-        long answer = 0;
+    long part2(int index) {
+        long ans = 0;
         for (int i = 0; i < index; i++) {
             for (Integer gear : gears.get(i)) {
                 int gearVal = 1;
@@ -117,11 +101,11 @@ public class Day03 implements DayTemplate {
                     }
                 }
                 if (nearNums == 2) {
-                    answer += gearVal;
+                    ans += gearVal;
                 }
             }
         }
-        return answer;
+        return ans;
     }
 
 }

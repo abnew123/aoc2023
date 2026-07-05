@@ -6,36 +6,10 @@ import java.util.*;
 
 public class Day07 implements DayTemplate {
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        long answer1 = 0;
-        long answer2 = 0;
-        List<Hand> hands1 = new ArrayList<>();
-        List<Hand> hands2 = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            hands1.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), true));
-            hands2.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), false));
-        }
-        Collections.sort(hands1);
-        Collections.sort(hands2);
-        for (int i = 0; i < hands1.size(); i++) {
-            answer1 += (long) hands1.get(i).bid * (i + 1);
-            answer2 += (long) hands2.get(i).bid * (i + 1);
-        }
-        return new String[]{answer1 + "", answer2 + ""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        long ans = 0;
         List<Hand> hands = new ArrayList<>();
         while (in.hasNext()) {
             String line = in.nextLine();
@@ -43,9 +17,9 @@ public class Day07 implements DayTemplate {
         }
         Collections.sort(hands);
         for (int i = 0; i < hands.size(); i++) {
-            answer += (long) hands.get(i).bid * (i + 1);
+            ans += (long) hands.get(i).bid * (i + 1);
         }
-        return answer + "";
+        return ans + "";
     }
 }
 
@@ -80,11 +54,10 @@ class Hand implements Comparable<Hand> {
         freqs[freqs.length - 1] += numJokers;
         strength = 2 * freqs[freqs.length - 1];
         if (freqs[freqs.length - 2] == 2) {
-            strength += 1; //for full house and two pair
+            strength += 1; 
         }
     }
 
-    @Override
     public int compareTo(Hand o) {
         if (strength != o.strength) {
             return strength - o.strength;
@@ -98,7 +71,6 @@ class Hand implements Comparable<Hand> {
         }
     }
 
-    @Override
     public boolean equals(Object other){
         if(other instanceof Hand o){
             if (strength != o.strength) {
@@ -115,7 +87,6 @@ class Hand implements Comparable<Hand> {
         return false;
     }
 
-    @Override
     public int hashCode(){
         return strength;
     }

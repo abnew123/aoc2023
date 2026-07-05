@@ -48,7 +48,10 @@ public interface DayTemplate {
      * @param in    The solver will read data from this Scanner.
      * @return Returns answer as a string array, with part 1 as index 0 and part 2 as index 1
      */
-    default String[] fullSolve(Scanner in) { return new String[2]; }
+    default String[] fullSolve(Scanner in) {
+        String text = in.useDelimiter("\\A").hasNext() ? in.next() : "";
+        return new String[]{solve(true, new Scanner(text)), solve(false, new Scanner(text))};
+    }
 
     /**
      * Some classes require additional, non code steps (e.g. judge an image output).

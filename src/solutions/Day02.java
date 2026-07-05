@@ -10,37 +10,17 @@ public class Day02 implements DayTemplate {
     static final String GREEN = "green";
     static final String BLUE = "blue";
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        int answer1 = 0;
-        int answer2 = 0;
-        while (in.hasNext()) {
-            String[] parts = in.nextLine().split("[:;]");
-            int index = Integer.parseInt(parts[0].split(" ")[1]);
-            Map<String, Integer> totals = computeTotals(parts);
-            answer1 += part1Add(totals, index);
-            answer2 += part2Add(totals);
-        }
-        return new String[]{answer1 + "", answer2+ ""};
-    }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    
     public String solve(boolean part1, Scanner in) {
-        int answer = 0;
+        int ans = 0;
         while (in.hasNext()) {
             String[] parts = in.nextLine().split("[:;]");
             int index = Integer.parseInt(parts[0].split(" ")[1]);
             Map<String, Integer> totals = computeTotals(parts);
-            answer += part1?part1Add(totals, index): part2Add(totals);
+            ans += part1?part1Add(totals, index): part2Add(totals);
         }
-        return answer + "";
+        return ans + "";
     }
 
     public Map<String, Integer> computeTotals(String[] parts){
@@ -58,14 +38,14 @@ public class Day02 implements DayTemplate {
         return totals;
     }
 
-    private int part1Add(Map<String, Integer> totals, int index){
+    int part1Add(Map<String, Integer> totals, int index){
         if (totals.get(RED) <= 12 && totals.get(GREEN) <= 13 && totals.get(BLUE) <= 14) {
             return index;
         }
         return 0;
     }
 
-    private int part2Add(Map<String, Integer> totals){
+    int part2Add(Map<String, Integer> totals){
         return totals.get(RED) * totals.get(GREEN) * totals.get(BLUE);
     }
 }

@@ -4,22 +4,10 @@ import src.meta.DayTemplate;
 
 import java.util.*;
 
-/* Major inspiration drawn from the following rust solution
- * https://github.com/maneatingape/advent-of-code-rust/blob/main/src/year2023/day25.rs
- * Did not do the low level optimizations, but roughly followed the high level solution
- */
+
 
 public class Day25 implements DayTemplate {
 
-    @Override
-    public String[] fullSolve(Scanner in) {
-        Map<String, List<String>> graph = parse(in);
-        List<String> verticesList = new ArrayList<>(graph.keySet());
-        String start = bfs(verticesList.getFirst(), graph);
-        String end = bfs(start, graph);
-        int size = getSize(start, end, graph);
-        return new String[]{size * (verticesList.size() - size) + "", "Merry Christmas!"};
-    }
 
     public String solve(boolean part1, Scanner in) {
         if (!part1) {
@@ -33,64 +21,64 @@ public class Day25 implements DayTemplate {
         return size * (verticesList.size() - size) + "";
     }
 
-    private Map<String, List<String>> parse(Scanner in){
+    Map<String, List<String>> parse(Scanner in){
         Map<String, List<String>> graph = new HashMap<>();
         while (in.hasNext()) {
             String[] line = in.nextLine().split(":");
-            String source = line[0];
-            String[] targets = line[1].trim().split(" ");
+            String src = line[0];
+            String[] tars = line[1].trim().split(" ");
             
-            // Ensure source exists in graph
-            graph.putIfAbsent(source, new ArrayList<>());
             
-            // Process all targets at once
-            for (String target : targets) {
-                graph.putIfAbsent(target, new ArrayList<>());
-                graph.get(source).add(target);
-                graph.get(target).add(source);
+            graph.putIfAbsent(src, new ArrayList<>());
+            
+            
+            for (String tar : tars) {
+                graph.putIfAbsent(tar, new ArrayList<>());
+                graph.get(src).add(tar);
+                graph.get(tar).add(src);
             }
         }
         return graph;
     }
 
-    private String bfs(String node, Map<String, List<String>> graph) {
+    String bfs(String node, Map<String, List<String>> graph) {
         String ret = "";
         Queue<String> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
         queue.add(node);
         while (!queue.isEmpty()) {
             ret = queue.poll();
-            for (String neighbor : graph.get(ret)) {
-                if (!visited.contains(neighbor)) {
-                    queue.add(neighbor);
-                    visited.add(neighbor);
+            for (String nbr : graph.get(ret)) {
+                if (!visited.contains(nbr)) {
+                    queue.add(nbr);
+                    visited.add(nbr);
                 }
             }
         }
         return ret;
     }
 
-    private int getSize(String start, String end, Map<String, List<String>> graph) {
-        int result = 0;
+    int getSize(String start, String end, Map<String, List<String>> graph) {
+        int res = 0;
         Queue<Route> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
         Set<Edge> usedEdges = new HashSet<>();
         for (int i = 0; i < 4; i++) {
-            result = 0;
+            res = 0;
             queue.add(new Route(start));
             visited.add(start);
             while (!queue.isEmpty()) {
-                result++;
-                Route current = queue.poll();
-                if (current.vertex.equals(end)) {
-                    usedEdges.addAll(current.edges);
+                res++;
+                Route cur = queue.poll();
+                if (cur.vertex.equals(end)) {
+                    usedEdges.addAll(cur.edges);
                     break;
                 }
-                for (String neighbor : graph.get(current.vertex)) {
-                    Edge e = new Edge(current.vertex, neighbor);
-                    if (!visited.contains(neighbor) && !usedEdges.contains(e)) {
-                        visited.add(neighbor);
-                        queue.add(new Route(neighbor, current));
+                for (String nbr : graph.get(cur.vertex)) {
+                    Edge e = new Edge(cur.vertex, nbr);
+                    if (!visited.contains(nbr) && !usedEdges.contains(e)) {
+                        visited.add(nbr);
+                        queue.add(new Route(nbr, cur));
                     }
                 }
             }
@@ -98,7 +86,7 @@ public class Day25 implements DayTemplate {
             queue = new LinkedList<>();
         }
 
-        return result;
+        return res;
     }
 
 }
@@ -112,10 +100,10 @@ class Route {
         edges = new ArrayList<>();
     }
 
-    public Route(String next, Route current) {
+    public Route(String next, Route cur) {
         vertex = next;
-        edges = new ArrayList<>(current.edges);
-        edges.add(new Edge(current.vertex, next));
+        edges = new ArrayList<>(cur.edges);
+        edges.add(new Edge(cur.vertex, next));
     }
 
     public String toString() {
@@ -133,7 +121,6 @@ class Edge {
         end = (s.compareTo(e) > 0) ? e : s;
     }
 
-    @Override
     public boolean equals(Object o) {
         if (o instanceof Edge edge) {
             return start.equals(edge.start) && end.equals(edge.end);
@@ -141,7 +128,6 @@ class Edge {
         return false;
     }
 
-    @Override
     public int hashCode() {
         return Objects.hash(start, end);
     }
