@@ -17,24 +17,8 @@ public class Day13 implements DayTemplate {
         long answer1 = 0;
         long answer2 = 0;
         for (Pattern pattern : patterns) {
-            List<Long> vals1 = pattern.reflections(0);
-            List<Long> vals2 = pattern.reflections(1);
-            for (Long val : vals1) {
-                if(val < 0){
-                    answer1+= -100 * val;
-                }
-                else{
-                    answer1 += val;
-                }
-            }
-            for (Long val : vals2) {
-                if(val < 0){
-                    answer2+= -100 * val;
-                }
-                else{
-                    answer2 += val;
-                }
-            }
+            answer1 += summarizePattern(pattern, 0);
+            answer2 += summarizePattern(pattern, 1);
         }
         return new String[]{answer1 + "", answer2 + ""};
     }
@@ -51,17 +35,24 @@ public class Day13 implements DayTemplate {
         long answer = 0;
         parse(in);
         for (Pattern pattern : patterns) {
-            List<Long> vals = pattern.reflections(part1 ? 0 : 1);
-            for (Long val : vals) {
-                if(val < 0){
-                    answer+= -100 * val;
-                }
-                else{
-                    answer += val;
-                }
-            }
+            answer += summarizePattern(pattern, part1 ? 0 : 1);
         }
         return answer + "";
+    }
+
+    private long summarizePattern(Pattern pattern, int closeness) {
+        long summary = 0;
+        for (Long reflection : pattern.reflections(closeness)) {
+            summary += scoreReflection(reflection);
+        }
+        return summary;
+    }
+
+    private long scoreReflection(Long reflection) {
+        if (reflection < 0) {
+            return -100 * reflection;
+        }
+        return reflection;
     }
 
     private void parse(Scanner in){
