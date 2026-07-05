@@ -5,257 +5,172 @@ import src.meta.DayTemplate;
 import java.util.*;
 
 public class Day20 implements DayTemplate {
+    static final int OUT = -1, BC = 0, FF = 1, CJ = 2;
+    Map<String, Integer> ids;
+    ArrayList<Integer> tl;
+    ArrayList<int[]> ol;
+    int button, broadcaster, rx = -1, head, tail;
+    int[] type, qi = new int[256], qt = new int[256];
+    int[][] out, inputs;
+    boolean[] flip, qh;
+    boolean[][] mem;
 
-    static String B = "broadcaster";
-    static int OUT = -1;
-    static int BC = 0;
-    static int FF = 1;
-    static int CJ = 2;
-
-
-    
     public String solve(boolean part1, Scanner in) {
-        Network net = new Network(readLines(in));
-        long ans = part1 ? part1(net) : part2(net, net.rxInput);
-        return ans + "";
+        build(in);
+        long ans = part1 ? pulses() : cycles();
+        return "" + ans;
     }
 
-    static List<String> readLines(Scanner in) {
-        List<String> lines = new ArrayList<>();
+    void build(Scanner in) {
+        ids = new HashMap<>();
+        tl = new ArrayList<>();
+        ol = new ArrayList<>();
+        button = id("button");
+        broadcaster = id("broadcaster");
         while (in.hasNextLine()) {
-            lines.add(in.nextLine());
+            String[] s = in.nextLine().split(" -> "), ts = s[1].split(", ");
+            int t = s[0].charAt(0) == '%' ? FF : s[0].charAt(0) == '&' ? CJ : BC;
+            String name = t == BC ? s[0] : s[0].substring(1);
+            int src = id(name);
+            tl.set(src, t);
+            int[] a = new int[ts.length];
+            for (int i = 0; i < ts.length; i++) {
+                a[i] = id(ts[i]);
+                if (ts[i].equals("rx")) {
+                    rx = src;
+                }
+            }
+            ol.set(src, a);
         }
-        return lines;
+        int n = ids.size();
+        type = new int[n];
+        out = new int[n][];
+        ArrayList<ArrayList<Integer>> ins = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            type[i] = tl.get(i);
+            out[i] = ol.get(i);
+            ins.add(new ArrayList<>());
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j : out[i]) {
+                if (type[j] == CJ) {
+                    ins.get(j).add(i);
+                }
+            }
+        }
+        inputs = new int[n][];
+        mem = new boolean[n][];
+        for (int i = 0; i < n; i++) {
+            inputs[i] = ins.get(i).stream().mapToInt(Integer::intValue).toArray();
+            if (type[i] == CJ) {
+                mem[i] = new boolean[inputs[i].length];
+            }
+        }
+        flip = new boolean[n];
+        qh = new boolean[256];
     }
 
-    long part1(Network net) {
-        long hi = 0;
-        long lo = 0;
+    int id(String s) {
+        Integer old = ids.get(s);
+        if (old != null) {
+            return old;
+        }
+        int n = ids.size();
+        ids.put(s, n);
+        tl.add(OUT);
+        ol.add(new int[0]);
+        return n;
+    }
+
+    long pulses() {
+        long hi = 0, lo = 0;
         for (int i = 0; i < 1000; i++) {
-            net.clearQueue();
-            net.enqueue(false, net.broadcaster, net.button);
-            while (net.hasPulse()) {
-                Pulse pulse = net.nextPulse();
-                if (pulse.high) {
+            start();
+            while (head < tail) {
+                if (qh[head]) {
                     hi++;
                 } else {
                     lo++;
                 }
-                net.sendPulse(pulse);
+                send(qt[head], qi[head], qh[head++]);
             }
         }
         return hi * lo;
     }
 
-    long part2(Network net, int rxInput) {
-        long ans = 1;
-        int[] allInputs = net.inputsTo(rxInput);
-        int[] seenOk = new int[allInputs.length];
-        int seenN = 0;
-        for (int i = 1; i < 10000 && seenN < allInputs.length; i++) {
-            net.clearQueue();
-            net.enqueue(false, net.broadcaster, net.button);
-            while (net.hasPulse()) {
-                Pulse pulse = net.nextPulse();
-                if (pulse.high) {
-                    for (int j = 0; j < allInputs.length; j++) {
-                        if (pulse.input == allInputs[j] && seenOk[j] == 0) {
-                            seenOk[j] = i;
-                            seenN++;
-                        }
+    long cycles() {
+        int[] want = inputsTo(rx), seen = new int[want.length];
+        for (int press = 1, found = 0; press < 10000 && found < want.length; press++) {
+            start();
+            while (head < tail) {
+                for (int i = 0; qh[head] && i < want.length; i++) {
+                    if (qi[head] == want[i] && seen[i] == 0) {
+                        seen[i] = press;
+                        found++;
                     }
                 }
-                net.sendPulse(pulse);
+                send(qt[head], qi[head], qh[head++]);
             }
         }
-        for (int success : seenOk) {
-            ans *= success;
+        long ans = 1;
+        for (int n : seen) {
+            ans *= n;
         }
         return ans;
     }
 
-    static class Network {
-        Map<String, Integer> ids = new HashMap<>();
-        List<Integer> tl = new ArrayList<>();
-        List<int[]> tarList = new ArrayList<>();
+    void start() {
+        head = tail = 0;
+        add(false, broadcaster, button);
+    }
 
-        int button;
-        int broadcaster;
-        int rxInput = -1;
-
-        int[] types;
-        int[][] tars;
-        int[][] inputs;
-        boolean[] flip;
-        boolean[][] mem;
-
-        int[] qi = new int[256];
-        int[] qt = new int[256];
-        boolean[] qh = new boolean[256];
-        int head;
-        int tail;
-
-        Network(List<String> lines) {
-            button = id("button");
-            broadcaster = id(B);
-            for (String line : lines) {
-                String[] sides = line.split(" -> ");
-                String rawName = sides[0];
-                int type;
-                String name;
-                if (rawName.charAt(0) == '%') {
-                    type = FF;
-                    name = rawName.substring(1);
-                } else if (rawName.charAt(0) == '&') {
-                    type = CJ;
-                    name = rawName.substring(1);
-                } else {
-                    type = BC;
-                    name = rawName;
-                }
-
-                int src = id(name);
-                tl.set(src, type);
-
-                String[] tarNames = sides[1].split(", ");
-                int[] tarIds = new int[tarNames.length];
-                for (int i = 0; i < tarNames.length; i++) {
-                    int tar = id(tarNames[i]);
-                    tarIds[i] = tar;
-                    if (tarNames[i].equals("rx")) {
-                        rxInput = src;
-                    }
-                }
-                tarList.set(src, tarIds);
-            }
-
-            int size = tl.size();
-            types = new int[size];
-            tars = new int[size][];
-            ArrayList<ArrayList<Integer>> inLists = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                types[i] = tl.get(i);
-                tars[i] = tarList.get(i);
-                inLists.add(new ArrayList<>());
-            }
-            for (int src = 0; src < size; src++) {
-                for (int tar : tars[src]) {
-                    if (types[tar] == CJ) {
-                        inLists.get(tar).add(src);
-                    }
-                }
-            }
-
-            inputs = new int[size][];
-            mem = new boolean[size][];
-            for (int i = 0; i < size; i++) {
-                inputs[i] = inLists.get(i).stream().mapToInt(Integer::intValue).toArray();
-                if (types[i] == CJ) {
-                    mem[i] = new boolean[inputs[i].length];
-                }
-            }
-            flip = new boolean[size];
+    void send(int tar, int input, boolean high) {
+        if (type[tar] == OUT) {
+            return;
         }
-
-        int id(String name) {
-            Integer existing = ids.get(name);
-            if (existing != null) {
-                return existing;
-            }
-            int id = ids.size();
-            ids.put(name, id);
-            tl.add(OUT);
-            tarList.add(new int[0]);
-            return id;
-        }
-
-        int[] inputsTo(int module) {
-            int count = 0;
-            for (int src = 0; src < tars.length; src++) {
-                for (int tar : tars[src]) {
-                    if (tar == module) {
-                        count++;
-                    }
-                }
-            }
-            int[] res = new int[count];
-            int index = 0;
-            for (int src = 0; src < tars.length; src++) {
-                for (int tar : tars[src]) {
-                    if (tar == module) {
-                        res[index++] = src;
-                    }
-                }
-            }
-            return res;
-        }
-
-        void clearQueue() {
-            head = 0;
-            tail = 0;
-        }
-
-        boolean hasPulse() {
-            return head < tail;
-        }
-
-        Pulse nextPulse() {
-            return new Pulse(qh[head], qt[head], qi[head++]);
-        }
-
-        void enqueue(boolean high, int tar, int input) {
-            if (tail == qt.length) {
-                int newLength = qt.length * 2;
-                qt = Arrays.copyOf(qt, newLength);
-                qi = Arrays.copyOf(qi, newLength);
-                qh = Arrays.copyOf(qh, newLength);
-            }
-            qh[tail] = high;
-            qt[tail] = tar;
-            qi[tail] = input;
-            tail++;
-        }
-
-        void sendPulse(Pulse pulse) {
-            int type = types[pulse.tar];
-            if (type == OUT) {
+        if (type[tar] == FF) {
+            if (high) {
                 return;
             }
-            if (type == BC) {
-                sendToTargets(false, pulse.tar);
-            } else if (type == FF) {
-                if (!pulse.high) {
-                    flip[pulse.tar] = !flip[pulse.tar];
-                    sendToTargets(flip[pulse.tar], pulse.tar);
+            flip[tar] = !flip[tar];
+            high = flip[tar];
+        } else if (type[tar] == CJ) {
+            boolean all = true;
+            for (int i = 0; i < inputs[tar].length; i++) {
+                if (inputs[tar][i] == input) {
+                    mem[tar][i] = high;
                 }
-            } else {
-                boolean[] memory = mem[pulse.tar];
-                int[] ins0 = inputs[pulse.tar];
-                for (int i = 0; i < ins0.length; i++) {
-                    if (ins0[i] == pulse.input) {
-                        memory[i] = pulse.high;
-                        break;
-                    }
-                }
-
-                boolean allHigh = true;
-                for (boolean high : memory) {
-                    if (!high) {
-                        allHigh = false;
-                        break;
-                    }
-                }
-                sendToTargets(!allHigh, pulse.tar);
+                all &= mem[tar][i];
             }
+            high = !all;
+        } else {
+            high = false;
         }
-
-        void sendToTargets(boolean high, int src) {
-            for (int tar : tars[src]) {
-                enqueue(high, tar, src);
-            }
+        for (int t : out[tar]) {
+            add(high, t, tar);
         }
     }
 
-    record Pulse(boolean high, int tar, int input) {
+    void add(boolean high, int tar, int input) {
+        if (tail == qt.length) {
+            qt = Arrays.copyOf(qt, tail * 2);
+            qi = Arrays.copyOf(qi, tail * 2);
+            qh = Arrays.copyOf(qh, tail * 2);
+        }
+        qh[tail] = high;
+        qt[tail] = tar;
+        qi[tail++] = input;
+    }
+
+    int[] inputsTo(int mod) {
+        ArrayList<Integer> a = new ArrayList<>();
+        for (int i = 0; i < out.length; i++) {
+            for (int j : out[i]) {
+                if (j == mod) {
+                    a.add(i);
+                }
+            }
+        }
+        return a.stream().mapToInt(Integer::intValue).toArray();
     }
 }

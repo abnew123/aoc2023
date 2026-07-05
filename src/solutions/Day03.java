@@ -5,117 +5,53 @@ import src.meta.DayTemplate;
 import java.util.*;
 
 public class Day03 implements DayTemplate {
-
-    List<String> lines = new ArrayList<>();
-    Map<Integer, List<SchematicNum>> nums = new HashMap<>();
-    Map<Integer, List<Integer>> gears = new HashMap<>();
-    Map<Integer, List<Integer>> symbols = new HashMap<>();
-
-
-    
     public String solve(boolean part1, Scanner in) {
-        long ans;
-        int index = initialize(in);
-        if (part1) {
-            ans = part1(index);
-        } else {
-            ans = part2(index);
+        List<String> g = new ArrayList<>();
+        while (in.hasNextLine()) {
+            g.add(in.nextLine());
         }
-        return ans + "";
-    }
-
-    boolean matches(SchematicNum num, int coord) {
-        return (coord >= num.start - 1 && coord <= num.end + 1);
-    }
-
-    List<SchematicNum> addNums(String line) {
-        List<SchematicNum> tmp = new ArrayList<>();
-        int index = 0;
-        while (index < line.length()) {
-            if (Character.isDigit(line.charAt(index))) {
-                int start = index;
-                while (index < line.length() - 1 && Character.isDigit(line.charAt(index + 1))) {
-                    index++;
-                }
-                tmp.add(new SchematicNum(start, index));
-            }
-            index++;
-        }
-        return tmp;
-    }
-
-    List<Integer> addSymbols(String line, boolean justGears) {
-        List<Integer> tmp = new ArrayList<>();
-        for (int i = 0; i < line.length(); i++) {
-            if (!Character.isDigit(line.charAt(i)) && line.charAt(i) != '.') {
-                if (line.charAt(i) != '*' && justGears) {
+        long ans = 0;
+        Map<Integer, List<Integer>> gears = new HashMap<>();
+        int rows = g.size(), cols = g.get(0).length();
+        for (int r = 0; r < rows; r++) {
+            String s = g.get(r);
+            for (int c = 0; c < cols; c++) {
+                if (!Character.isDigit(s.charAt(c))) {
                     continue;
                 }
-                tmp.add(i);
-            }
-        }
-        return tmp;
-    }
-
-    int initialize(Scanner in) {
-        int index = 0;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            lines.add(line);
-            nums.put(index, addNums(line));
-            gears.put(index, addSymbols(line, true));
-            symbols.put(index, addSymbols(line, false));
-            index++;
-        }
-        return index;
-    }
-
-    long part1(int index) {
-        long ans = 0;
-        for (int i = 0; i < index; i++) {
-            for (SchematicNum num : nums.get(i)) {
-                for (int j = Math.max(0, i - 1); j <= Math.min(i + 1, index - 1); j++) {
-                    for (Integer symbol : symbols.get(j)) {
-                        if (matches(num, symbol)) {
-                            ans += Integer.parseInt(lines.get(i).substring(num.start, num.end + 1));
+                int start = c, n = 0;
+                while (c < cols && Character.isDigit(s.charAt(c))) {
+                    n = 10 * n + s.charAt(c++) - '0';
+                }
+                boolean ok = false;
+                Set<Integer> near = new HashSet<>();
+                for (int rr = Math.max(0, r - 1); rr <= Math.min(rows - 1, r + 1); rr++) {
+                    for (int cc = Math.max(0, start - 1); cc <= Math.min(cols - 1, c); cc++) {
+                        char ch = g.get(rr).charAt(cc);
+                        if (!Character.isDigit(ch) && ch != '.') {
+                            ok = true;
+                        }
+                        if (ch == '*') {
+                            near.add(rr * cols + cc);
                         }
                     }
                 }
+                if (part1 && ok) {
+                    ans += n;
+                }
+                for (int gear : near) {
+                    gears.computeIfAbsent(gear, k -> new ArrayList<>()).add(n);
+                }
+                c--;
             }
         }
-        return ans;
-    }
-
-    long part2(int index) {
-        long ans = 0;
-        for (int i = 0; i < index; i++) {
-            for (Integer gear : gears.get(i)) {
-                int gearVal = 1;
-                int nearNums = 0;
-                for (int j = Math.max(0, i - 1); j <= Math.min(i + 1, index - 1); j++) {
-                    for (SchematicNum num : nums.get(j)) {
-                        if (matches(num, gear)) {
-                            gearVal *= Integer.parseInt(lines.get(j).substring(num.start, num.end + 1));
-                            nearNums++;
-                        }
-                    }
-                }
-                if (nearNums == 2) {
-                    ans += gearVal;
+        if (!part1) {
+            for (List<Integer> a : gears.values()) {
+                if (a.size() == 2) {
+                    ans += a.get(0) * a.get(1);
                 }
             }
         }
-        return ans;
-    }
-
-}
-
-class SchematicNum {
-    int start;
-    int end;
-
-    public SchematicNum(int s, int e) {
-        start = s;
-        end = e;
+        return "" + ans;
     }
 }
