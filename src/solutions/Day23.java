@@ -24,57 +24,70 @@ public class Day23 implements DayTemplate {
         Coordinate start = endpoints[0];
         Coordinate end = endpoints[1];
         if (part1) {
-            Path path = new Path();
-            path.coordsOnPath.add(start);
-            path.latest = start;
-            Deque<Path> stack = new LinkedList<>();
-            stack.push(path);
-            while (!stack.isEmpty()) {
-                Path p = stack.pop();
-                Coordinate current = p.latest;
-                for (Coordinate next : neighbors.get(current)) {
-                    if (next.equals(end)) {
-                        if (p.pathLength + next.weight > answer) {
-                            answer = p.pathLength + next.weight;
-                        }
-                        break;
-                    }
-                    if (!p.coordsOnPath.contains(next)) {
-                        Path newPath = new Path(p);
-                        newPath.latest = next;
-                        newPath.coordsOnPath.add(next);
-                        newPath.pathLength += next.weight;
-                        stack.push(newPath);
-                    }
-                }
-            }
+            answer = longestPathBetweenIntersections(start, end);
         } else {
-            answer += neighbors.get(start).iterator().next().weight;
-            answer += neighbors.get(end).iterator().next().weight;
-            constructGrid(neighbors, start);
-            Set<State> states = new HashSet<>();
-            states.add(new State("+      ", 0));
-            for (int i = 0; i < 6; i++) {
-                for (State state : states) {
-                    addNextRow(state, i, 0, " ", new State("", state.val));
+            answer = longestCondensedPath(start, end);
+        }
+        return answer + "";
+    }
+
+    private int longestPathBetweenIntersections(Coordinate start, Coordinate end) {
+        int answer = 0;
+        Path path = new Path();
+        path.coordsOnPath.add(start);
+        path.latest = start;
+        Deque<Path> stack = new LinkedList<>();
+        stack.push(path);
+        while (!stack.isEmpty()) {
+            Path p = stack.pop();
+            Coordinate current = p.latest;
+            for (Coordinate next : neighbors.get(current)) {
+                if (next.equals(end)) {
+                    answer = Math.max(answer, p.pathLength + next.weight);
+                    break;
                 }
-                states = nextStates;
-                nextStates = new HashSet<>();
-            }
-            for (State state : states) {
-                // Check if the state ends with "     +"
-                if (state.dpState.length >= 6 && 
-                    state.dpState[state.dpState.length - 6] == ' ' &&
-                    state.dpState[state.dpState.length - 5] == ' ' &&
-                    state.dpState[state.dpState.length - 4] == ' ' &&
-                    state.dpState[state.dpState.length - 3] == ' ' &&
-                    state.dpState[state.dpState.length - 2] == ' ' &&
-                    state.dpState[state.dpState.length - 1] == '+') {
-                    answer += state.val;
+                if (!p.coordsOnPath.contains(next)) {
+                    Path newPath = new Path(p);
+                    newPath.latest = next;
+                    newPath.coordsOnPath.add(next);
+                    newPath.pathLength += next.weight;
+                    stack.push(newPath);
                 }
             }
         }
-        return answer + "";
+        return answer;
+    }
+
+    private int longestCondensedPath(Coordinate start, Coordinate end) {
+        int answer = 0;
+        answer += neighbors.get(start).iterator().next().weight;
+        answer += neighbors.get(end).iterator().next().weight;
+        constructGrid(neighbors, start);
+        Set<State> states = new HashSet<>();
+        states.add(new State("+      ", 0));
+        for (int i = 0; i < 6; i++) {
+            for (State state : states) {
+                addNextRow(state, i, 0, " ", new State("", state.val));
+            }
+            states = nextStates;
+            nextStates = new HashSet<>();
+        }
+        for (State state : states) {
+            if (endsAtExit(state)) {
+                answer += state.val;
+            }
+        }
+        return answer;
+    }
+
+    private boolean endsAtExit(State state) {
+        return state.dpState.length >= 6 &&
+                state.dpState[state.dpState.length - 6] == ' ' &&
+                state.dpState[state.dpState.length - 5] == ' ' &&
+                state.dpState[state.dpState.length - 4] == ' ' &&
+                state.dpState[state.dpState.length - 3] == ' ' &&
+                state.dpState[state.dpState.length - 2] == ' ' &&
+                state.dpState[state.dpState.length - 1] == '+';
     }
 
     private int[][] parseGrid(Scanner in, boolean part1) {
