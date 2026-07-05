@@ -15,7 +15,19 @@ public class Day23 implements DayTemplate {
 
     Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        String input = in.useDelimiter("\\A").hasNext() ? in.next() : "";
+        return new String[]{
+                new Day23().solve(true, new Scanner(input)),
+                new Day23().solve(false, new Scanner(input))
+        };
+    }
+
     public String solve(boolean part1, Scanner in) {
+        nodeGrid = new Coordinate[6][6];
+        nextStates = new HashSet<>();
+        neighbors = new HashMap<>();
         int answer = 0;
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {

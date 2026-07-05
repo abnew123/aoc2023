@@ -14,6 +14,17 @@ public class Day14 implements DayTemplate {
     private int rows;
     private int cols;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        parse(in);
+        byte[][] initial = copyGrid();
+        shiftNorth();
+        int answer1 = getSupportLoad();
+        stones = initial;
+        runSpinCycles();
+        return new String[]{answer1 + "", getSupportLoad() + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -27,25 +38,29 @@ public class Day14 implements DayTemplate {
         if (part1) {
             shiftNorth();
         } else {
-            Map<Integer, Integer> states = new HashMap<>();
-            int index = 0;
-            int offset = 0;
-            while (index < 1000000000) {
-                cycle();
-                index++;
-                int key = gridHash() * 31 + getSupportLoad();
-                Integer previous = states.putIfAbsent(key, index);
-                if (previous != null) {
-                    int cycle = index - previous;
-                    offset = (1000000000 - index) % cycle;
-                    break;
-                }
-            }
-            for (int i = 0; i < offset; i++) {
-                cycle();
-            }
+            runSpinCycles();
         }
         return getSupportLoad() + "";
+    }
+
+    private void runSpinCycles() {
+        Map<Integer, Integer> states = new HashMap<>();
+        int index = 0;
+        int offset = 0;
+        while (index < 1000000000) {
+            cycle();
+            index++;
+            int key = gridHash() * 31 + getSupportLoad();
+            Integer previous = states.putIfAbsent(key, index);
+            if (previous != null) {
+                int cycle = index - previous;
+                offset = (1000000000 - index) % cycle;
+                break;
+            }
+        }
+        for (int i = 0; i < offset; i++) {
+            cycle();
+        }
     }
 
     private void parse(Scanner in) {
@@ -149,5 +164,13 @@ public class Day14 implements DayTemplate {
             }
         }
         return hash;
+    }
+
+    private byte[][] copyGrid() {
+        byte[][] copy = new byte[rows][cols];
+        for (int r = 0; r < rows; r++) {
+            System.arraycopy(stones[r], 0, copy[r], 0, cols);
+        }
+        return copy;
     }
 }

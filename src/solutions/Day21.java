@@ -11,6 +11,12 @@ public class Day21 implements DayTemplate {
 
     int[][] grid;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        fillReachableDistances(in, Integer.MAX_VALUE);
+        return new String[]{solvePart1() + "", solvePart2() + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -20,13 +26,24 @@ public class Day21 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        fillReachableDistances(in, part1 ? 64 : Integer.MAX_VALUE);
+        long answer;
+        if (part1) {
+            answer = solvePart1();
+        } else {
+            answer = solvePart2();
+        }
+        return answer + "";
+    }
+
+    private void fillReachableDistances(Scanner in, int maxSteps) {
         List<Coordinate> reachablePoints = new ArrayList<>();
         reachablePoints.add(buildGridAndGetStart(in));
         int[] xs = new int[]{-1, 1, 0, 0};
         int[] ys = new int[]{0, 0, -1, 1};
         int index = 0;
-        while (index < (part1 ? 64 : grid.length)) {
+        int limit = Math.min(maxSteps, grid.length);
+        while (index < limit) {
             index++;
             List<Coordinate> tmp2 = new ArrayList<>();
             for (Coordinate c : reachablePoints) {
@@ -42,13 +59,6 @@ public class Day21 implements DayTemplate {
             }
             reachablePoints = tmp2;
         }
-        if (part1) {
-            answer = solvePart1();
-        }
-        if (!part1) {
-            answer = solvePart2();
-        }
-        return answer + "";
     }
 
     private Coordinate buildGridAndGetStart(Scanner in){

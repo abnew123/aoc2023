@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 247ms for a standardized one-pass `MasterSolver` run after optimization. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are useful for comparing individual solver changes, but they understate the first-run cost someone sees when running all parts once.
+Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 249ms for a standardized day-level `MasterSolver` run after optimization. `MasterSolver` now times each day once through `fullSolve`, so days can parse shared input once for both parts. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are still useful for comparing individual solver changes, but the day-level total is the better end-to-end number.
 
 See [performance notes](PERFORMANCE.md) for visual before/after examples and benchmark caveats.
 

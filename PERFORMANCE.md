@@ -1,6 +1,6 @@
 # Performance Notes
 
-The README table uses warm 10-run averages for each part because that makes solver-to-solver changes easier to compare. A single standardized `MasterSolver` run is the better number for "I cloned the repo and ran all 50 parts once"; on this branch that is roughly 247ms and still prints `Everything checks out!`.
+The README table uses warm 10-run averages for each part because that makes solver-to-solver changes easier to compare. The headline `MasterSolver` number now times each day once through `fullSolve`, which is closer to "I cloned the repo and ran all days once"; on this branch the 10-process average is roughly 249ms and the correctness check still prints `Everything checks out!`.
 
 The first invocation of a Java solver is often slower because the JVM is still loading classes, verifying bytecode, linking methods, compiling hot paths with the JIT, filling CPU caches, and sometimes paying one-time allocation or GC costs. These costs are real for a one-shot command, so the warm table should not be read as the literal end-to-end startup experience.
 
