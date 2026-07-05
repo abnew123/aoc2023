@@ -41,6 +41,17 @@ public class Day24 implements DayTemplate {
         invalidX = new boolean[maxes[0] - mins[0] + 1];
         invalidY = new boolean[maxes[1] - mins[1] + 1];
         invalidZ = new boolean[maxes[2] - mins[2] + 1];
+        markInvalidVelocities(stones);
+        determinePossibleTriples();
+
+        long[] rockPosition = findRockPosition(stones);
+        if (rockPosition[0] != -1) {
+            return (rockPosition[0] + rockPosition[1] + rockPosition[2]);
+        }
+        return answer;
+    }
+
+    private void markInvalidVelocities(List<Hailstone> stones) {
         for (int i = 0; i < stones.size(); i++) {
             for (int j = 0; j < stones.size(); j++) {
                 Hailstone first = stones.get(i);
@@ -48,20 +59,20 @@ public class Day24 implements DayTemplate {
                 adjustInvalids(first,second);
             }
         }
-        determinePossibleTriples();
+    }
 
-        // a smarter search would be to start at 0,0,0 and come up with increasingly larger vectors by magnitude
+    private long[] findRockPosition(List<Hailstone> stones) {
         for(Integer x: possibleX){
             for(Integer y: possibleY){
                 for(Integer z: possibleZ){
-                    long[] positions = helper(new Coordinate(x,y,z), stones);
+                    long[] positions = intersectionForVelocity(new Coordinate(x,y,z), stones);
                     if (positions[0] != -1) {
-                        return (positions[0] + positions[1] + positions[2]);
+                        return positions;
                     }
                 }
             }
         }
-        return answer;
+        return new long[]{-1, -1, -1};
     }
 
     private void determinePossibleTriples(){
@@ -146,7 +157,7 @@ public class Day24 implements DayTemplate {
         return stones;
     }
 
-    private long[] helper(Coordinate v, List<Hailstone> stones) {
+    private long[] intersectionForVelocity(Coordinate v, List<Hailstone> stones) {
         long x = Long.MAX_VALUE;
         long y = Long.MAX_VALUE;
         long z = Long.MAX_VALUE;
