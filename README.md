@@ -1,8 +1,15 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, roughly 1 second on my 2024 Macbook Pro before optimization, and roughly 249ms for a standardized day-level `MasterSolver` run after optimization. `MasterSolver` now times each day once through `fullSolve`, so days can parse shared input once for both parts. Benchmark times below are warm 10-run averages per part using the existing `DayTemplate.timer` convention; those numbers are still useful for comparing individual solver changes, but the day-level total is the better end-to-end number.
+The reproducible fresh-JVM benchmark now averages **232.750ms of solver time**, **264.786ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **307.878ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 230.312ms solver / 262.402ms main / 307.829ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
-See [performance notes](PERFORMANCE.md) for visual before/after examples and benchmark caveats.
+[`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, the paired Day 16 comparison, and historical benchmark caveats.
+
+```shell
+mkdir -p /tmp/aoc2023-classes
+javac -d /tmp/aoc2023-classes $(git ls-files '*.java' ':!src/tests/**')
+java -cp /tmp/aoc2023-classes src.FreshJvmBenchmark --verify
+java -cp /tmp/aoc2023-classes src.FreshJvmBenchmark
+```
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
@@ -87,6 +94,10 @@ See [performance notes](PERFORMANCE.md) for visual before/after examples and ben
   <img src=".aoc_tiles/tiles/2023/25.png" width="161px">
 </a>
 <!-- AOC TILES END -->
+
+## Historical warm per-part timings
+
+The table below is retained from the earlier July benchmark pass. Its values are warm 10-run per-part averages using `DayTemplate.timer`; they are useful historical context, but they are not fresh-JVM wall times and should not be compared directly with the current measurements above.
 
 | Day | Problem | Solution | Part 1 (ms) | Part 2 (ms) |
 | --- | --- | --- |------------:|------------:|

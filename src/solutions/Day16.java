@@ -26,8 +26,9 @@ public class Day16 implements DayTemplate {
     @Override
     public String[] fullSolve(Scanner in) {
         generateGraph(in);
-        int answer1 = tryFromLocation(-1, 0, RIGHT);
-        int answer2 = runFromAllPoints();
+        int[] traversalStack = newTraversalStack();
+        int answer1 = tryFromLocation(-1, 0, RIGHT, traversalStack);
+        int answer2 = runFromAllPoints(traversalStack);
         return new String[]{answer1 + "", answer2 + ""};
     }
 
@@ -41,7 +42,10 @@ public class Day16 implements DayTemplate {
      */
     public String solve(boolean part1, Scanner in) {
         generateGraph(in);
-        int answer = part1 ? tryFromLocation(-1, 0, RIGHT) : runFromAllPoints();
+        int[] traversalStack = newTraversalStack();
+        int answer = part1
+                ? tryFromLocation(-1, 0, RIGHT, traversalStack)
+                : runFromAllPoints(traversalStack);
         return answer + "";
     }
 
@@ -64,27 +68,30 @@ public class Day16 implements DayTemplate {
         stamp = 1;
     }
 
-    private int runFromAllPoints() {
+    private int[] newTraversalStack() {
+        return new int[seen.length + 4];
+    }
+
+    private int runFromAllPoints(int[] traversalStack) {
         int currBest = 0;
         for (int y = 0; y < rows; y++) {
-            currBest = Math.max(currBest, tryFromLocation(-1, y, RIGHT));
-            currBest = Math.max(currBest, tryFromLocation(cols, y, LEFT));
+            currBest = Math.max(currBest, tryFromLocation(-1, y, RIGHT, traversalStack));
+            currBest = Math.max(currBest, tryFromLocation(cols, y, LEFT, traversalStack));
         }
         for (int x = 0; x < cols; x++) {
-            currBest = Math.max(currBest, tryFromLocation(x, -1, DOWN));
-            currBest = Math.max(currBest, tryFromLocation(x, rows, UP));
+            currBest = Math.max(currBest, tryFromLocation(x, -1, DOWN, traversalStack));
+            currBest = Math.max(currBest, tryFromLocation(x, rows, UP, traversalStack));
         }
         return currBest;
     }
 
-    private int tryFromLocation(int startX, int startY, int startDir) {
+    private int tryFromLocation(int startX, int startY, int startDir, int[] traversalStack) {
         int currentStamp = nextStamp();
         int energizedCount = 0;
         int x = startX;
         int y = startY;
         int dir = startDir;
 
-        int[] stack = new int[rows * cols * 4 + 4];
         int stackSize = 0;
         while (true) {
             x += DX[dir];
@@ -93,7 +100,7 @@ public class Day16 implements DayTemplate {
                 if (stackSize == 0) {
                     return energizedCount;
                 }
-                int packed = stack[--stackSize];
+                int packed = traversalStack[--stackSize];
                 dir = packed & 3;
                 int pos = packed >> 2;
                 x = pos % cols;
@@ -107,7 +114,7 @@ public class Day16 implements DayTemplate {
                 if (stackSize == 0) {
                     return energizedCount;
                 }
-                int packed = stack[--stackSize];
+                int packed = traversalStack[--stackSize];
                 dir = packed & 3;
                 int pos = packed >> 2;
                 x = pos % cols;
@@ -127,10 +134,10 @@ public class Day16 implements DayTemplate {
             } else if (tile == '\\') {
                 dir = backslashDirection(dir);
             } else if (tile == '|' && (dir == LEFT || dir == RIGHT)) {
-                stack[stackSize++] = (cell << 2) | DOWN;
+                traversalStack[stackSize++] = (cell << 2) | DOWN;
                 dir = UP;
             } else if (tile == '-' && (dir == UP || dir == DOWN)) {
-                stack[stackSize++] = (cell << 2) | RIGHT;
+                traversalStack[stackSize++] = (cell << 2) | RIGHT;
                 dir = LEFT;
             }
         }
