@@ -110,6 +110,37 @@ The 10-pair means were:
 
 For the primary solver metric, the paired mean improvement was 3.102ms and the approximate 95% confidence interval for the candidate-minus-pristine delta was **[-4.77ms, -1.44ms]**. Because that interval excludes zero, this run supports a real solver improvement; the near-flat startup and harness means are also consistent with the change being inside Day 16 rather than in process orchestration.
 
+## Day 22 top-surface settling
+
+Day 22 now parses the six coordinates without regex splitting and settles bricks in ascending initial height against an exact `(x,y)` top surface offset by the observed signed coordinate bounds. Each brick lands one level above the maximum height under its footprint; owners at that maximum are precisely its direct supporters. This derives the same support graph without allocating a 3-D voxel grid or moving every brick downward one `z` level at a time.
+
+Two serial full-suite replications each used separate baseline/candidate classpaths, one excluded cold JVM per classpath, and 10 measured fresh JVMs per classpath. Startup, main, solver, and harness retain the definitions above. The full-suite solver means were:
+
+| Replication | Baseline solver (ms) | Candidate solver (ms) | Change |
+| ---: | ---: | ---: | ---: |
+| 1 | 234.185 | 229.350 | -4.835 |
+| 2 (reverse order) | 229.255 | 230.028 | +0.772 |
+| Combined 20-process mean | 231.720 | 229.689 | -2.031 (-0.88%) |
+
+The aggregate full-suite direction is favorable but noisy because it includes the other 24 days. A final post-review candidate-only cold-plus-10 set had a 232.529ms solver mean and 6.394ms sample standard deviation, further illustrating that whole-suite noise. To isolate whether Day 22 itself improved, the final compiled classpaths ran a cold Day 22 process followed by 10 counterbalanced pairs of fresh Day 22 JVMs. The timer includes scanner construction, parsing, settling, both answers, and scanner close; every process returned `401 / 63491`.
+
+| Pair | Order | Baseline Day 22 (ms) | Candidate Day 22 (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 29.120 | 23.694 | -5.425 |
+| 2 | C-B | 31.039 | 23.597 | -7.442 |
+| 3 | B-C | 29.886 | 24.442 | -5.443 |
+| 4 | C-B | 30.092 | 23.704 | -6.389 |
+| 5 | B-C | 30.180 | 23.846 | -6.333 |
+| 6 | C-B | 30.778 | 23.146 | -7.632 |
+| 7 | B-C | 32.477 | 24.043 | -8.434 |
+| 8 | C-B | 28.844 | 23.255 | -5.589 |
+| 9 | B-C | 29.840 | 23.320 | -6.520 |
+| 10 | C-B | 30.144 | 24.248 | -5.896 |
+
+The excluded cold processes were 28.722ms baseline and 23.591ms candidate. Measured means were **30.240ms baseline** and **23.730ms candidate**, a **6.510ms (21.53%)** reduction. The paired-delta sample standard deviation was 1.023ms and the approximate 95% confidence interval was **[-7.24ms, -5.78ms]**.
+
+Correctness checks retained the established 50-answer checksum and agreement between all independent and combined solves. Day 22 additionally matched the official `5 / 7` example, a signed-coordinate two-brick support chain, and the previous voxel solver on 50 deterministic, non-overlapping generated brick stacks containing point, x-axis, y-axis, and vertical bricks.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.
