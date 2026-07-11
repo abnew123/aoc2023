@@ -321,6 +321,46 @@ Their 10-process means were:
 
 All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `6440 / 5905`; 5,000 deterministic randomized hands including jokers and duplicate card strings matched the exact pre-change implementation, an identical-hand bid case confirmed stable ranking, and repeated-space/tab input matched the ordinary-space answers.
 
+## Day 6 integer race search
+
+Day 6 previously split and streamed each race line multiple times and used floating-point quadratic roots. The root formula counted equality as a win when the record was exactly on an integer root, contrary to the prompt's strict inequality, and `time * time` could overflow before conversion to `double`. The solver now parses the spaced and concatenated values together and binary-searches the first winning hold time using the overflow-safe predicate `hold > distance / (time - hold)`.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs. Odd pairs ran the `a89fc47` regex/stream baseline then candidate (`B-C`); even pairs reversed the order (`C-B`).
+
+| Pair | Order | Regex/roots (ms) | Direct/integer (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 3.201 | 1.597 | -1.604 |
+| 2 | C-B | 3.475 | 1.577 | -1.899 |
+| 3 | B-C | 3.060 | 1.732 | -1.328 |
+| 4 | C-B | 3.526 | 1.473 | -2.054 |
+| 5 | B-C | 2.990 | 1.523 | -1.466 |
+| 6 | C-B | 3.452 | 1.440 | -2.012 |
+| 7 | B-C | 3.619 | 1.652 | -1.967 |
+| 8 | C-B | 3.125 | 1.676 | -1.449 |
+| 9 | B-C | 3.458 | 1.645 | -1.813 |
+| 10 | C-B | 2.991 | 1.685 | -1.307 |
+
+Table deltas and summary statistics use the unrounded nanosecond records. The excluded cold values were 3.186 ms baseline and 1.693 ms candidate. The measured means were **3.290 ms baseline** and **1.600 ms candidate**, a **1.690 ms (51.4%) reduction**. The paired-delta sample standard deviation was 0.292 ms and the t(9) 95% confidence interval was **[-1.898 ms, -1.481 ms]**.
+
+The authoritative whole-suite counterbalanced comparison also showed a statistically clear solver reduction: its 10-pair means were 214.247 ms baseline and 207.282 ms candidate, a -6.965 ms delta with a 95% confidence interval of **[-11.909 ms, -2.022 ms]**. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 290.434 | 243.784 | 210.617 | 29.857 | 33.167 |
+| Candidate | 295.368 | 252.898 | 219.738 | 26.850 | 33.161 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 290.780 | 285.325 | -5.455 |
+| Main | 247.751 | 242.493 | -5.258 |
+| Solver | 215.824 | 210.216 | -5.609 |
+| Startup | 26.543 | 26.486 | -0.057 |
+| Harness | 31.927 | 32.278 | +0.351 |
+
+All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `288 / 71503`; exact-root cases such as time 7 and distance 12 correctly return zero; and 1,200 deterministic races matched brute-force or `BigInteger` multiplication references across small and near-trillion times, zero-win cases, mixed whitespace, and distances near `Long.MAX_VALUE`.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.

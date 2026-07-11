@@ -1,12 +1,14 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest reproducible fresh-JVM benchmark averages **231.164ms of solver time**, **268.455ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **318.155ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 224.218ms solver / 261.562ms main / 314.781ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest reproducible fresh-JVM benchmark averages **210.216ms of solver time**, **242.493ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **285.325ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 219.738ms solver / 252.898ms main / 295.368ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
 Day 12 now retains only two rolling DP columns instead of allocating a record-length-by-group-count matrix for every line. A counterbalanced isolated fresh-process comparison reduced its mean from 15.377ms to 14.169ms (-7.86%), with a paired 95% confidence interval of [-1.39ms, -1.03ms]; the whole-suite comparison remained inconclusive under interactive load.
 
 Day 15 now parses the initialization sequence in one character-indexed pass and uses a direct 256-box array. Its isolated mean fell from 18.657ms to 9.239ms (-50.5%), with a paired 95% confidence interval of [-9.61ms, -9.23ms]; the whole-suite paired point estimate also favored the candidate but remained inconclusive.
 
 Day 7 now parses each hand and bid once, maps card ranks directly, and classifies frequency groups without splitting card strings or sorting 13 counters. Its isolated mean fell from 16.925ms to 9.140ms (-46.0%), with a paired 95% confidence interval of [-8.025ms, -7.545ms]; the whole-suite paired interval also excluded zero.
+
+Day 6 now parses both race lines once and counts strict record wins with overflow-safe integer binary search. Its isolated mean fell from 3.290ms to 1.600ms (-51.4%), with a paired 95% confidence interval of [-1.898ms, -1.481ms]; the whole-suite paired interval also excluded zero.
 
 [`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, paired optimization comparisons, and historical benchmark caveats.
 
