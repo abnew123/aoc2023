@@ -40,13 +40,16 @@ public class Day17 implements DayTemplate {
         int height = lines.size();
         int width = lines.getFirst().length();
         int[] heatLoss = new int[width * height];
+        int maxHeatLoss = 0;
         for (int y = 0; y < height; y++) {
             String line = lines.get(y);
             for (int x = 0; x < width; x++) {
-                heatLoss[cellIndex(x, y, height)] = line.charAt(x) - '0';
+                int heat = line.charAt(x) - '0';
+                heatLoss[cellIndex(x, y, height)] = heat;
+                maxHeatLoss = Math.max(maxHeatLoss, heat);
             }
         }
-        return new Grid(heatLoss, width, height);
+        return new Grid(heatLoss, width, height, maxHeatLoss);
     }
 
     private int solve(Grid grid, int min, int max) {
@@ -57,8 +60,8 @@ public class Day17 implements DayTemplate {
         int startState = stateIndex(0, 0, 0, grid.height);
         best[startState] = 0;
 
-        LongMinHeap queue = new LongMinHeap(stateCount);
-        queue.add(queueEntry(0, startState));
+        BucketQueue queue = new BucketQueue(grid.maxHeatLoss * max);
+        queue.add(0, startState);
 
         while (!queue.isEmpty()) {
             long entry = queue.poll();
@@ -94,7 +97,7 @@ public class Day17 implements DayTemplate {
                     int nextState = stateIndex(nextX, nextY, turn, grid.height);
                     if (nextPath < best[nextState]) {
                         best[nextState] = nextPath;
-                        queue.add(queueEntry(nextPath, nextState));
+                        queue.add(nextPath, nextState);
                     }
                 }
             }
@@ -127,61 +130,49 @@ public class Day17 implements DayTemplate {
         return (int) entry;
     }
 
-    private record Grid(int[] heatLoss, int width, int height) {
+    private record Grid(int[] heatLoss, int width, int height, int maxHeatLoss) {
     }
 
-    private static class LongMinHeap {
-        private long[] values;
+    private static class BucketQueue {
+        private final int[][] buckets;
+        private final int[] bucketSizes;
+        private int currentCost;
         private int size;
 
-        LongMinHeap(int stateCount) {
-            values = new long[Math.max(16, Math.min(stateCount, 1024))];
+        BucketQueue(int maxEdgeCost) {
+            buckets = new int[maxEdgeCost + 1][];
+            bucketSizes = new int[buckets.length];
         }
 
         boolean isEmpty() {
             return size == 0;
         }
 
-        void add(long value) {
-            if (size == values.length) {
+        void add(int cost, int state) {
+            int bucket = cost % buckets.length;
+            int bucketSize = bucketSizes[bucket];
+            int[] values = buckets[bucket];
+            if (values == null) {
+                values = new int[16];
+                buckets[bucket] = values;
+            } else if (bucketSize == values.length) {
                 values = Arrays.copyOf(values, values.length * 2);
+                buckets[bucket] = values;
             }
-            int index = size++;
-            while (index > 0) {
-                int parent = (index - 1) >>> 1;
-                long parentValue = values[parent];
-                if (parentValue <= value) {
-                    break;
-                }
-                values[index] = parentValue;
-                index = parent;
-            }
-            values[index] = value;
+            values[bucketSize] = state;
+            bucketSizes[bucket] = bucketSize + 1;
+            size++;
         }
 
         long poll() {
-            long result = values[0];
-            long value = values[--size];
-            if (size > 0) {
-                int index = 0;
-                int half = size >>> 1;
-                while (index < half) {
-                    int child = (index << 1) + 1;
-                    long childValue = values[child];
-                    int right = child + 1;
-                    if (right < size && values[right] < childValue) {
-                        child = right;
-                        childValue = values[right];
-                    }
-                    if (value <= childValue) {
-                        break;
-                    }
-                    values[index] = childValue;
-                    index = child;
-                }
-                values[index] = value;
+            int bucket = currentCost % buckets.length;
+            while (bucketSizes[bucket] == 0) {
+                currentCost++;
+                bucket = currentCost % buckets.length;
             }
-            return result;
+            int state = buckets[bucket][--bucketSizes[bucket]];
+            size--;
+            return queueEntry(currentCost, state);
         }
     }
 }

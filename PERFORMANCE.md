@@ -110,6 +110,37 @@ The 10-pair means were:
 
 For the primary solver metric, the paired mean improvement was 3.102ms and the approximate 95% confidence interval for the candidate-minus-pristine delta was **[-4.77ms, -1.44ms]**. Because that interval excludes zero, this run supports a real solver improvement; the near-flat startup and harness means are also consistent with the change being inside Day 16 rather than in process orchestration.
 
+## Day 17 bounded bucket queue
+
+Day 17 now uses a circular integer bucket queue for Dijkstra instead of a binary heap. A segment edge adds between zero and `maximum grid digit × maximum straight-run length`; using one more bucket than that exact bound preserves nondecreasing-cost polling, including zero-cost edges and stale duplicate entries, while removing heap sift operations.
+
+Two serial full-suite replications used separate baseline/candidate classpaths. Each classpath ran one excluded cold JVM plus 10 measured fresh JVMs with the standard wall/main/solver/startup/harness split.
+
+| Replication | Baseline solver (ms) | Candidate solver (ms) | Change |
+| ---: | ---: | ---: | ---: |
+| 1 | 222.449 | 215.663 | -6.785 |
+| 2 (reverse order) | 225.697 | 214.463 | -11.235 |
+| Combined 20-process mean | 224.073 | 215.063 | -9.010 (-4.02%) |
+
+For attribution, the same final classpaths also ran a cold Day 17 process and 10 counterbalanced pairs of fresh Day 17 JVMs. This diagnostic includes scanner construction, parsing, both searches, and scanner close; every process returned `724 / 877`.
+
+| Pair | Order | Binary heap (ms) | Bucket queue (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 45.286 | 34.813 | -10.473 |
+| 2 | C-B | 45.931 | 36.092 | -9.839 |
+| 3 | B-C | 45.650 | 44.977 | -0.672 |
+| 4 | C-B | 43.059 | 45.198 | +2.139 |
+| 5 | B-C | 42.677 | 45.205 | +2.527 |
+| 6 | C-B | 43.666 | 35.587 | -8.078 |
+| 7 | B-C | 43.772 | 35.303 | -8.470 |
+| 8 | C-B | 45.624 | 34.439 | -11.185 |
+| 9 | B-C | 42.977 | 34.751 | -8.226 |
+| 10 | C-B | 45.316 | 34.981 | -10.335 |
+
+The excluded cold processes were 48.140ms heap and 38.171ms bucket. Measured means were **44.396ms heap** and **38.135ms bucket**, a **6.261ms (14.10%)** reduction. The paired-delta sample standard deviation was 5.400ms and the approximate 95% confidence interval was **[-10.13ms, -2.40ms]**.
+
+Correctness retained the established 50-answer checksum and agreement between all independent and combined solves. Day 17 also matched the official `102 / 94` sample, the official ultra-crucible `71` sample, and the binary heap on 50 deterministic rectangular grids containing heat digits from zero through nine.
+
 ## Day 22 top-surface settling
 
 Day 22 now parses the six coordinates without regex splitting and settles bricks in ascending initial height against an exact `(x,y)` top surface offset by the observed signed coordinate bounds. Each brick lands one level above the maximum height under its footprint; owners at that maximum are precisely its direct supporters. This derives the same support graph without allocating a 3-D voxel grid or moving every brick downward one `z` level at a time.
