@@ -44,27 +44,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 307.915 | 258.126 | 226.674 | 30.517 | 31.452 |
-| 1 | 306.918 | 262.656 | 232.649 | 25.434 | 30.007 |
-| 2 | 297.321 | 252.618 | 221.510 | 25.748 | 31.108 |
-| 3 | 303.444 | 257.253 | 225.877 | 27.205 | 31.376 |
-| 4 | 299.271 | 255.153 | 224.034 | 25.289 | 31.119 |
-| 5 | 299.427 | 252.563 | 219.843 | 27.639 | 32.721 |
-| 6 | 301.054 | 258.556 | 226.589 | 23.568 | 31.967 |
-| 7 | 297.794 | 253.543 | 221.738 | 25.299 | 31.805 |
-| 8 | 306.096 | 261.330 | 230.313 | 26.025 | 31.017 |
-| 9 | 311.058 | 265.038 | 233.117 | 27.237 | 31.921 |
-| 10 | 310.887 | 262.324 | 228.971 | 29.769 | 33.353 |
+| Cold | 295.312 | 249.184 | 218.383 | 26.747 | 30.802 |
+| 1 | 297.560 | 251.920 | 220.728 | 26.688 | 31.192 |
+| 2 | 288.975 | 247.783 | 216.101 | 25.806 | 31.682 |
+| 3 | 294.015 | 254.123 | 222.970 | 25.741 | 31.152 |
+| 4 | 293.587 | 249.893 | 219.165 | 24.644 | 30.727 |
+| 5 | 289.456 | 249.636 | 218.237 | 24.561 | 31.399 |
+| 6 | 302.453 | 250.254 | 216.713 | 33.191 | 33.541 |
+| 7 | 309.554 | 263.666 | 231.123 | 26.879 | 32.543 |
+| 8 | 300.144 | 255.482 | 220.423 | 25.648 | 35.059 |
+| 9 | 292.883 | 253.696 | 219.771 | 24.858 | 33.925 |
+| 10 | 305.627 | 263.173 | 231.789 | 27.276 | 31.384 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 303.327 | 302.249 | 5.175 |
-| Main | 258.103 | 257.904 | 4.574 |
-| Solver | 226.464 | 226.233 | 4.721 |
-| Startup | 26.321 | 25.887 | 1.704 |
-| Harness | 31.639 | 31.590 | 0.942 |
+| Wall | 297.425 | 295.787 | 6.904 |
+| Main | 253.963 | 252.808 | 5.505 |
+| Solver | 221.702 | 220.097 | 5.509 |
+| Startup | 26.529 | 25.774 | 2.522 |
+| Harness | 32.260 | 31.540 | 1.449 |
 
 ## Day 16 stack reuse
 
@@ -240,6 +240,46 @@ Their 10-process means were:
 | Harness | 32.404 | 31.639 | -0.765 |
 
 Interactive machine load was explicitly nonuniform, so these aggregate movements across 24 unrelated days are retained transparently but are not used to judge the change. The accepted evidence is the isolated paired Day 12 interval. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `21 / 525152`, and 2,000 deterministic short records matched an exhaustive replacement-and-run-count oracle, including impossible layouts and single-group cases.
+
+## Day 15 single-pass initialization sequence
+
+Day 15 now walks the prompt's single comma-delimited sequence once. It accumulates each complete step hash for part 1 while hashing the label and applying the operation for part 2, and uses a 256-slot box array instead of regex-created step/field arrays, a stream-backed list, and boxed `HashMap` keys. Labels are allocated only when a new lens is inserted; exact-label replacement mutates in place and preserves slot order. Multi-digit focal lengths are parsed with checked arithmetic.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs. Odd pairs ran the `5e95797` regex/`HashMap` baseline then candidate (`B-C`); even pairs reversed the order (`C-B`).
+
+| Pair | Order | Regex/HashMap (ms) | One pass (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 18.432 | 9.211 | -9.221 |
+| 2 | C-B | 18.467 | 9.210 | -9.257 |
+| 3 | B-C | 18.715 | 9.100 | -9.615 |
+| 4 | C-B | 18.736 | 9.206 | -9.530 |
+| 5 | B-C | 18.613 | 9.111 | -9.502 |
+| 6 | C-B | 18.540 | 9.504 | -9.035 |
+| 7 | B-C | 19.055 | 9.111 | -9.943 |
+| 8 | C-B | 18.685 | 9.285 | -9.400 |
+| 9 | B-C | 18.477 | 9.340 | -9.136 |
+| 10 | C-B | 18.851 | 9.312 | -9.539 |
+
+The excluded cold values were 18.818 ms baseline and 9.799 ms candidate. The measured means were **18.657 ms baseline** and **9.239 ms candidate**, a **9.418 ms (50.5%) reduction**. The paired-delta sample standard deviation was 0.267 ms and the t(9) 95% confidence interval was **[-9.61 ms, -9.23 ms]**.
+
+The authoritative whole-suite child point estimate also favored the candidate but remained noisy: its counterbalanced 10-pair solver means were 224.226 ms baseline and 222.370 ms candidate, a -1.856 ms delta with a 95% confidence interval of [-6.72 ms, +3.01 ms]. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 304.064 | 258.399 | 225.687 | 29.055 | 32.712 |
+| Candidate | 295.312 | 249.184 | 218.383 | 26.747 | 30.802 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 300.811 | 297.425 | -3.386 |
+| Main | 256.936 | 253.963 | -2.974 |
+| Solver | 225.616 | 221.702 | -3.914 |
+| Startup | 26.778 | 26.529 | -0.249 |
+| Harness | 31.320 | 32.260 | +0.941 |
+
+The accepted evidence is the isolated paired Day 15 interval; the whole-suite paired interval is explicitly inconclusive under interactive load, while the separate phase means are retained as the latest current-source run. Verification retained all 50 expected answers, all 25 combined-solve pairs, and the established checksum. The official sequence returned `1320 / 145`, the standalone `HASH` example returned 52, and 1,000 deterministic sequences containing hash collisions, removals, replacements, varied labels, and multi-digit focal lengths matched the exact pre-change implementation.
 
 ## Historical warm measurements
 
