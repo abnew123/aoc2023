@@ -1,8 +1,10 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The reproducible fresh-JVM benchmark now averages **232.750ms of solver time**, **264.786ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **307.878ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 230.312ms solver / 262.402ms main / 307.829ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest reproducible fresh-JVM benchmark averages **226.464ms of solver time**, **258.103ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **303.327ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 226.674ms solver / 258.126ms main / 307.915ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
-[`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, the paired Day 16 comparison, and historical benchmark caveats.
+Day 12 now retains only two rolling DP columns instead of allocating a record-length-by-group-count matrix for every line. A counterbalanced isolated fresh-process comparison reduced its mean from 15.377ms to 14.169ms (-7.86%), with a paired 95% confidence interval of [-1.39ms, -1.03ms]; the whole-suite comparison remained inconclusive under interactive load.
+
+[`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, paired optimization comparisons, and historical benchmark caveats.
 
 ```shell
 mkdir -p /tmp/aoc2023-classes

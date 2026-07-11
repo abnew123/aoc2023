@@ -89,7 +89,11 @@ public class Day12 implements DayTemplate {
         }
         int recordLength = conditionRecord.length();
         int wiggle = recordLength - totalSprings - groups.length + 1;
-        long[][] dp = new long[recordLength][groups.length];
+        if (wiggle <= 0) {
+            return 0;
+        }
+        long[] previous = new long[wiggle];
+        long[] current = new long[wiggle];
 
         boolean noHashesToLeft = true;
         long sum = 0;
@@ -103,7 +107,7 @@ public class Day12 implements DayTemplate {
                     sum++;
                 }
             }
-            dp[i + firstGroup][0] = sum;
+            previous[i] = sum;
             noHashesToLeft &= (conditionRecord.charAt(i) != '#');
         }
 
@@ -112,17 +116,21 @@ public class Day12 implements DayTemplate {
             sum = 0;
             int currentGroup = groups[i];
 
-            for (int j = start; j < start + wiggle; j++) {
+            for (int offset = 0; offset < wiggle; offset++) {
+                int j = start + offset;
                 if (conditionRecord.charAt(j + currentGroup) == '#') {
                     sum = 0;
                 } else {
-                    if (dp[j - 1][i - 1] > 0 && (conditionRecord.charAt(j - 1) != '#') &&
+                    if (previous[offset] > 0 && (conditionRecord.charAt(j - 1) != '#') &&
                             (possibleCount[j + currentGroup] - possibleCount[j]) == currentGroup) {
-                        sum += dp[j - 1][i - 1];
+                        sum += previous[offset];
                     }
                 }
-                dp[j + currentGroup][i] = sum;
+                current[offset] = sum;
             }
+            long[] swap = previous;
+            previous = current;
+            current = swap;
             start += currentGroup + 1;
         }
         return sum;

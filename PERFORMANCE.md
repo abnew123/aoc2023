@@ -33,7 +33,7 @@ Each child JVM runs all 25 `fullSolve` paths exactly once. The fields intentiona
 | `wall` | Parent-observed time from starting the Java child through protocol output, process exit, and stream completion. |
 | `startup` | Parent-observed time from starting the child until its flushed start marker is received. This includes JVM/bootstrap and benchmark-class initialization. |
 | `main` | Child-observed time from the first executable line of `main` through checksum/result preparation. It stops before the final result record is formatted and printed. |
-| `solver` | Sum of the 25 exact intervals around `solver.fullSolve(outerScanner)`. Reflective class lookup, solver construction, and construction of the outer input-file `Scanner` occur before each interval. Reading/parsing that happens inside `fullSolve` is included, as is any additional `Scanner` construction performed by a `fullSolve` implementation. |
+| `solver` | Sum of the 25 exact intervals around `solver.fullSolve(outerScanner)`. Solver selection, solver construction, and construction of the outer input-file `Scanner` occur before each interval. Reading/parsing that happens inside `fullSolve` is included, as is any additional `Scanner` construction performed by a `fullSolve` implementation. |
 | `harness` | `main - solver`, covering orchestration outside those 25 calls, including class lookup, solver and outer-scanner construction, checksum generation, and protocol work. |
 
 The start marker is emitted shortly after the first line of `main`, so `startup` and `main` overlap slightly at that boundary and must not be added together. Conversely, `wall` continues through result delivery and JVM shutdown after the child captures `main`; therefore `wall - main` is not a pure startup number, and the five columns are not intended to form an additive identity.
@@ -44,27 +44,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 307.829 | 262.402 | 230.312 | 26.105 | 32.090 |
-| 1 | 305.116 | 261.840 | 230.161 | 24.240 | 31.679 |
-| 2 | 307.384 | 263.848 | 232.323 | 24.543 | 31.525 |
-| 3 | 307.414 | 263.604 | 232.587 | 24.797 | 31.017 |
-| 4 | 302.852 | 260.261 | 228.771 | 23.494 | 31.490 |
-| 5 | 310.532 | 268.609 | 236.605 | 23.884 | 32.004 |
-| 6 | 303.568 | 260.535 | 228.663 | 23.919 | 31.872 |
-| 7 | 308.050 | 263.797 | 230.029 | 25.157 | 33.767 |
-| 8 | 304.781 | 260.815 | 229.258 | 24.888 | 31.557 |
-| 9 | 319.404 | 275.382 | 242.771 | 24.727 | 32.611 |
-| 10 | 309.679 | 269.174 | 236.334 | 24.592 | 32.840 |
+| Cold | 307.915 | 258.126 | 226.674 | 30.517 | 31.452 |
+| 1 | 306.918 | 262.656 | 232.649 | 25.434 | 30.007 |
+| 2 | 297.321 | 252.618 | 221.510 | 25.748 | 31.108 |
+| 3 | 303.444 | 257.253 | 225.877 | 27.205 | 31.376 |
+| 4 | 299.271 | 255.153 | 224.034 | 25.289 | 31.119 |
+| 5 | 299.427 | 252.563 | 219.843 | 27.639 | 32.721 |
+| 6 | 301.054 | 258.556 | 226.589 | 23.568 | 31.967 |
+| 7 | 297.794 | 253.543 | 221.738 | 25.299 | 31.805 |
+| 8 | 306.096 | 261.330 | 230.313 | 26.025 | 31.017 |
+| 9 | 311.058 | 265.038 | 233.117 | 27.237 | 31.921 |
+| 10 | 310.887 | 262.324 | 228.971 | 29.769 | 33.353 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 307.878 | 307.399 | 4.769 |
-| Main | 264.786 | 263.700 | 4.858 |
-| Solver | 232.750 | 231.242 | 4.560 |
-| Startup | 24.424 | 24.567 | 0.524 |
-| Harness | 32.036 | 31.775 | 0.814 |
+| Wall | 303.327 | 302.249 | 5.175 |
+| Main | 258.103 | 257.904 | 4.574 |
+| Solver | 226.464 | 226.233 | 4.721 |
+| Startup | 26.321 | 25.887 | 1.704 |
+| Harness | 31.639 | 31.590 | 0.942 |
 
 ## Day 16 stack reuse
 
@@ -200,6 +200,46 @@ The exact final factory and reflective baseline ran as one excluded cold pair fo
 | Harness | 34.191 | 33.327 | **-0.864** | **[-1.58, -0.15]** |
 
 Among the targeted work metrics, only the harness reduction is statistically clear in this exact run; wall, main, and solver are explicitly treated as inconclusive. Startup also shows a statistically clear 1.615ms regression in this sample, but the preceding direct-switch replication moved startup by -1.984ms with an interval crossing zero, so the startup effect did not reproduce. That preceding replication independently favored the candidate harness (35.625ms to 32.582ms, paired interval [-4.50, -1.59] ms). Both implementations produced the same established 50-answer checksum.
+
+## Day 12 rolling dynamic-programming columns
+
+Day 12's placement DP previously allocated `long[recordLength][groupCount]` for every condition record even though group `i` reads only group `i - 1`. It now stores two `long[wiggle]` columns, where `wiggle` is the number of legal placement offsets, and swaps them after every group. Each destination slot is overwritten before the swap, so no clearing or stale-state assumption is involved. Impossible minimum lengths still return zero.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, verified both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs. Odd pairs ran the `0121a58` matrix baseline then rolling candidate (`B-C`); even pairs reversed the order (`C-B`).
+
+| Pair | Order | Matrix DP (ms) | Rolling DP (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 15.572 | 14.588 | -0.984 |
+| 2 | C-B | 15.223 | 14.505 | -0.718 |
+| 3 | B-C | 15.300 | 13.937 | -1.362 |
+| 4 | C-B | 15.543 | 14.179 | -1.365 |
+| 5 | B-C | 15.422 | 14.361 | -1.061 |
+| 6 | C-B | 15.462 | 13.873 | -1.589 |
+| 7 | B-C | 14.930 | 13.854 | -1.076 |
+| 8 | C-B | 15.260 | 14.032 | -1.228 |
+| 9 | B-C | 15.678 | 14.329 | -1.350 |
+| 10 | C-B | 15.379 | 14.029 | -1.350 |
+
+The excluded cold values were 15.535 ms matrix and 13.918 ms rolling. The measured means were **15.377 ms matrix** and **14.169 ms rolling**, a 1.208 ms (7.86%) reduction. The paired-delta sample standard deviation was 0.250 ms and the t(9) 95% confidence interval was **[-1.39 ms, -1.03 ms]**.
+
+The exact final classpaths also ran through the authoritative whole-suite child. Its counterbalanced 10-pair solver means were 221.516 ms baseline and 225.944 ms candidate; the +4.427 ms paired delta had a wide 95% confidence interval of [-0.38 ms, +9.23 ms]. The standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 305.653 | 256.276 | 223.860 | 30.165 | 32.416 |
+| Candidate | 307.915 | 258.126 | 226.674 | 30.517 | 31.452 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 301.305 | 303.327 | +2.022 |
+| Main | 255.704 | 258.103 | +2.400 |
+| Solver | 223.299 | 226.464 | +3.165 |
+| Startup | 27.411 | 26.321 | -1.090 |
+| Harness | 32.404 | 31.639 | -0.765 |
+
+Interactive machine load was explicitly nonuniform, so these aggregate movements across 24 unrelated days are retained transparently but are not used to judge the change. The accepted evidence is the isolated paired Day 12 interval. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `21 / 525152`, and 2,000 deterministic short records matched an exhaustive replacement-and-run-count oracle, including impossible layouts and single-group cases.
 
 ## Historical warm measurements
 
