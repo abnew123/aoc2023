@@ -2,14 +2,11 @@ package src.meta;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Scanner;
 
 public class MasterSolver {
 
     private static final String DATA_DAY = "./data/day";
-    private static final String SOLUTIONS_DAY = "src.solutions.Day";
     private static final String PART = " part ";
 
     public static void main(String[] args) throws Exception {
@@ -27,9 +24,7 @@ public class MasterSolver {
             for (boolean part1 : parts) {
                 File file = new File(DATA_DAY + zeroFilledDay + ".txt");
                 try (Scanner in = new Scanner(file)) {
-                    Class<?> cls = Class.forName( SOLUTIONS_DAY+ zeroFilledDay);
-                    Method m = cls.getDeclaredMethod("solve", boolean.class, Scanner.class);
-                    String answer = (String) m.invoke(cls.getDeclaredConstructor().newInstance(), part1, in);
+                    String answer = SolverFactory.create(day).solve(part1, in);
                     System.out.println(
                             "Day " + zeroFilledDay + PART + (part1 ? 1 : 2) + " solution: " + answer);
                 }
@@ -50,17 +45,17 @@ public class MasterSolver {
      *                  true. Timer will give individual days times by part if param
      *                  is set to false. Note that even if param is set to false,
      *                  total time will be given.
-     * @throws Exception
+     * @throws FileNotFoundException when a puzzle input cannot be opened
      */
 
-    public static void timer(boolean total) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, FileNotFoundException {
+    public static void timer(boolean total) throws FileNotFoundException {
         Double totalTime = 0.0;
         for (int day = 1; day <= 25; day++) {
             String zeroFilledDay = (day < 10 ? "0" : "") + day;
-            Double time = (Double) Class.forName(SOLUTIONS_DAY + zeroFilledDay)
-                    .getMethod("dayTimer", Scanner.class)
-                    .invoke(Class.forName(SOLUTIONS_DAY + zeroFilledDay).getDeclaredConstructor().newInstance(),
-                            new Scanner(new File(DATA_DAY + zeroFilledDay + ".txt")));
+            double time;
+            try (Scanner scanner = new Scanner(new File(DATA_DAY + zeroFilledDay + ".txt"))) {
+                time = SolverFactory.create(day).dayTimer(scanner);
+            }
             if (!total) {
                 System.out.println("Day " + zeroFilledDay + " execution time: " + time);
             }
@@ -69,7 +64,7 @@ public class MasterSolver {
         System.out.println("Total execution time (ms): " + totalTime);
     }
 
-    public static boolean correctnessCheck() throws FileNotFoundException, NoSuchMethodException, ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static boolean correctnessCheck() throws FileNotFoundException {
         boolean allCorrect = true;
         try (Scanner expectedResultsScanner = new Scanner(new File("./data/expectedResults.txt"))) {
             for (int day = 1; day <= 25; day++) {
@@ -78,9 +73,7 @@ public class MasterSolver {
                     String expectedAnswer = expectedResultsScanner.nextLine();
                     File file = new File(DATA_DAY + zeroFilledDay + ".txt");
                     try (Scanner in = new Scanner(file)) {
-                        Class<?> cls = Class.forName(SOLUTIONS_DAY + zeroFilledDay);
-                        Method m = cls.getDeclaredMethod("solve", boolean.class, Scanner.class);
-                        String answer = (String) m.invoke(cls.getDeclaredConstructor().newInstance(), part == 1, in);
+                        String answer = SolverFactory.create(day).solve(part == 1, in);
                         if (!answer.equals(expectedAnswer)) {
                             System.out.println(
                                     "Day " + zeroFilledDay + PART + (part == 1 ? 1 : 2) + " solution: " + answer + " doesn't match expected result of " + expectedAnswer);

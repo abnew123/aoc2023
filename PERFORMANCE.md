@@ -172,6 +172,35 @@ The excluded cold processes were 28.722ms baseline and 23.591ms candidate. Measu
 
 Correctness checks retained the established 50-answer checksum and agreement between all independent and combined solves. Day 22 additionally matched the official `5 / 7` example, a signed-coordinate two-brick support chain, and the previous voxel solver on 50 deterministic, non-overlapping generated brick stacks containing point, x-axis, y-axis, and vertical bricks.
 
+## Direct solver factory
+
+The fresh-JVM and normal master harnesses previously formatted a class name, called `Class.forName`, looked up a constructor, and reflectively instantiated each of the 25 solvers. They now share a direct switch-based factory. Solver construction remains outside the solver timer, so this change targets only main/harness/wall work and cannot make the solver metric appear faster.
+
+The exact final factory and reflective baseline ran as one excluded cold pair followed by 10 counterbalanced pairs of fresh JVMs. The machine was under nonuniform interactive load, so the decision was based on the predeclared harness phase rather than the much noisier wall or solver samples. The cold harness values were 34.307ms reflection and 31.953ms factory.
+
+| Pair | Order | Reflection harness (ms) | Factory harness (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 33.390 | 33.889 | +0.499 |
+| 2 | C-B | 33.820 | 31.956 | -1.864 |
+| 3 | B-C | 34.127 | 32.783 | -1.344 |
+| 4 | C-B | 34.640 | 34.835 | +0.195 |
+| 5 | B-C | 35.247 | 33.355 | -1.892 |
+| 6 | C-B | 33.993 | 34.813 | +0.820 |
+| 7 | B-C | 33.733 | 32.623 | -1.110 |
+| 8 | C-B | 34.663 | 32.966 | -1.697 |
+| 9 | B-C | 34.850 | 33.822 | -1.028 |
+| 10 | C-B | 33.443 | 32.225 | -1.218 |
+
+| Metric | Reflection mean (ms) | Factory mean (ms) | Delta (ms) | Paired 95% interval (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| Wall | 306.640 | 309.521 | +2.880 | [-13.24, 19.00] |
+| Main | 264.749 | 268.684 | +3.936 | [-8.76, 16.63] |
+| Solver | 230.558 | 235.358 | +4.800 | [-7.66, 17.26] |
+| Startup | 27.975 | 29.590 | +1.615 | [0.24, 2.99] |
+| Harness | 34.191 | 33.327 | **-0.864** | **[-1.58, -0.15]** |
+
+Among the targeted work metrics, only the harness reduction is statistically clear in this exact run; wall, main, and solver are explicitly treated as inconclusive. Startup also shows a statistically clear 1.615ms regression in this sample, but the preceding direct-switch replication moved startup by -1.984ms with an interval crossing zero, so the startup effect did not reproduce. That preceding replication independently favored the candidate harness (35.625ms to 32.582ms, paired interval [-4.50, -1.59] ms). Both implementations produced the same established 50-answer checksum.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.

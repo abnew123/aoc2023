@@ -1,6 +1,7 @@
 package src;
 
 import src.meta.DayTemplate;
+import src.meta.SolverFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -351,11 +352,8 @@ public final class FreshJvmBenchmark {
         return DATA_DIRECTORY.resolve(String.format(Locale.ROOT, "day%02d.txt", day));
     }
 
-    private static DayTemplate newSolver(int day) throws Exception {
-        return (DayTemplate) Class.forName(String.format(Locale.ROOT,
-                        "src.solutions.Day%02d", day))
-                .getDeclaredConstructor()
-                .newInstance();
+    private static DayTemplate newSolver(int day) {
+        return SolverFactory.create(day);
     }
 
     private static String checksum(List<String> answers) throws Exception {
