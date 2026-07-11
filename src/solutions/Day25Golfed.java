@@ -4,7 +4,7 @@ Map m;List<ArrayList<Integer>>g;int N;
 String s(boolean p,String I){
 if(!p)return"Merry Christmas!";
 m=new HashMap();g=new ArrayList();N=0;
-for(String L:I.split("\\R")){String[]a=L.split(":? ");int x=i(a[0]);for(int j=1;j<a.length;){int y=i(a[j++]);g.get(x).add(y);g.get(y).add(x);}}
+for(var L:I.split("\\R")){var a=L.split(":? ");int x=i(a[0]);for(int j=1;j<a.length;){int y=i(a[j++]);g.get(x).add(y);g.get(y).add(x);}}
 int a=f(0),b=f(a),n=c(a,b);return""+n*(N-n);
 }
 int i(String s){Integer x=(Integer)m.get(s);if(x!=null)return x;m.put(s,N);g.add(new ArrayList());return N++;}

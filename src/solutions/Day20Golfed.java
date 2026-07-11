@@ -2,7 +2,7 @@ class T{
 int R,X,u,v,t[]=new int[677],q[]=new int[512],i[]=new int[512],M[]=new int[677],F[]=new int[677];int[][]o=new int[677][],p=new int[677][9];boolean[]f=new boolean[677],h=new boolean[512];
 String s(boolean P,String I){
 java.util.Arrays.fill(t,-1);
-for(String L:I.split("\\R")){String[]a=L.split(" -> "),w=a[1].split(", ");int c=a[0].charAt(0),y=c==37?1:c==38?2:0,n=i(a[0].substring(y<1?0:1));t[n]=y;if(y<1)R=n;var r=new int[w.length];for(int j=0;j<w.length;){r[j]=i(w[j]);if(w[j++].equals("rx"))X=n;}o[n]=r;}
+for(var L:I.split("\\R")){var a=L.split(" -> ");var w=a[1].split(", ");int c=a[0].charAt(0),y=c==37?1:c==38?2:0,n=i(a[0].substring(y<1?0:1));t[n]=y;if(y<1)R=n;var r=new int[w.length];for(int j=0;j<w.length;){r[j]=i(w[j]);if(w[j++].equals("rx"))X=n;}o[n]=r;}
 for(int j=0;j<677;j++)if(o[j]!=null)for(int k:o[j])if(t[k]>1)p[k][++p[k][0]]=j;
 for(int j=0;j<677;j++)F[j]=(2<<p[j][0])-2;
 return""+(P?P():C());
