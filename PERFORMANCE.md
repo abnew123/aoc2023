@@ -281,6 +281,46 @@ Their 10-process means were:
 
 The accepted evidence is the isolated paired Day 15 interval; the whole-suite paired interval is explicitly inconclusive under interactive load, while the separate phase means are retained as the latest current-source run. Verification retained all 50 expected answers, all 25 combined-solve pairs, and the established checksum. The official sequence returned `1320 / 145`, the standalone `HASH` example returned 52, and 1,000 deterministic sequences containing hash collisions, removals, replacements, varied labels, and multi-digit focal lengths matched the exact pre-change implementation.
 
+## Day 7 direct hand classification
+
+Day 7 previously regex-split every input line repeatedly, split every five-card hand into strings, compared each card against a per-hand rank-string array, and sorted 13 frequency counters. It now tokenizes each line once, maps card characters directly for the applicable rules, and finds the two largest frequency groups in one scan. Joker cards remain weakest only for part 2 tie-breaking, are counted separately for category construction, and stable object sorting still preserves input order for identical hands.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs. Odd pairs ran the `3560131` regex/frequency-sort baseline then candidate (`B-C`); even pairs reversed the order (`C-B`).
+
+| Pair | Order | Regex/sort (ms) | Direct classification (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 16.839 | 8.962 | -7.877 |
+| 2 | C-B | 17.074 | 9.635 | -7.439 |
+| 3 | B-C | 16.834 | 9.059 | -7.774 |
+| 4 | C-B | 17.080 | 9.390 | -7.690 |
+| 5 | B-C | 17.118 | 8.928 | -8.190 |
+| 6 | C-B | 17.276 | 9.003 | -8.274 |
+| 7 | B-C | 16.718 | 8.999 | -7.720 |
+| 8 | C-B | 16.238 | 9.051 | -7.187 |
+| 9 | B-C | 17.236 | 9.157 | -8.080 |
+| 10 | C-B | 16.833 | 9.215 | -7.619 |
+
+Table deltas and summary statistics use the unrounded nanosecond records. The excluded cold values were 17.254 ms baseline and 9.526 ms candidate. The measured means were **16.925 ms baseline** and **9.140 ms candidate**, a **7.785 ms (46.0%) reduction**. The paired-delta sample standard deviation was 0.336 ms and the t(9) 95% confidence interval was **[-8.025 ms, -7.545 ms]**.
+
+The authoritative whole-suite counterbalanced comparison also showed a statistically clear solver reduction: its 10-pair means were 234.090 ms baseline and 225.537 ms candidate, a -8.553 ms (3.65%) delta with a 95% confidence interval of **[-15.064 ms, -2.041 ms]**. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 339.591 | 283.643 | 246.575 | 37.979 | 37.068 |
+| Candidate | 314.781 | 261.562 | 224.218 | 33.616 | 37.344 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 320.682 | 318.155 | -2.526 |
+| Main | 271.658 | 268.455 | -3.203 |
+| Solver | 234.545 | 231.164 | -3.381 |
+| Startup | 33.416 | 32.842 | -0.574 |
+| Harness | 37.113 | 37.291 | +0.178 |
+
+All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `6440 / 5905`; 5,000 deterministic randomized hands including jokers and duplicate card strings matched the exact pre-change implementation, an identical-hand bid case confirmed stable ranking, and repeated-space/tab input matched the ordinary-space answers.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.
