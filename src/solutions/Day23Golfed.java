@@ -1,6 +1,6 @@
 class W{
 int[]D;int[][]g;String G;int L,e;
-String s(boolean p,String[]Z){G=String.join("\n",Z)+"\n";int w=G.indexOf(10)+1,N=0,h[]=new int[L=G.length()],S=G.indexOf(46),E=G.lastIndexOf(46);D=new int[]{1,w,-1,-w};
+String s(boolean p,String[]Z){G=String.join("\n",Z);int w=G.indexOf(10)+1,N=0,h[]=new int[L=G.length()],S=G.indexOf(46),E=G.lastIndexOf(46);D=new int[]{1,w,-1,-w};
 for(int v=0;v<L;v++)if(o(v)&&(v==S||v==E||n(v)!=2))h[v]=++N;
 g=new int[N][9];e=h[E]-1;
 for(int v=0;v<L;v++)if(h[v]>0)for(int d=0;d<4;d++)if(a(G.charAt(v),p,d))A(h,h[v]-1,v,d,p);
