@@ -24,6 +24,8 @@ Verification passed with this deterministic, length-framed SHA-256 answer checks
 VERIFY_OK solve_answers=50 full_solve_pairs=25 checksum=d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b
 ```
 
+Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The Day 11 measurements below have been withdrawn and replaced with clean process-isolated data. The current-source headline/table and Day 18 measurements remain provisional until their clean recovery runs are recorded.
+
 ## Timing definitions
 
 Each child JVM runs all 25 `fullSolve` paths exactly once. The fields intentionally describe different timing boundaries:
@@ -405,41 +407,56 @@ The accepted evidence is the isolated paired Day 1 interval; the whole-suite pai
 
 Day 11 previously split every grid row into one-character strings, retained the resulting nested lists, allocated a `Coordinate` for every galaxy, and checked every galaxy pair. It now counts galaxies per row and column while reading the rectangular map, then derives ordinary Manhattan distance and empty-axis crossings with prefix sums. Both answers come from that single analysis in linear time and invocation-local state.
 
-An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `d8f3e71`.
+The original measurements for this change overlapped leaked background AoC JVMs and are withdrawn. The clean recovery first verified through the OS process table that no AoC Java/Javac, benchmark, timing, or watchdog process was active. Every recovery Java/Javac invocation then ran in a tracked process group with a hard deadline and a final descendant check. An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `d8f3e71`.
 
 | Pair | Order | Object/pair baseline (ms) | Primitive axes (ms) | Delta (ms) |
 | ---: | :---: | ---: | ---: | ---: |
-| 1 | B-C | 15.914 | 3.846 | -12.068 |
-| 2 | C-B | 15.549 | 3.986 | -11.563 |
-| 3 | B-C | 15.752 | 4.019 | -11.733 |
-| 4 | C-B | 15.250 | 3.954 | -11.297 |
-| 5 | B-C | 15.509 | 3.881 | -11.628 |
-| 6 | C-B | 15.017 | 3.593 | -11.423 |
-| 7 | B-C | 15.524 | 3.676 | -11.848 |
-| 8 | C-B | 14.935 | 3.589 | -11.346 |
-| 9 | B-C | 15.901 | 3.949 | -11.953 |
-| 10 | C-B | 15.181 | 3.714 | -11.467 |
+| 1 | B-C | 14.567 | 3.493 | -11.073 |
+| 2 | C-B | 14.662 | 3.519 | -11.143 |
+| 3 | B-C | 14.214 | 3.506 | -10.708 |
+| 4 | C-B | 13.756 | 3.358 | -10.398 |
+| 5 | B-C | 14.351 | 3.443 | -10.909 |
+| 6 | C-B | 13.919 | 3.346 | -10.573 |
+| 7 | B-C | 14.061 | 3.435 | -10.626 |
+| 8 | C-B | 13.922 | 3.352 | -10.570 |
+| 9 | B-C | 13.900 | 3.318 | -10.581 |
+| 10 | C-B | 13.843 | 3.299 | -10.544 |
 
-The excluded cold values were 15.615ms baseline and 4.245ms candidate. The measured means were **15.453ms baseline** and **3.821ms candidate**, an **11.633ms (75.3%) reduction**. The paired-delta sample standard deviation was 0.262ms and the t(9) 95% confidence interval was **[-11.820ms, -11.445ms]**.
+The excluded cold values were 13.907ms baseline and 3.307ms candidate. The measured means were **14.120ms baseline** and **3.407ms candidate**, a **10.713ms (75.9%) reduction**. The paired-delta sample standard deviation was 0.246ms and the t(9) 95% confidence interval was **[-10.889ms, -10.536ms]**.
 
-The whole-suite comparison was much noisier under interactive load: its counterbalanced 10-pair solver means were 227.108ms baseline and 223.546ms candidate, a -3.562ms delta with a 95% confidence interval of [-15.310ms, +8.186ms]. Separate standard phase runs had these excluded cold processes:
+The clean whole-suite comparison used the same counterbalanced order and separate child JVMs:
+
+| Pair | Order | Baseline solver (ms) | Candidate solver (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 204.160 | 197.879 | -6.281 |
+| 2 | C-B | 197.897 | 187.089 | -10.808 |
+| 3 | B-C | 205.460 | 198.951 | -6.509 |
+| 4 | C-B | 207.458 | 187.872 | -19.586 |
+| 5 | B-C | 209.682 | 186.541 | -23.141 |
+| 6 | C-B | 199.052 | 192.000 | -7.052 |
+| 7 | B-C | 207.983 | 188.037 | -19.946 |
+| 8 | C-B | 207.975 | 185.827 | -22.148 |
+| 9 | B-C | 199.009 | 196.597 | -2.412 |
+| 10 | C-B | 199.791 | 194.264 | -5.527 |
+
+Its solver means were **203.847ms baseline** and **191.506ms candidate**, a **12.341ms (6.05%) reduction**. The paired-delta sample standard deviation was 7.953ms and the t(9) 95% confidence interval was **[-18.030ms, -6.652ms]**. Separate standard phase runs had these excluded cold processes:
 
 | Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Baseline | 312.157 | 261.257 | 225.403 | 35.377 | 35.854 |
-| Candidate | 275.196 | 239.630 | 202.220 | 31.303 | 37.411 |
+| Baseline | 284.000 | 237.816 | 207.777 | 27.570 | 30.038 |
+| Candidate | 259.692 | 213.020 | 183.702 | 28.082 | 29.318 |
 
 Their 10-process means were:
 
 | Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
 | --- | ---: | ---: | ---: |
-| Wall | 312.729 | 315.214 | +2.485 |
-| Main | 265.637 | 265.689 | +0.052 |
-| Solver | 227.599 | 226.434 | -1.165 |
-| Startup | 31.182 | 37.719 | +6.537 |
-| Harness | 38.038 | 39.255 | +1.217 |
+| Wall | 276.254 | 264.348 | -11.906 |
+| Main | 232.371 | 219.863 | -12.508 |
+| Solver | 202.537 | 190.253 | -12.284 |
+| Startup | 25.529 | 26.234 | +0.705 |
+| Harness | 29.835 | 29.610 | -0.224 |
 
-The accepted evidence is the isolated paired interval; aggregate movement across the other 24 days is explicitly inconclusive. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official map returned `374 / 82000210`, and 500 deterministic rectangular maps—including single-row, single-column, empty-axis, zero-galaxy, and optional-final-newline cases—matched both the exact pre-change implementation and an independent explicit-coordinate expansion oracle.
+Both clean paired intervals exclude zero, and the separate phase split independently shows the solver reduction while startup and harness remain essentially unchanged. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official map returned `374 / 82000210`, and 500 deterministic rectangular maps—including single-row, single-column, empty-axis, zero-galaxy, and optional-final-newline cases—matched both the exact pre-change implementation and an independent explicit-coordinate expansion oracle.
 
 ## Day 18 exact streaming lagoon geometry
 
