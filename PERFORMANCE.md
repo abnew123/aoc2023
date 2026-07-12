@@ -361,6 +361,46 @@ Their 10-process means were:
 
 All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `288 / 71503`; exact-root cases such as time 7 and distance 12 correctly return zero; and 1,200 deterministic races matched brute-force or `BigInteger` multiplication references across small and near-trillion times, zero-win cases, mixed whitespace, and distances near `Long.MAX_VALUE`.
 
+## Day 1 single-pass calibration scan
+
+Day 1 previously buffered every input line, scanned each line four times, recreated the nine-word array for every search, copied character arrays, and allocated substrings for word probes. It now processes lines immediately, scans forward once, and uses allocation-free prefix checks while retaining one-character advancement so overlapping words such as `twone` and `oneight` remain visible. Numeric recognition still uses `Character.isDigit`/`Character.digit`, and lines without a requested token retain the prior `-11` contribution.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs. Odd pairs ran the `d708409` four-scan baseline then candidate (`B-C`); even pairs reversed the order (`C-B`).
+
+| Pair | Order | Four scans (ms) | Single scan (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 9.051 | 6.375 | -2.676 |
+| 2 | C-B | 8.912 | 6.348 | -2.564 |
+| 3 | B-C | 9.052 | 6.407 | -2.645 |
+| 4 | C-B | 10.022 | 6.542 | -3.480 |
+| 5 | B-C | 9.323 | 6.466 | -2.857 |
+| 6 | C-B | 8.866 | 6.553 | -2.313 |
+| 7 | B-C | 9.128 | 6.874 | -2.254 |
+| 8 | C-B | 8.904 | 6.241 | -2.663 |
+| 9 | B-C | 8.967 | 6.712 | -2.255 |
+| 10 | C-B | 9.373 | 6.213 | -3.160 |
+
+Table deltas and summary statistics use the unrounded nanosecond records. The excluded cold values were 9.839 ms baseline and 7.011 ms candidate. The measured means were **9.160 ms baseline** and **6.473 ms candidate**, a **2.687 ms (29.3%) reduction**. The paired-delta sample standard deviation was 0.396 ms and the t(9) 95% confidence interval was **[-2.970 ms, -2.403 ms]**.
+
+The authoritative whole-suite child comparison was directionally consistent but noisy: its counterbalanced 10-pair solver means were 210.361 ms baseline and 205.331 ms candidate, a -5.030 ms delta with a 95% confidence interval of [-10.815 ms, +0.756 ms]. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 277.638 | 246.362 | 213.114 | 27.377 | 33.247 |
+| Candidate | 280.294 | 246.097 | 214.887 | 29.627 | 31.211 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 290.782 | 279.093 | -11.688 |
+| Main | 247.385 | 240.784 | -6.602 |
+| Solver | 215.708 | 210.345 | -5.364 |
+| Startup | 28.424 | 26.217 | -2.207 |
+| Harness | 31.677 | 30.439 | -1.238 |
+
+The accepted evidence is the isolated paired Day 1 interval; the whole-suite paired interval is explicitly inconclusive under nonuniform interactive load, and the phase split is retained transparently. All 50 independent answers and 25 combined solves retain the established checksum. The official samples returned `142` and `281`; overlap, numeric-zero, uppercase, tokenless, Arabic-decimal-digit, and blank-line cases retained exact behavior; and 1,011 deterministic randomized lines matched the pre-change implementation.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.

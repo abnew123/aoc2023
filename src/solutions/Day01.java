@@ -2,25 +2,18 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class Day01 implements DayTemplate {
 
     @Override
     public String[] fullSolve(Scanner in){
-        int answer1 = 0;
-        int answer2 = 0;
-        List<String> lines = new ArrayList<>();
+        long answer1 = 0;
+        long answer2 = 0;
         while (in.hasNext()) {
-            lines.add(in.nextLine());
-        }
-        for (String line : lines) {
-            answer1 += 10 * findFirstDigit(line, true, true);
-            answer1 += findFirstDigit(line, false, true);
-            answer2 += 10 * findFirstDigit(line, true, false);
-            answer2 += findFirstDigit(line, false, false);
+            long values = scanBoth(in.nextLine());
+            answer1 += (int) (values >> 32);
+            answer2 += (int) values;
         }
         return new String[]{answer1 + "", answer2+ ""};
     }
@@ -34,39 +27,71 @@ public class Day01 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        int answer = 0;
-        List<String> lines = new ArrayList<>();
+        long answer = 0;
         while (in.hasNext()) {
-            lines.add(in.nextLine());
-        }
-        for (String line : lines) {
-            answer += 10 * findFirstDigit(line, true, part1);
-            answer += findFirstDigit(line, false, part1);
+            answer += scanLine(in.nextLine(), !part1);
         }
         return answer + "";
     }
 
-    private int findFirstDigit(String line, boolean forwards, boolean part1) {
-        String[] digits = new String[]{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
-        char[] chars = line.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            int index = forwards ? i : (chars.length - i - 1);
-            if (!part1) {
-                for (int j = 0; j < digits.length; j++) {
-                    if (index + digits[j].length() > line.length()) {
-                        continue;
-                    }
-                    String substring = line.substring(index, index + digits[j].length());
-                    if (substring.contains(digits[j])) {
-                        return j + 1;
-                    }
+    private long scanBoth(String line) {
+        int firstNumeric = -1;
+        int lastNumeric = -1;
+        int firstToken = -1;
+        int lastToken = -1;
+        for (int index = 0; index < line.length(); index++) {
+            char current = line.charAt(index);
+            int numeric = Character.isDigit(current) ? Character.digit(current, 10) : -1;
+            if (numeric >= 0) {
+                if (firstNumeric < 0) {
+                    firstNumeric = numeric;
                 }
+                lastNumeric = numeric;
             }
-            char ch = chars[index];
-            if (Character.isDigit(ch)) {
-                return Character.digit(ch, 10);
+            int token = numeric >= 0 ? numeric : wordAt(line, index);
+            if (token >= 0) {
+                if (firstToken < 0) {
+                    firstToken = token;
+                }
+                lastToken = token;
             }
         }
-        return -1;
+        int part1 = 10 * firstNumeric + lastNumeric;
+        int part2 = 10 * firstToken + lastToken;
+        return ((long) part1 << 32) | (part2 & 0xffffffffL);
+    }
+
+    private int scanLine(String line, boolean includeWords) {
+        int first = -1;
+        int last = -1;
+        for (int index = 0; index < line.length(); index++) {
+            char current = line.charAt(index);
+            int value = Character.isDigit(current) ? Character.digit(current, 10) : -1;
+            if (value < 0 && includeWords) {
+                value = wordAt(line, index);
+            }
+            if (value >= 0) {
+                if (first < 0) {
+                    first = value;
+                }
+                last = value;
+            }
+        }
+        return 10 * first + last;
+    }
+
+    private int wordAt(String line, int index) {
+        return switch (line.charAt(index)) {
+            case 'o' -> line.startsWith("one", index) ? 1 : -1;
+            case 't' -> line.startsWith("two", index) ? 2
+                    : line.startsWith("three", index) ? 3 : -1;
+            case 'f' -> line.startsWith("four", index) ? 4
+                    : line.startsWith("five", index) ? 5 : -1;
+            case 's' -> line.startsWith("six", index) ? 6
+                    : line.startsWith("seven", index) ? 7 : -1;
+            case 'e' -> line.startsWith("eight", index) ? 8 : -1;
+            case 'n' -> line.startsWith("nine", index) ? 9 : -1;
+            default -> -1;
+        };
     }
 }
