@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest reproducible fresh-JVM benchmark averages **210.345ms of solver time**, **240.784ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **279.093ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 214.887ms solver / 246.097ms main / 280.294ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest reproducible fresh-JVM benchmark averages **226.434ms of solver time**, **265.689ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **315.214ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 202.220ms solver / 239.630ms main / 275.196ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
 Day 12 now retains only two rolling DP columns instead of allocating a record-length-by-group-count matrix for every line. A counterbalanced isolated fresh-process comparison reduced its mean from 15.377ms to 14.169ms (-7.86%), with a paired 95% confidence interval of [-1.39ms, -1.03ms]; the whole-suite comparison remained inconclusive under interactive load.
 
@@ -11,6 +11,8 @@ Day 7 now parses each hand and bid once, maps card ranks directly, and classifie
 Day 6 now parses both race lines once and counts strict record wins with overflow-safe integer binary search. Its isolated mean fell from 3.290ms to 1.600ms (-51.4%), with a paired 95% confidence interval of [-1.898ms, -1.481ms]; the whole-suite paired interval also excluded zero.
 
 Day 1 now scans each calibration line once, matching overlapping digit words without temporary substrings or line buffering. Its isolated mean fell from 9.160ms to 6.473ms (-29.3%), with a paired 95% confidence interval of [-2.970ms, -2.403ms]; the whole-suite paired interval remained inconclusive under interactive load.
+
+Day 11 now derives both cosmic-distance totals from primitive row and column counts. Its isolated mean fell from 15.453ms to 3.821ms (-75.3%), with a paired 95% confidence interval of [-11.820ms, -11.445ms]; the whole-suite paired interval remained inconclusive under interactive load.
 
 [`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, paired optimization comparisons, and historical benchmark caveats.
 

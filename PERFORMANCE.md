@@ -401,6 +401,46 @@ Their 10-process means were:
 
 The accepted evidence is the isolated paired Day 1 interval; the whole-suite paired interval is explicitly inconclusive under nonuniform interactive load, and the phase split is retained transparently. All 50 independent answers and 25 combined solves retain the established checksum. The official samples returned `142` and `281`; overlap, numeric-zero, uppercase, tokenless, Arabic-decimal-digit, and blank-line cases retained exact behavior; and 1,011 deterministic randomized lines matched the pre-change implementation.
 
+## Day 11 primitive axis contributions
+
+Day 11 previously split every grid row into one-character strings, retained the resulting nested lists, allocated a `Coordinate` for every galaxy, and checked every galaxy pair. It now counts galaxies per row and column while reading the rectangular map, then derives ordinary Manhattan distance and empty-axis crossings with prefix sums. Both answers come from that single analysis in linear time and invocation-local state.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `d8f3e71`.
+
+| Pair | Order | Object/pair baseline (ms) | Primitive axes (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 15.914 | 3.846 | -12.068 |
+| 2 | C-B | 15.549 | 3.986 | -11.563 |
+| 3 | B-C | 15.752 | 4.019 | -11.733 |
+| 4 | C-B | 15.250 | 3.954 | -11.297 |
+| 5 | B-C | 15.509 | 3.881 | -11.628 |
+| 6 | C-B | 15.017 | 3.593 | -11.423 |
+| 7 | B-C | 15.524 | 3.676 | -11.848 |
+| 8 | C-B | 14.935 | 3.589 | -11.346 |
+| 9 | B-C | 15.901 | 3.949 | -11.953 |
+| 10 | C-B | 15.181 | 3.714 | -11.467 |
+
+The excluded cold values were 15.615ms baseline and 4.245ms candidate. The measured means were **15.453ms baseline** and **3.821ms candidate**, an **11.633ms (75.3%) reduction**. The paired-delta sample standard deviation was 0.262ms and the t(9) 95% confidence interval was **[-11.820ms, -11.445ms]**.
+
+The whole-suite comparison was much noisier under interactive load: its counterbalanced 10-pair solver means were 227.108ms baseline and 223.546ms candidate, a -3.562ms delta with a 95% confidence interval of [-15.310ms, +8.186ms]. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 312.157 | 261.257 | 225.403 | 35.377 | 35.854 |
+| Candidate | 275.196 | 239.630 | 202.220 | 31.303 | 37.411 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 312.729 | 315.214 | +2.485 |
+| Main | 265.637 | 265.689 | +0.052 |
+| Solver | 227.599 | 226.434 | -1.165 |
+| Startup | 31.182 | 37.719 | +6.537 |
+| Harness | 38.038 | 39.255 | +1.217 |
+
+The accepted evidence is the isolated paired interval; aggregate movement across the other 24 days is explicitly inconclusive. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official map returned `374 / 82000210`, and 500 deterministic rectangular maps—including single-row, single-column, empty-axis, zero-galaxy, and optional-final-newline cases—matched both the exact pre-change implementation and an independent explicit-coordinate expansion oracle.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.
