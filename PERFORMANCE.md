@@ -441,6 +441,46 @@ Their 10-process means were:
 
 The accepted evidence is the isolated paired interval; aggregate movement across the other 24 days is explicitly inconclusive. Verification retained all 50 expected answers, all 25 combined-solve pairs, and checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official map returned `374 / 82000210`, and 500 deterministic rectangular maps—including single-row, single-column, empty-axis, zero-galaxy, and optional-final-newline cases—matched both the exact pre-change implementation and an independent explicit-coordinate expansion oracle.
 
+## Day 18 exact streaming lagoon geometry
+
+Day 18 previously created an instruction object per interpretation, repeatedly compiled regex splits and direction maps, boxed four coordinate histories, and traversed those histories again for shoelace area. It now decodes both prompt instruction forms once and streams each edge through invocation-local `BigInteger` coordinate, twice-area, and boundary accumulators. Absolute shoelace area handles either orientation, arbitrary-size literal distances remain exact, and a nonclosed path is rejected explicitly.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `6a3ec0f`.
+
+| Pair | Order | Objects/regex/history (ms) | Exact streaming geometry (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 10.258 | 6.879 | -3.379 |
+| 2 | C-B | 10.216 | 7.043 | -3.173 |
+| 3 | B-C | 10.725 | 6.959 | -3.767 |
+| 4 | C-B | 10.565 | 7.028 | -3.538 |
+| 5 | B-C | 10.709 | 6.771 | -3.938 |
+| 6 | C-B | 10.423 | 6.932 | -3.490 |
+| 7 | B-C | 9.986 | 6.737 | -3.249 |
+| 8 | C-B | 10.392 | 6.711 | -3.681 |
+| 9 | B-C | 10.465 | 7.753 | -2.712 |
+| 10 | C-B | 10.323 | 6.824 | -3.499 |
+
+The excluded cold values were 10.582ms baseline and 7.219ms candidate. The measured means were **10.406ms baseline** and **6.964ms candidate**, a **3.443ms (33.1%) reduction**. The paired-delta sample standard deviation was 0.345ms and the t(9) 95% confidence interval was **[-3.689ms, -3.196ms]**.
+
+The whole-suite comparison was overwhelmed by nonuniform interactive load: its counterbalanced 10-pair solver means were 202.933ms baseline and 216.986ms candidate, a +14.053ms delta with a 95% confidence interval of [-9.017ms, +37.123ms]. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 302.790 | 244.297 | 206.685 | 42.904 | 37.611 |
+| Candidate | 292.081 | 246.586 | 211.386 | 29.612 | 35.199 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 286.388 | 288.564 | +2.176 |
+| Main | 242.032 | 244.785 | +2.753 |
+| Solver | 205.840 | 209.222 | +3.382 |
+| Startup | 29.175 | 29.714 | +0.539 |
+| Harness | 36.191 | 35.563 | -0.628 |
+
+The accepted evidence is the isolated paired interval; the aggregate suite is explicitly inconclusive. Verification retained all 50 expected answers and all 25 combined-solve pairs. The official sample returned `62 / 952408144115`; 300 deterministic rectangles with LF/CRLF and optional final newlines matched the exact pre-change implementation; and candidate-only cases covered reverse orientation plus a literal distance far beyond `long`, checked against independent rectangle arithmetic.
+
 ## Historical warm measurements
 
 The per-part table in the README is retained from the earlier July warm benchmark pass. Those values came from repeated calls within an already-running JVM and are useful for historical solver context, but they are not directly comparable with the fresh-process wall, main, or solver samples above. First invocations can be slower because the JVM is loading and verifying classes, linking methods, compiling hot paths, filling caches, and sometimes paying one-time allocation or GC costs.
