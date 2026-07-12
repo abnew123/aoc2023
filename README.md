@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest current-source fresh-JVM benchmark averaged **209.222ms of solver time**, **244.785ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **288.564ms of process wall time** across 10 separate Java processes under explicitly nonuniform interactive load. The first excluded cold process measured 211.386ms solver / 246.586ms main / 292.081ms wall. This headline is provisional because its Day 18 run overlapped a subsequently discovered leaked-background-JVM contamination window; the Day 11 figures below have already been replaced by a clean recovery, and Day 18 will be rerun before the headline is accepted. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest clean current-source fresh-JVM benchmark averaged **191.989ms of solver time**, **222.023ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **266.044ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 189.909ms solver / 220.773ms main / 268.881ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
 Day 12 now retains only two rolling DP columns instead of allocating a record-length-by-group-count matrix for every line. A counterbalanced isolated fresh-process comparison reduced its mean from 15.377ms to 14.169ms (-7.86%), with a paired 95% confidence interval of [-1.39ms, -1.03ms]; the whole-suite comparison remained inconclusive under interactive load.
 
@@ -14,7 +14,7 @@ Day 1 now scans each calibration line once, matching overlapping digit words wit
 
 Day 11 now derives both cosmic-distance totals from primitive row and column counts. A clean recovery after removal of leaked background JVMs measured its isolated mean falling from 14.120ms to 3.407ms (-75.9%), with a paired 95% confidence interval of [-10.889ms, -10.536ms]; the clean whole-suite paired interval also excluded zero.
 
-Day 18 now streams both instruction interpretations through exact shoelace/perimeter accumulators without regexes or coordinate histories. Its isolated mean fell from 10.406ms to 6.964ms (-33.1%), with a paired 95% confidence interval of [-3.689ms, -3.196ms]; the whole-suite comparison remained inconclusive under interactive load.
+Day 18 now streams both instruction interpretations through exact shoelace/perimeter accumulators without regexes or coordinate histories. A clean recovery after removal of leaked background JVMs measured its isolated mean falling from 10.539ms to 7.071ms (-32.9%), with a paired 95% confidence interval of [-3.725ms, -3.210ms]; the clean whole-suite paired interval remained inconclusive.
 
 [`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, paired optimization comparisons, and historical benchmark caveats.
 

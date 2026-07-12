@@ -24,7 +24,7 @@ Verification passed with this deterministic, length-framed SHA-256 answer checks
 VERIFY_OK solve_answers=50 full_solve_pairs=25 checksum=d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b
 ```
 
-Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The Day 11 measurements below have been withdrawn and replaced with clean process-isolated data. The current-source headline/table and Day 18 measurements remain provisional until their clean recovery runs are recorded.
+Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The original Day 11 and Day 18 measurements have been withdrawn and replaced with clean process-isolated data below. The current-source table has likewise been replaced by the clean Day 18 candidate standard run.
 
 ## Timing definitions
 
@@ -46,27 +46,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 295.312 | 249.184 | 218.383 | 26.747 | 30.802 |
-| 1 | 297.560 | 251.920 | 220.728 | 26.688 | 31.192 |
-| 2 | 288.975 | 247.783 | 216.101 | 25.806 | 31.682 |
-| 3 | 294.015 | 254.123 | 222.970 | 25.741 | 31.152 |
-| 4 | 293.587 | 249.893 | 219.165 | 24.644 | 30.727 |
-| 5 | 289.456 | 249.636 | 218.237 | 24.561 | 31.399 |
-| 6 | 302.453 | 250.254 | 216.713 | 33.191 | 33.541 |
-| 7 | 309.554 | 263.666 | 231.123 | 26.879 | 32.543 |
-| 8 | 300.144 | 255.482 | 220.423 | 25.648 | 35.059 |
-| 9 | 292.883 | 253.696 | 219.771 | 24.858 | 33.925 |
-| 10 | 305.627 | 263.173 | 231.789 | 27.276 | 31.384 |
+| Cold | 268.881 | 220.773 | 189.909 | 29.616 | 30.864 |
+| 1 | 266.988 | 222.874 | 192.442 | 25.564 | 30.432 |
+| 2 | 267.062 | 223.528 | 193.715 | 25.083 | 29.813 |
+| 3 | 275.560 | 228.980 | 198.872 | 28.043 | 30.108 |
+| 4 | 264.485 | 220.853 | 190.491 | 25.062 | 30.363 |
+| 5 | 266.054 | 222.973 | 192.812 | 24.507 | 30.161 |
+| 6 | 265.607 | 220.505 | 190.485 | 25.870 | 30.019 |
+| 7 | 263.031 | 218.567 | 188.368 | 25.691 | 30.199 |
+| 8 | 261.203 | 218.373 | 188.091 | 24.177 | 30.282 |
+| 9 | 261.038 | 217.419 | 187.715 | 25.029 | 29.704 |
+| 10 | 269.412 | 226.156 | 196.901 | 24.778 | 29.255 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 297.425 | 295.787 | 6.904 |
-| Main | 253.963 | 252.808 | 5.505 |
-| Solver | 221.702 | 220.097 | 5.509 |
-| Startup | 26.529 | 25.774 | 2.522 |
-| Harness | 32.260 | 31.540 | 1.449 |
+| Wall | 266.044 | 265.831 | 4.269 |
+| Main | 222.023 | 221.864 | 3.644 |
+| Solver | 191.989 | 191.466 | 3.748 |
+| Startup | 25.380 | 25.073 | 1.072 |
+| Harness | 30.034 | 30.135 | 0.356 |
 
 ## Day 16 stack reuse
 
@@ -462,41 +462,56 @@ Both clean paired intervals exclude zero, and the separate phase split independe
 
 Day 18 previously created an instruction object per interpretation, repeatedly compiled regex splits and direction maps, boxed four coordinate histories, and traversed those histories again for shoelace area. It now decodes both prompt instruction forms once and streams each edge through invocation-local `BigInteger` coordinate, twice-area, and boundary accumulators. Absolute shoelace area handles either orientation, arbitrary-size literal distances remain exact, and a nonclosed path is rejected explicitly.
 
-An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `6a3ec0f`.
+The original measurements for this change overlapped leaked background AoC JVMs and are withdrawn. The clean recovery first verified through the OS process table that no AoC Java/Javac, benchmark, timing, or watchdog process was active. Every recovery Java/Javac invocation then ran in a tracked process group with a hard deadline and a final descendant check. An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `6a3ec0f`.
 
 | Pair | Order | Objects/regex/history (ms) | Exact streaming geometry (ms) | Delta (ms) |
 | ---: | :---: | ---: | ---: | ---: |
-| 1 | B-C | 10.258 | 6.879 | -3.379 |
-| 2 | C-B | 10.216 | 7.043 | -3.173 |
-| 3 | B-C | 10.725 | 6.959 | -3.767 |
-| 4 | C-B | 10.565 | 7.028 | -3.538 |
-| 5 | B-C | 10.709 | 6.771 | -3.938 |
-| 6 | C-B | 10.423 | 6.932 | -3.490 |
-| 7 | B-C | 9.986 | 6.737 | -3.249 |
-| 8 | C-B | 10.392 | 6.711 | -3.681 |
-| 9 | B-C | 10.465 | 7.753 | -2.712 |
-| 10 | C-B | 10.323 | 6.824 | -3.499 |
+| 1 | B-C | 10.556 | 6.833 | -3.723 |
+| 2 | C-B | 10.982 | 7.102 | -3.880 |
+| 3 | B-C | 10.320 | 7.123 | -3.197 |
+| 4 | C-B | 10.946 | 7.254 | -3.692 |
+| 5 | B-C | 10.468 | 6.977 | -3.492 |
+| 6 | C-B | 10.214 | 7.555 | -2.659 |
+| 7 | B-C | 10.482 | 6.953 | -3.529 |
+| 8 | C-B | 10.764 | 7.144 | -3.620 |
+| 9 | B-C | 10.466 | 6.772 | -3.695 |
+| 10 | C-B | 10.194 | 7.000 | -3.194 |
 
-The excluded cold values were 10.582ms baseline and 7.219ms candidate. The measured means were **10.406ms baseline** and **6.964ms candidate**, a **3.443ms (33.1%) reduction**. The paired-delta sample standard deviation was 0.345ms and the t(9) 95% confidence interval was **[-3.689ms, -3.196ms]**.
+The excluded cold values were 10.600ms baseline and 6.903ms candidate. The measured means were **10.539ms baseline** and **7.071ms candidate**, a **3.468ms (32.9%) reduction**. The paired-delta sample standard deviation was 0.360ms and the t(9) 95% confidence interval was **[-3.725ms, -3.210ms]**.
 
-The whole-suite comparison was overwhelmed by nonuniform interactive load: its counterbalanced 10-pair solver means were 202.933ms baseline and 216.986ms candidate, a +14.053ms delta with a 95% confidence interval of [-9.017ms, +37.123ms]. Separate standard phase runs had these excluded cold processes:
+The clean whole-suite comparison used the same counterbalanced order and separate child JVMs:
+
+| Pair | Order | Baseline solver (ms) | Candidate solver (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 190.970 | 194.159 | +3.188 |
+| 2 | C-B | 197.241 | 193.115 | -4.126 |
+| 3 | B-C | 185.963 | 191.786 | +5.823 |
+| 4 | C-B | 189.957 | 190.637 | +0.679 |
+| 5 | B-C | 194.903 | 194.403 | -0.499 |
+| 6 | C-B | 187.964 | 190.108 | +2.144 |
+| 7 | B-C | 187.754 | 201.173 | +13.419 |
+| 8 | C-B | 197.251 | 190.967 | -6.285 |
+| 9 | B-C | 197.889 | 196.900 | -0.990 |
+| 10 | C-B | 203.815 | 189.644 | -14.171 |
+
+Its solver means were 193.371ms baseline and 193.289ms candidate, a -0.082ms (-0.04%) delta. The paired-delta sample standard deviation was 7.361ms and the t(9) 95% confidence interval was **[-5.347ms, +5.184ms]**, so aggregate movement across the other 24 days remains explicitly inconclusive. Separate standard phase runs had these excluded cold processes:
 
 | Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Baseline | 302.790 | 244.297 | 206.685 | 42.904 | 37.611 |
-| Candidate | 292.081 | 246.586 | 211.386 | 29.612 | 35.199 |
+| Baseline | 265.092 | 217.996 | 186.271 | 28.680 | 31.725 |
+| Candidate | 268.881 | 220.773 | 189.909 | 29.616 | 30.864 |
 
 Their 10-process means were:
 
 | Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
 | --- | ---: | ---: | ---: |
-| Wall | 286.388 | 288.564 | +2.176 |
-| Main | 242.032 | 244.785 | +2.753 |
-| Solver | 205.840 | 209.222 | +3.382 |
-| Startup | 29.175 | 29.714 | +0.539 |
-| Harness | 36.191 | 35.563 | -0.628 |
+| Wall | 265.267 | 266.044 | +0.777 |
+| Main | 221.175 | 222.023 | +0.847 |
+| Solver | 190.974 | 191.989 | +1.015 |
+| Startup | 25.391 | 25.380 | -0.011 |
+| Harness | 30.201 | 30.034 | -0.168 |
 
-The accepted evidence is the isolated paired interval; the aggregate suite is explicitly inconclusive. Verification retained all 50 expected answers and all 25 combined-solve pairs. The official sample returned `62 / 952408144115`; 300 deterministic rectangles with LF/CRLF and optional final newlines matched the exact pre-change implementation; and candidate-only cases covered reverse orientation plus a literal distance far beyond `long`, checked against independent rectangle arithmetic.
+The accepted evidence is the clean isolated paired interval; the clean whole-suite paired interval and separate phase means are retained transparently as inconclusive aggregate evidence. Verification retained all 50 expected answers and all 25 combined-solve pairs. The official sample returned `62 / 952408144115`; 300 deterministic rectangles with LF/CRLF and optional final newlines matched the exact pre-change implementation; and candidate-only cases covered reverse orientation plus a literal distance far beyond `long`, checked against independent rectangle arithmetic.
 
 ## Historical warm measurements
 
