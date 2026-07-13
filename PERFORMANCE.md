@@ -24,7 +24,7 @@ Verification passed with this deterministic, length-framed SHA-256 answer checks
 VERIFY_OK solve_answers=50 full_solve_pairs=25 checksum=d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b
 ```
 
-Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The original Day 11 and Day 18 measurements have been withdrawn and replaced with clean process-isolated data below. The current-source table has likewise been replaced by the clean Day 18 candidate standard run.
+Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The original Day 11 and Day 18 measurements have been withdrawn and replaced with clean process-isolated data below. The current-source table now records the later clean Day 25 candidate standard run.
 
 ## Timing definitions
 
@@ -46,27 +46,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 277.795 | 232.557 | 201.263 | 28.281 | 31.294 |
-| 1 | 260.902 | 219.518 | 189.084 | 25.343 | 30.434 |
-| 2 | 270.975 | 225.440 | 193.609 | 28.793 | 31.831 |
-| 3 | 269.017 | 227.002 | 196.602 | 25.721 | 30.400 |
-| 4 | 276.194 | 233.709 | 201.918 | 26.374 | 31.791 |
-| 5 | 266.206 | 223.280 | 191.269 | 26.807 | 32.011 |
-| 6 | 272.806 | 229.694 | 196.959 | 26.669 | 32.734 |
-| 7 | 276.480 | 234.366 | 202.101 | 25.712 | 32.265 |
-| 8 | 272.032 | 228.955 | 196.720 | 26.565 | 32.235 |
-| 9 | 271.107 | 226.921 | 193.963 | 27.885 | 32.958 |
-| 10 | 268.098 | 225.751 | 193.649 | 27.070 | 32.102 |
+| Cold | 278.793 | 232.693 | 201.276 | 30.350 | 31.417 |
+| 1 | 270.064 | 225.706 | 196.028 | 25.255 | 29.677 |
+| 2 | 277.158 | 235.817 | 205.450 | 25.776 | 30.367 |
+| 3 | 282.855 | 237.425 | 207.462 | 25.988 | 29.963 |
+| 4 | 280.562 | 235.100 | 203.643 | 26.952 | 31.457 |
+| 5 | 268.554 | 223.385 | 194.222 | 25.915 | 29.163 |
+| 6 | 279.572 | 233.495 | 203.016 | 26.701 | 30.479 |
+| 7 | 274.682 | 229.835 | 200.025 | 25.779 | 29.810 |
+| 8 | 270.764 | 225.168 | 194.319 | 26.306 | 30.848 |
+| 9 | 272.299 | 223.896 | 194.238 | 29.209 | 29.659 |
+| 10 | 275.774 | 229.998 | 199.431 | 26.395 | 30.568 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 270.381 | 271.041 | 4.653 |
-| Main | 227.464 | 226.962 | 4.497 |
-| Solver | 195.587 | 195.283 | 4.189 |
-| Startup | 26.694 | 26.617 | 1.045 |
-| Harness | 31.876 | 32.057 | 0.852 |
+| Wall | 275.229 | 275.228 | 4.825 |
+| Main | 229.982 | 229.916 | 5.271 |
+| Solver | 199.783 | 199.728 | 4.969 |
+| Startup | 26.428 | 26.147 | 1.094 |
+| Harness | 30.199 | 30.165 | 0.674 |
 
 ## Day 16 stack reuse
 
@@ -552,6 +552,29 @@ Their 10-process means were:
 | Harness | 32.161 | 31.876 | -0.285 |
 
 The accepted evidence is the isolated paired interval; the whole-suite interval is explicitly inconclusive, and the complete phase split is retained transparently. All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `8 / 2286`; candidate-only checks covered omitted colors, flexible whitespace, and IDs/counts/products beyond `long` range.
+
+## Day 25 exact three-wire min-cut
+
+The previous endpoint/path-removal heuristic produced the personal and official answers but was not a general cut algorithm: a valid graph made from internally dense groups of six and seven vertices joined by exactly three wires returned `12` instead of `42`. Day 25 now deduplicates logical undirected wires and computes an exact global minimum cut with capped unit-capacity max flows. The prompt guarantees the required cut has three wires, so the search stops as soon as an exact cut of size three is proven. The answer product uses `long` arithmetic.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call. One excluded cold pair was followed by 10 counterbalanced pairs of separate JVM processes:
+
+| Pair | Order | Heuristic (ms) | Exact min-cut (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 15.482 | 14.274 | -1.208 |
+| 2 | C-B | 16.523 | 15.180 | -1.342 |
+| 3 | B-C | 15.712 | 13.864 | -1.848 |
+| 4 | C-B | 15.722 | 13.931 | -1.791 |
+| 5 | B-C | 15.838 | 14.377 | -1.461 |
+| 6 | C-B | 15.713 | 14.118 | -1.595 |
+| 7 | B-C | 15.701 | 15.478 | -0.224 |
+| 8 | C-B | 15.510 | 13.885 | -1.625 |
+| 9 | B-C | 16.230 | 13.949 | -2.281 |
+| 10 | C-B | 15.538 | 13.960 | -1.578 |
+
+The excluded cold values were 16.244ms heuristic and 14.629ms exact. The measured means were **15.797ms heuristic** and **14.302ms exact**, a **1.495ms (9.5%) reduction**. The paired-delta sample standard deviation was 0.536ms and the t(9) 95% confidence interval was **[-1.879ms, -1.112ms]**. The current-source cold-plus-10 run and its complete wall/main/solver/startup/harness split are recorded at the top of this document.
+
+All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official example returned `54`; 250 generated pairs of internally dense five-to-eight-vertex groups joined by exactly three distinct wires returned the expected partition products, including reciprocal/duplicate edge declarations. Separate and combined entry points agreed throughout.
 
 ## Historical warm measurements
 

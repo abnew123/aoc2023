@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest clean current-source fresh-JVM benchmark averaged **195.587ms of solver time**, **227.464ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **270.381ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 201.263ms solver / 232.557ms main / 277.795ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest clean current-source fresh-JVM benchmark averaged **199.783ms of solver time**, **229.982ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **275.229ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 201.276ms solver / 232.693ms main / 278.793ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
 
 Day 2 now parses each game once without regex splitting or per-game color maps, computes both answers together, treats omitted colors as zero, and retains arbitrary-size IDs, counts, products, and sums. Its isolated mean fell from 6.577ms to 5.756ms (-12.5%), with a paired 95% confidence interval of [-1.114ms, -0.528ms]; the whole-suite paired interval remained inconclusive.
 
@@ -17,6 +17,8 @@ Day 1 now scans each calibration line once, matching overlapping digit words wit
 Day 11 now derives both cosmic-distance totals from primitive row and column counts. A clean recovery after removal of leaked background JVMs measured its isolated mean falling from 14.120ms to 3.407ms (-75.9%), with a paired 95% confidence interval of [-10.889ms, -10.536ms]; the clean whole-suite paired interval also excluded zero.
 
 Day 18 now streams both instruction interpretations through exact shoelace/perimeter accumulators without regexes or coordinate histories. A clean recovery after removal of leaked background JVMs measured its isolated mean falling from 10.539ms to 7.071ms (-32.9%), with a paired 95% confidence interval of [-3.725ms, -3.210ms]; the clean whole-suite paired interval remained inconclusive.
+
+Day 25 now uses an exact deterministic global min-cut instead of the previous endpoint/path-removal heuristic, which failed valid three-wire-cut graphs. Despite the stronger guarantee, its isolated mean fell from 15.797ms to 14.302ms (-9.5%), with a paired 95% confidence interval of [-1.879ms, -1.112ms].
 
 [`FreshJvmBenchmark`](src/FreshJvmBenchmark.java) verifies all 50 independent `solve` answers and all 25 `fullSolve` pairs before launching one cold and 10 measured child JVMs. See the [performance notes](PERFORMANCE.md) for commands, raw samples, timing definitions, paired optimization comparisons, and historical benchmark caveats.
 
