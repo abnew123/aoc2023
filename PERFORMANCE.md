@@ -46,27 +46,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 268.881 | 220.773 | 189.909 | 29.616 | 30.864 |
-| 1 | 266.988 | 222.874 | 192.442 | 25.564 | 30.432 |
-| 2 | 267.062 | 223.528 | 193.715 | 25.083 | 29.813 |
-| 3 | 275.560 | 228.980 | 198.872 | 28.043 | 30.108 |
-| 4 | 264.485 | 220.853 | 190.491 | 25.062 | 30.363 |
-| 5 | 266.054 | 222.973 | 192.812 | 24.507 | 30.161 |
-| 6 | 265.607 | 220.505 | 190.485 | 25.870 | 30.019 |
-| 7 | 263.031 | 218.567 | 188.368 | 25.691 | 30.199 |
-| 8 | 261.203 | 218.373 | 188.091 | 24.177 | 30.282 |
-| 9 | 261.038 | 217.419 | 187.715 | 25.029 | 29.704 |
-| 10 | 269.412 | 226.156 | 196.901 | 24.778 | 29.255 |
+| Cold | 277.795 | 232.557 | 201.263 | 28.281 | 31.294 |
+| 1 | 260.902 | 219.518 | 189.084 | 25.343 | 30.434 |
+| 2 | 270.975 | 225.440 | 193.609 | 28.793 | 31.831 |
+| 3 | 269.017 | 227.002 | 196.602 | 25.721 | 30.400 |
+| 4 | 276.194 | 233.709 | 201.918 | 26.374 | 31.791 |
+| 5 | 266.206 | 223.280 | 191.269 | 26.807 | 32.011 |
+| 6 | 272.806 | 229.694 | 196.959 | 26.669 | 32.734 |
+| 7 | 276.480 | 234.366 | 202.101 | 25.712 | 32.265 |
+| 8 | 272.032 | 228.955 | 196.720 | 26.565 | 32.235 |
+| 9 | 271.107 | 226.921 | 193.963 | 27.885 | 32.958 |
+| 10 | 268.098 | 225.751 | 193.649 | 27.070 | 32.102 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 266.044 | 265.831 | 4.269 |
-| Main | 222.023 | 221.864 | 3.644 |
-| Solver | 191.989 | 191.466 | 3.748 |
-| Startup | 25.380 | 25.073 | 1.072 |
-| Harness | 30.034 | 30.135 | 0.356 |
+| Wall | 270.381 | 271.041 | 4.653 |
+| Main | 227.464 | 226.962 | 4.497 |
+| Solver | 195.587 | 195.283 | 4.189 |
+| Startup | 26.694 | 26.617 | 1.045 |
+| Harness | 31.876 | 32.057 | 0.852 |
 
 ## Day 16 stack reuse
 
@@ -512,6 +512,46 @@ Their 10-process means were:
 | Harness | 30.201 | 30.034 | -0.168 |
 
 The accepted evidence is the clean isolated paired interval; the clean whole-suite paired interval and separate phase means are retained transparently as inconclusive aggregate evidence. Verification retained all 50 expected answers and all 25 combined-solve pairs. The official sample returned `62 / 952408144115`; 300 deterministic rectangles with LF/CRLF and optional final newlines matched the exact pre-change implementation; and candidate-only cases covered reverse orientation plus a literal distance far beyond `long`, checked against independent rectangle arithmetic.
+
+## Day 2 direct exact game parsing
+
+Day 2 previously compiled multiple regex splits per line and draw, repeatedly split each draw again for its number and color, and maintained a boxed string-keyed map for the three maxima. It now scans each line once, updates three `BigInteger` maxima directly, and derives both answers together. Missing colors correctly contribute zero to the power, and IDs, cube counts, products, and sums are no longer limited to `int`.
+
+An isolated runner constructed the solver and input `Scanner` before timing the exact `fullSolve` call, checked both answers, and ran one excluded cold JVM per variant followed by 10 counterbalanced pairs of separate JVMs against baseline `dca3492`.
+
+| Pair | Order | Regex/map baseline (ms) | Direct exact parser (ms) | Delta (ms) |
+| ---: | :---: | ---: | ---: | ---: |
+| 1 | B-C | 6.714 | 5.735 | -0.979 |
+| 2 | C-B | 6.912 | 6.121 | -0.791 |
+| 3 | B-C | 6.017 | 5.631 | -0.387 |
+| 4 | C-B | 6.425 | 5.680 | -0.745 |
+| 5 | B-C | 6.458 | 5.269 | -1.189 |
+| 6 | C-B | 7.167 | 5.865 | -1.302 |
+| 7 | B-C | 6.752 | 6.094 | -0.658 |
+| 8 | C-B | 6.393 | 5.808 | -0.585 |
+| 9 | B-C | 6.235 | 6.098 | -0.137 |
+| 10 | C-B | 6.696 | 5.262 | -1.434 |
+
+The excluded cold values were 6.771ms baseline and 5.825ms candidate. The measured means were **6.577ms baseline** and **5.756ms candidate**, a **0.821ms (12.5%) reduction**. The paired-delta sample standard deviation was 0.410ms and the t(9) 95% confidence interval was **[-1.114ms, -0.528ms]**.
+
+The clean counterbalanced whole-suite solver means were 200.246ms baseline and 199.136ms candidate, a -1.110ms delta with a 95% confidence interval of [-4.276ms, +2.056ms]. Separate standard phase runs had these excluded cold processes:
+
+| Variant | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 276.577 | 228.765 | 194.951 | 31.433 | 33.814 |
+| Candidate | 277.795 | 232.557 | 201.263 | 28.281 | 31.294 |
+
+Their 10-process means were:
+
+| Metric | Baseline mean (ms) | Candidate mean (ms) | Change (ms) |
+| --- | ---: | ---: | ---: |
+| Wall | 274.129 | 270.381 | -3.747 |
+| Main | 230.636 | 227.464 | -3.172 |
+| Solver | 198.475 | 195.587 | -2.887 |
+| Startup | 27.232 | 26.694 | -0.538 |
+| Harness | 32.161 | 31.876 | -0.285 |
+
+The accepted evidence is the isolated paired interval; the whole-suite interval is explicitly inconclusive, and the complete phase split is retained transparently. All 50 independent answers and 25 combined solves retain checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b`. The official sample returned `8 / 2286`; candidate-only checks covered omitted colors, flexible whitespace, and IDs/counts/products beyond `long` range.
 
 ## Historical warm measurements
 

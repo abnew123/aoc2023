@@ -1,6 +1,8 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest clean current-source fresh-JVM benchmark averaged **191.989ms of solver time**, **222.023ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **266.044ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 189.909ms solver / 220.773ms main / 268.881ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest clean current-source fresh-JVM benchmark averaged **195.587ms of solver time**, **227.464ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **270.381ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 201.263ms solver / 232.557ms main / 277.795ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+
+Day 2 now parses each game once without regex splitting or per-game color maps, computes both answers together, treats omitted colors as zero, and retains arbitrary-size IDs, counts, products, and sums. Its isolated mean fell from 6.577ms to 5.756ms (-12.5%), with a paired 95% confidence interval of [-1.114ms, -0.528ms]; the whole-suite paired interval remained inconclusive.
 
 Day 12 now retains only two rolling DP columns instead of allocating a record-length-by-group-count matrix for every line. A counterbalanced isolated fresh-process comparison reduced its mean from 15.377ms to 14.169ms (-7.86%), with a paired 95% confidence interval of [-1.39ms, -1.03ms]; the whole-suite comparison remained inconclusive under interactive load.
 
