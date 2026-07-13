@@ -11,7 +11,7 @@ int i(String s){Integer x=(Integer)m.get(s);if(x!=null)return x;m.put(s,N);g.add
 int c(int e){
 int[][]u=new int[N][N];
 for(int f=0;f<4;f++){int[]q=new int[N],P=new int[N];int h=0,t=0;P[0]=1;q[t++]=0;
-while(h<t&&P[e]<1){int v=q[h++];for(int n:g.get(v))if(P[n]<1&&u[v][n]<1){P[n]=v+1;q[t++]=n;}}
+while(h<t&P[e]<1){int v=q[h++];for(int n:g.get(v))if(P[n]<1&&u[v][n]<1){P[n]=v+1;q[t++]=n;}}
 if(P[e]<1)return f>2?t*(N-t):0;for(int x=e;x>0;x=P[x]-1){int y=P[x]-1;u[y][x]++;u[x][y]--;}}
 return 0;
 }
