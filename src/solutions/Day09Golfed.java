@@ -1,1 +1,1 @@
-class I{String s(boolean p,String[]I){long r=0;for(var L:I){var q=L.split(" ");int n=q.length,a[]=new int[n];for(int i=0;i<n;)a[i]=new Integer(q[i++]);long x=0;for(;n-->0;){x=p?x+a[n]:a[0]-x;for(int i=0;i<n;)a[i]=a[i+1]-a[i++];}r+=x;}return r+"";}}
+class I{String s(boolean p,String[]I){long r=0;for(var L:I){var q=L.split(" ");int n=q.length,a[]=new int[n];for(int i=0;i<n;i++)a[i]=new Integer(q[p?i:n+~i]);long x=0;for(;n-->0;){x+=a[n];for(int i=0;i<n;)a[i]=a[i+1]-a[i++];}r+=x;}return r+"";}}
