@@ -62,6 +62,11 @@ class Day24Test extends BaseTest {
     }
 
     @Test
+    void testDay24OfficialSamplePart1() {
+        assertEquals(2, new Day24().intersectionsInArea(new Scanner(OFFICIAL_SAMPLE), 7, 27));
+    }
+
+    @Test
     void testDay24OfficialSamplePart2() {
         assertEquals("47", new Day24().solve(false, new Scanner(OFFICIAL_SAMPLE)));
     }

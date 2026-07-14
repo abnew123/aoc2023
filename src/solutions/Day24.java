@@ -9,8 +9,9 @@ import java.util.Scanner;
 
 public class Day24 implements DayTemplate {
 
-    private static final BigInteger TEST_MIN = BigInteger.valueOf(200_000_000_000_000L);
-    private static final BigInteger TEST_MAX = BigInteger.valueOf(400_000_000_000_000L);
+    private static final long TEST_MIN = 200_000_000_000_000L;
+    private static final long TEST_MAX = 400_000_000_000_000L;
+    private static final int FAST_FALLBACK = -1;
 
     @Override
     public String[] fullSolve(Scanner in) {
@@ -24,36 +25,35 @@ public class Day24 implements DayTemplate {
         return part1 ? Long.toString(part1(stones)) : part2(stones);
     }
 
+    public long intersectionsInArea(Scanner in, long minimum, long maximum) {
+        if (minimum > maximum) {
+            throw new IllegalArgumentException("Minimum must not exceed maximum");
+        }
+        return part1(parse(in), minimum, maximum);
+    }
+
     private long part1(List<Hailstone> stones) {
+        return part1(stones, TEST_MIN, TEST_MAX);
+    }
+
+    private long part1(List<Hailstone> stones, long minimum, long maximum) {
+        BigInteger exactMinimum = BigInteger.valueOf(minimum);
+        BigInteger exactMaximum = BigInteger.valueOf(maximum);
+        LongHailstone[] fastStones = new LongHailstone[stones.size()];
+        for (int index = 0; index < stones.size(); index++) {
+            fastStones[index] = toLong(stones.get(index));
+        }
         long intersections = 0;
         for (int firstIndex = 0; firstIndex < stones.size(); firstIndex++) {
             Hailstone first = stones.get(firstIndex);
             for (int secondIndex = firstIndex + 1; secondIndex < stones.size(); secondIndex++) {
                 Hailstone second = stones.get(secondIndex);
-                BigInteger denominator = first.vx.multiply(second.vy).subtract(first.vy.multiply(second.vx));
-                if (denominator.signum() == 0) {
-                    if (collinearFutureIntersectionInArea(first, second)) {
-                        intersections++;
-                    }
-                    continue;
-                }
-
-                BigInteger dx = second.x.subtract(first.x);
-                BigInteger dy = second.y.subtract(first.y);
-                BigInteger firstTime = dx.multiply(second.vy).subtract(dy.multiply(second.vx));
-                BigInteger secondTime = dx.multiply(first.vy).subtract(dy.multiply(first.vx));
-                if (denominator.signum() < 0) {
-                    denominator = denominator.negate();
-                    firstTime = firstTime.negate();
-                    secondTime = secondTime.negate();
-                }
-                if (firstTime.signum() < 0 || secondTime.signum() < 0) {
-                    continue;
-                }
-
-                BigInteger intersectionX = first.x.multiply(denominator).add(first.vx.multiply(firstTime));
-                BigInteger intersectionY = first.y.multiply(denominator).add(first.vy.multiply(firstTime));
-                if (inside(intersectionX, denominator) && inside(intersectionY, denominator)) {
+                int fastResult = fastStones[firstIndex] == null || fastStones[secondIndex] == null
+                        ? FAST_FALLBACK
+                        : intersectsInArea(fastStones[firstIndex], fastStones[secondIndex],
+                        minimum, maximum);
+                if (fastResult == 1 || fastResult == FAST_FALLBACK
+                        && intersectsInArea(first, second, exactMinimum, exactMaximum)) {
                     intersections++;
                 }
             }
@@ -61,18 +61,95 @@ public class Day24 implements DayTemplate {
         return intersections;
     }
 
-    private boolean collinearFutureIntersectionInArea(Hailstone first, Hailstone second) {
+    private LongHailstone toLong(Hailstone stone) {
+        try {
+            return new LongHailstone(stone.x.longValueExact(), stone.y.longValueExact(),
+                    stone.vx.longValueExact(), stone.vy.longValueExact());
+        } catch (ArithmeticException exception) {
+            return null;
+        }
+    }
+
+    private int intersectsInArea(LongHailstone first, LongHailstone second,
+                                 long minimum, long maximum) {
+        try {
+            long denominator = Math.subtractExact(Math.multiplyExact(first.vx, second.vy),
+                    Math.multiplyExact(first.vy, second.vx));
+            if (denominator == 0) {
+                return FAST_FALLBACK;
+            }
+            long dx = Math.subtractExact(second.x, first.x);
+            long dy = Math.subtractExact(second.y, first.y);
+            long firstTime = Math.subtractExact(Math.multiplyExact(dx, second.vy),
+                    Math.multiplyExact(dy, second.vx));
+            long secondTime = Math.subtractExact(Math.multiplyExact(dx, first.vy),
+                    Math.multiplyExact(dy, first.vx));
+            if (denominator < 0) {
+                denominator = Math.negateExact(denominator);
+                firstTime = Math.negateExact(firstTime);
+                secondTime = Math.negateExact(secondTime);
+            }
+            if (firstTime < 0 || secondTime < 0) {
+                return 0;
+            }
+            return inside(first.x, first.vx, firstTime, denominator, minimum, maximum)
+                    && inside(first.y, first.vy, firstTime, denominator, minimum, maximum) ? 1 : 0;
+        } catch (ArithmeticException exception) {
+            return FAST_FALLBACK;
+        }
+    }
+
+    private boolean inside(long origin, long velocity, long time, long denominator,
+                           long minimum, long maximum) {
+        long quotient = time / denominator;
+        long remainder = time % denominator;
+        long whole = Math.addExact(origin, Math.multiplyExact(velocity, quotient));
+        long residual = Math.multiplyExact(velocity, remainder);
+        whole = Math.addExact(whole, Math.floorDiv(residual, denominator));
+        long fractionalNumerator = Math.floorMod(residual, denominator);
+        return whole >= minimum
+                && (whole < maximum || whole == maximum && fractionalNumerator == 0);
+    }
+
+    private boolean intersectsInArea(Hailstone first, Hailstone second,
+                                     BigInteger minimum, BigInteger maximum) {
+        BigInteger denominator = first.vx.multiply(second.vy).subtract(first.vy.multiply(second.vx));
+        if (denominator.signum() == 0) {
+            return collinearFutureIntersectionInArea(first, second, minimum, maximum);
+        }
+        BigInteger dx = second.x.subtract(first.x);
+        BigInteger dy = second.y.subtract(first.y);
+        BigInteger firstTime = dx.multiply(second.vy).subtract(dy.multiply(second.vx));
+        BigInteger secondTime = dx.multiply(first.vy).subtract(dy.multiply(first.vx));
+        if (denominator.signum() < 0) {
+            denominator = denominator.negate();
+            firstTime = firstTime.negate();
+            secondTime = secondTime.negate();
+        }
+        if (firstTime.signum() < 0 || secondTime.signum() < 0) {
+            return false;
+        }
+        BigInteger intersectionX = first.x.multiply(denominator).add(first.vx.multiply(firstTime));
+        BigInteger intersectionY = first.y.multiply(denominator).add(first.vy.multiply(firstTime));
+        return inside(intersectionX, denominator, minimum, maximum)
+                && inside(intersectionY, denominator, minimum, maximum);
+    }
+
+    private boolean collinearFutureIntersectionInArea(Hailstone first, Hailstone second,
+                                                       BigInteger minimum, BigInteger maximum) {
         boolean firstStationary = first.vx.signum() == 0 && first.vy.signum() == 0;
         boolean secondStationary = second.vx.signum() == 0 && second.vy.signum() == 0;
         if (firstStationary && secondStationary) {
             return first.x.equals(second.x) && first.y.equals(second.y)
-                    && insidePoint(first.x, first.y);
+                    && insidePoint(first.x, first.y, minimum, maximum);
         }
         if (firstStationary) {
-            return insidePoint(first.x, first.y) && pointOnFutureRay(first.x, first.y, second);
+            return insidePoint(first.x, first.y, minimum, maximum)
+                    && pointOnFutureRay(first.x, first.y, second);
         }
         if (secondStationary) {
-            return insidePoint(second.x, second.y) && pointOnFutureRay(second.x, second.y, first);
+            return insidePoint(second.x, second.y, minimum, maximum)
+                    && pointOnFutureRay(second.x, second.y, first);
         }
 
         BigInteger dx = second.x.subtract(first.x);
@@ -89,17 +166,17 @@ public class Day24 implements DayTemplate {
         BigInteger otherStart = useX ? first.y : first.x;
         BigInteger otherVelocity = useX ? first.vy : first.vx;
 
-        Fraction lower = Fraction.of(TEST_MIN);
-        Fraction upper = Fraction.of(TEST_MAX);
+        Fraction lower = Fraction.of(minimum);
+        Fraction upper = Fraction.of(maximum);
         if (otherVelocity.signum() == 0) {
-            if (otherStart.compareTo(TEST_MIN) < 0 || otherStart.compareTo(TEST_MAX) > 0) {
+            if (otherStart.compareTo(minimum) < 0 || otherStart.compareTo(maximum) > 0) {
                 return false;
             }
         } else {
             Fraction atMinimum = Fraction.of(firstStart).add(new Fraction(
-                    TEST_MIN.subtract(otherStart).multiply(firstVelocity), otherVelocity));
+                    minimum.subtract(otherStart).multiply(firstVelocity), otherVelocity));
             Fraction atMaximum = Fraction.of(firstStart).add(new Fraction(
-                    TEST_MAX.subtract(otherStart).multiply(firstVelocity), otherVelocity));
+                    maximum.subtract(otherStart).multiply(firstVelocity), otherVelocity));
             Fraction lineLower = atMinimum.compareTo(atMaximum) <= 0 ? atMinimum : atMaximum;
             Fraction lineUpper = atMinimum.compareTo(atMaximum) <= 0 ? atMaximum : atMinimum;
             if (lineLower.compareTo(lower) > 0) {
@@ -136,14 +213,16 @@ public class Day24 implements DayTemplate {
         return new Fraction(displacement, velocity).signum() >= 0;
     }
 
-    private boolean insidePoint(BigInteger x, BigInteger y) {
-        return x.compareTo(TEST_MIN) >= 0 && x.compareTo(TEST_MAX) <= 0
-                && y.compareTo(TEST_MIN) >= 0 && y.compareTo(TEST_MAX) <= 0;
+    private boolean insidePoint(BigInteger x, BigInteger y,
+                                BigInteger minimum, BigInteger maximum) {
+        return x.compareTo(minimum) >= 0 && x.compareTo(maximum) <= 0
+                && y.compareTo(minimum) >= 0 && y.compareTo(maximum) <= 0;
     }
 
-    private boolean inside(BigInteger numerator, BigInteger denominator) {
-        return numerator.compareTo(TEST_MIN.multiply(denominator)) >= 0
-                && numerator.compareTo(TEST_MAX.multiply(denominator)) <= 0;
+    private boolean inside(BigInteger numerator, BigInteger denominator,
+                           BigInteger minimum, BigInteger maximum) {
+        return numerator.compareTo(minimum.multiply(denominator)) >= 0
+                && numerator.compareTo(maximum.multiply(denominator)) <= 0;
     }
 
     private String part2(List<Hailstone> stones) {
@@ -500,6 +579,9 @@ public class Day24 implements DayTemplate {
         private BigInteger[] velocity() {
             return new BigInteger[]{vx, vy, vz};
         }
+    }
+
+    private record LongHailstone(long x, long y, long vx, long vy) {
     }
 
     private static final class Fraction {

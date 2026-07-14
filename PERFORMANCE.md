@@ -48,27 +48,27 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 307.819 | 259.648 | 225.306 | 31.357 | 34.341 |
-| 1 | 304.376 | 256.893 | 224.709 | 31.620 | 32.184 |
-| 2 | 295.938 | 251.467 | 220.166 | 27.667 | 31.300 |
-| 3 | 297.587 | 251.651 | 219.883 | 28.683 | 31.768 |
-| 4 | 301.742 | 256.569 | 222.794 | 28.598 | 33.775 |
-| 5 | 305.591 | 251.547 | 218.657 | 37.267 | 32.889 |
-| 6 | 307.662 | 258.072 | 225.580 | 32.795 | 32.492 |
-| 7 | 322.009 | 276.043 | 243.760 | 30.353 | 32.282 |
-| 8 | 315.013 | 267.344 | 233.983 | 32.558 | 33.361 |
-| 9 | 302.685 | 254.148 | 221.269 | 31.701 | 32.879 |
-| 10 | 295.279 | 251.824 | 219.540 | 27.710 | 32.284 |
+| Cold | 270.605 | 225.976 | 195.269 | 25.863 | 30.707 |
+| 1 | 262.812 | 216.465 | 185.799 | 27.629 | 30.666 |
+| 2 | 264.065 | 219.232 | 189.992 | 25.940 | 29.239 |
+| 3 | 272.729 | 227.525 | 197.043 | 26.499 | 30.482 |
+| 4 | 270.029 | 224.839 | 194.588 | 26.306 | 30.252 |
+| 5 | 255.171 | 214.424 | 184.874 | 26.006 | 29.550 |
+| 6 | 286.166 | 221.040 | 189.949 | 46.105 | 31.091 |
+| 7 | 275.287 | 228.038 | 194.021 | 28.176 | 34.017 |
+| 8 | 264.062 | 217.816 | 187.282 | 27.376 | 30.535 |
+| 9 | 265.086 | 221.529 | 190.981 | 25.693 | 30.548 |
+| 10 | 268.580 | 219.075 | 189.286 | 30.691 | 29.789 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 304.788 | 303.531 | 8.462 |
-| Main | 257.556 | 255.359 | 8.109 |
-| Solver | 225.034 | 222.031 | 7.968 |
-| Startup | 30.895 | 30.987 | 2.966 |
-| Harness | 32.522 | 32.388 | 0.732 |
+| Wall | 268.399 | 266.833 | 8.428 |
+| Main | 220.998 | 220.136 | 4.569 |
+| Solver | 190.381 | 189.971 | 3.918 |
+| Startup | 29.042 | 26.937 | 6.177 |
+| Harness | 30.617 | 30.508 | 1.320 |
 
 ## Day 24 exact rock recovery
 
@@ -77,6 +77,26 @@ Day 24 part 2 now subtracts the hailstone collision cross-product equations to f
 The official sample returns `47`. The personal input yields position `(129723668686742, 353939130278484, 227368817349775)`, velocity `(312, -116, 109)`, and answer `711031616315001`; the solver's exact final validation accepts all hailstones. Forty shuffled synthetic systems additionally covered fractional collision times, initially rank-deficient stones, rock velocities outside every hailstone velocity range, an `x = -1` rock, coordinates beyond `long` multiplication range, missing final newlines, repeat calls on one solver instance, and a perturbed inconsistent trajectory. Dedicated rank-five and rank-four systems verify the lower-rank lattice fallback. Exact part 1 checks covered stationary, overlapping, opposing, and separating collinear future paths. The corrected external expected-results record passes all 50 independent solves and all 25 combined solves with checksum `3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f`.
 
 The current cold-plus-10 phase table above establishes the new correctness baseline. An immediately preceding current-source replication averaged 224.150ms solver and 296.288ms wall, with respective sample standard deviations of 7.884ms and 11.312ms. The drift and elevated dispersion make a speed comparison inconclusive; the lower-rank fallback is not entered by the full-rank personal input. These runs are intentionally not compared as a speed win against the prior branch: the previous workload returned the wrong answer and is not a valid performance baseline.
+
+### Day 24 exact checked-long intersection path
+
+Part 1 now precomputes checked `long` shadows for each hailstone and evaluates ordinary pair intersections with exact integer arithmetic. Checked multiply, subtract, negate, quotient, and remainder operations fall back to the unchanged `BigInteger` implementation on any overflow or out-of-range input. Parallel and collinear pairs also retain the complete `BigInteger` ray/segment treatment. The rational area comparison avoids overflowing `position * denominator`: it divides the nonnegative time numerator first, then normalizes the signed fractional remainder with `floorDiv`/`floorMod`. Bounds remain inclusive. The public area-bounds entry point makes the prompt's sample region directly testable without changing the personal-input bounds.
+
+The official Part 1 sample returns 2 in `[7, 27]`. Two thousand deterministic inputs with two through eight stones matched the exact pre-change implementation, as did stationary and separating collinear paths, coordinates beyond `long`, and long-fitting values whose determinant multiplication overflows. All 50 independent answers and all 25 combined solves retain checksum `3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f`; Part 2 remains the corrected exact solver and returns `711031616315001`.
+
+Ten fresh-JVM, counterbalanced Day 24 pairs compared the pushed `20cad33` baseline with the candidate. The candidate-minus-baseline `fullSolve` delta averaged -21.328ms with a paired 95% confidence interval of `[-21.630, -21.026]`ms (37.447ms to 16.119ms). One baseline and one candidate cold process were excluded.
+
+The repository publication gate used a second clean, serial, counterbalanced set of ten full-25-day pairs against the same pushed tip. Paired candidate-minus-baseline results were:
+
+| Metric | Baseline mean | Candidate mean | Mean delta | Paired 95% CI |
+| --- | ---: | ---: | ---: | ---: |
+| Wall | 287.755 | 268.399 | -19.356 | [-26.330, -12.382] |
+| Main | 243.126 | 220.998 | -22.128 | [-25.514, -18.742] |
+| Solver | 212.420 | 190.381 | -22.038 | [-25.125, -18.951] |
+| Startup | 26.965 | 29.042 | +2.077 | [-2.133, 6.286] |
+| Harness | 30.706 | 30.617 | -0.090 | [-1.056, 0.877] |
+
+The aggregate solver interval is wholly below zero, so this batch passes the publication rule. Startup and harness movements are explicitly inconclusive. The current cold-plus-10 table above is the candidate half of these same pairs; its cold process is reported but excluded from statistics.
 
 ## Day 16 stack reuse
 
