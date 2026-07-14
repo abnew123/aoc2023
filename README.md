@@ -1,6 +1,6 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-The latest clean current-source fresh-JVM benchmark averaged **199.783ms of solver time**, **229.982ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **275.229ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 201.276ms solver / 232.693ms main / 278.793ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1.
+The latest clean current-source fresh-JVM benchmark averaged **213.340ms of solver time**, **244.032ms from the first line of `main` through result preparation (before final result formatting and printing)**, and **286.014ms of process wall time** across 10 separate Java processes. The first excluded cold process measured 207.717ms solver / 237.048ms main / 280.007ms wall. These measurements are from a 2024 MacBook Pro running macOS 15.6 (24G84), aarch64, with 14 available processors and OpenJDK 23.0.1. This run includes the exact Day 24 correction; the previous lower whole-suite total used a false-positive Day 24 part 2 implementation and is not a valid speed baseline.
 
 Day 2 now parses each game once without regex splitting or per-game color maps, computes both answers together, treats omitted colors as zero, and retains arbitrary-size IDs, counts, products, and sums. Its isolated mean fell from 6.577ms to 5.756ms (-12.5%), with a paired 95% confidence interval of [-1.114ms, -0.528ms]; the whole-suite paired interval remained inconclusive.
 
@@ -115,7 +115,7 @@ java -cp /tmp/aoc2023-classes src.FreshJvmBenchmark
 
 ## Historical warm per-part timings
 
-The table below is retained from the earlier July benchmark pass. Its values are warm 10-run per-part averages using `DayTemplate.timer`; they are useful historical context, but they are not fresh-JVM wall times and should not be compared directly with the current measurements above.
+The table below is retained from the earlier July benchmark pass. Its values are warm 10-run per-part averages using `DayTemplate.timer`; they are useful historical context, but they are not fresh-JVM wall times and should not be compared directly with the current measurements above. Day 24 is withdrawn because that run timed the `bc693c7`-derived false-positive part 2 solver rather than the corrected exact implementation.
 
 | Day | Problem | Solution | Part 1 (ms) | Part 2 (ms) |
 | --- | --- | --- |------------:|------------:|
@@ -142,5 +142,5 @@ The table below is retained from the earlier July benchmark pass. Its values are
 | 21 | [Step Counter](https://adventofcode.com/2023/day/21) | [Source](src/solutions/Day21.java) | 3.424 | 3.397 |
 | 22 | [Sand Slabs](https://adventofcode.com/2023/day/22) | [Source](src/solutions/Day22.java) | 5.588 | 6.383 |
 | 23 | [A Long Walk](https://adventofcode.com/2023/day/23) | [Source](src/solutions/Day23.java) | 6.997 | 11.799 |
-| 24 | [Never Tell Me The Odds](https://adventofcode.com/2023/day/24) | [Source](src/solutions/Day24.java) | 2.597 | 4.994 |
+| 24 | [Never Tell Me The Odds](https://adventofcode.com/2023/day/24) | [Source](src/solutions/Day24.java) | withdrawn | withdrawn |
 | 25 | [Snowverload](https://adventofcode.com/2023/day/25) | [Source](src/solutions/Day25.java) | 5.419 | 0.001 |

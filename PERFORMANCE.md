@@ -21,10 +21,12 @@ The recorded environment was:
 Verification passed with this deterministic, length-framed SHA-256 answer checksum:
 
 ```text
-VERIFY_OK solve_answers=50 full_solve_pairs=25 checksum=d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b
+VERIFY_OK solve_answers=50 full_solve_pairs=25 checksum=3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f
 ```
 
-Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The original Day 11 and Day 18 measurements have been withdrawn and replaced with clean process-isolated data below. The current-source table now records the later clean Day 25 candidate standard run.
+Recovery note (2026-07-12): two leaked AoC JVMs invalidated speed measurements collected from 2026-07-11 22:08 EDT until their removal around 2026-07-12 11:30 EDT. The original Day 11 and Day 18 measurements have been withdrawn and replaced with clean process-isolated data below. The current-source table has since been replaced again by the correctness-fixed Day 24 run.
+
+Correctness recovery (2026-07-13): the ignored expected-results file and every source revision since `bc693c7` contained the false-positive Day 24 part 2 value `1033313543348751`. That revision reduced candidate validation to comparisons with stone 0, skipped parallel relative paths, and truncated rational collision times. The exact solver now returns `711031616315001`, validates the derived rock against every hailstone with `BigInteger` cross-products and nonnegative rational times, and produces the corrected checksum above. Any historical statement below that quotes checksum `d6af64d6b36b5441bc0ca5d8ab99cf7568c6bc9b62ac807d37d96d3c3aec372b` or says all 50 answers matched describes consistency with the then-stale local baseline, not independent correctness. Historical whole-suite absolute totals include the incorrect Day 24 workload and are superseded by the current table; isolated A/B results for other days remain useful.
 
 ## Timing definitions
 
@@ -46,27 +48,35 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 278.793 | 232.693 | 201.276 | 30.350 | 31.417 |
-| 1 | 270.064 | 225.706 | 196.028 | 25.255 | 29.677 |
-| 2 | 277.158 | 235.817 | 205.450 | 25.776 | 30.367 |
-| 3 | 282.855 | 237.425 | 207.462 | 25.988 | 29.963 |
-| 4 | 280.562 | 235.100 | 203.643 | 26.952 | 31.457 |
-| 5 | 268.554 | 223.385 | 194.222 | 25.915 | 29.163 |
-| 6 | 279.572 | 233.495 | 203.016 | 26.701 | 30.479 |
-| 7 | 274.682 | 229.835 | 200.025 | 25.779 | 29.810 |
-| 8 | 270.764 | 225.168 | 194.319 | 26.306 | 30.848 |
-| 9 | 272.299 | 223.896 | 194.238 | 29.209 | 29.659 |
-| 10 | 275.774 | 229.998 | 199.431 | 26.395 | 30.568 |
+| Cold | 280.007 | 237.048 | 207.717 | 25.877 | 29.330 |
+| 1 | 278.213 | 236.741 | 207.223 | 24.821 | 29.518 |
+| 2 | 285.525 | 243.111 | 212.905 | 25.545 | 30.206 |
+| 3 | 295.178 | 253.927 | 223.834 | 25.540 | 30.093 |
+| 4 | 284.522 | 243.258 | 211.133 | 24.762 | 32.125 |
+| 5 | 280.978 | 241.708 | 210.902 | 24.819 | 30.806 |
+| 6 | 287.359 | 245.338 | 214.039 | 25.085 | 31.299 |
+| 7 | 288.829 | 245.017 | 213.207 | 26.945 | 31.810 |
+| 8 | 286.179 | 242.911 | 212.906 | 26.558 | 30.006 |
+| 9 | 292.803 | 249.670 | 218.587 | 26.587 | 31.082 |
+| 10 | 280.551 | 238.637 | 208.660 | 25.234 | 29.977 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 275.229 | 275.228 | 4.825 |
-| Main | 229.982 | 229.916 | 5.271 |
-| Solver | 199.783 | 199.728 | 4.969 |
-| Startup | 26.428 | 26.147 | 1.094 |
-| Harness | 30.199 | 30.165 | 0.674 |
+| Wall | 286.014 | 285.852 | 5.358 |
+| Main | 244.032 | 243.184 | 4.975 |
+| Solver | 213.340 | 212.905 | 4.815 |
+| Startup | 25.589 | 25.387 | 0.818 |
+| Harness | 30.692 | 30.506 | 0.869 |
+
+## Day 24 exact rock recovery
+
+Day 24 part 2 now subtracts the hailstone collision cross-product equations to form an exact six-unknown linear system for rock position and velocity. A rank-aware rational Gaussian elimination accepts arbitrarily long singular prefixes instead of assuming the first three stones are independent. Once six independent rows determine a candidate, exact validation against every original hailstone makes the remaining difference rows redundant; a globally rank-five system instead substitutes its affine family into the original quadratic collision equation. The rock's six components must be integral as required by the prompt; collision times remain exact rationals, must agree on all three axes, and must be nonnegative. This removes the previous componentwise velocity bounds, truncating division, parallel-case skips, mutable accumulated search state, and `-1` sentinel.
+
+The official sample returns `47`. The personal input yields position `(129723668686742, 353939130278484, 227368817349775)`, velocity `(312, -116, 109)`, and answer `711031616315001`; the solver's exact final validation accepts all hailstones. Forty shuffled synthetic systems additionally covered fractional collision times, initially rank-deficient stones, rock velocities outside every hailstone velocity range, an `x = -1` rock, coordinates beyond `long` multiplication range, missing final newlines, repeat calls on one solver instance, and a perturbed inconsistent trajectory. Exact part 1 checks covered stationary, overlapping, opposing, and separating collinear future paths. The corrected external expected-results record passes all 50 independent solves and all 25 combined solves with checksum `3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f`.
+
+The current cold-plus-10 phase table above establishes the new correctness baseline. It is intentionally not compared as a speed win against the prior branch: the previous workload returned the wrong answer and is not a valid performance baseline.
 
 ## Day 16 stack reuse
 
