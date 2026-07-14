@@ -83,6 +83,20 @@ class Day24Test extends BaseTest {
     }
 
     @Test
+    void testDay24RankDeficientIntegralRocks() {
+        String rankFive = "0, 0, 0 @ 0, 1, 0\n"
+                + "1, 0, 0 @ -1, 0, 0\n"
+                + "-1, 0, 0 @ 1, 0, 0\n"
+                + "0, 0, 0 @ 0, 0, 1\n";
+        assertEquals("0", new Day24().solve(false, new Scanner(rankFive)));
+
+        String rankFour = "-1, 2, 1 @ 1, -2, -1\n"
+                + "0, -6, -3 @ 0, 2, 1\n"
+                + "-2, 0, 0 @ 1, 0, 0\n";
+        assertEquals("0", new Day24().solve(false, new Scanner(rankFour)));
+    }
+
+    @Test
     void testDay24ExactCollinearPaths() {
         Day24 day24 = new Day24();
         String center = "300000000000000";

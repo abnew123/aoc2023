@@ -48,35 +48,35 @@ All values are milliseconds. The cold process is reported but excluded from the 
 
 | Run | Wall | Main | Solver | Startup | Harness |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Cold | 280.007 | 237.048 | 207.717 | 25.877 | 29.330 |
-| 1 | 278.213 | 236.741 | 207.223 | 24.821 | 29.518 |
-| 2 | 285.525 | 243.111 | 212.905 | 25.545 | 30.206 |
-| 3 | 295.178 | 253.927 | 223.834 | 25.540 | 30.093 |
-| 4 | 284.522 | 243.258 | 211.133 | 24.762 | 32.125 |
-| 5 | 280.978 | 241.708 | 210.902 | 24.819 | 30.806 |
-| 6 | 287.359 | 245.338 | 214.039 | 25.085 | 31.299 |
-| 7 | 288.829 | 245.017 | 213.207 | 26.945 | 31.810 |
-| 8 | 286.179 | 242.911 | 212.906 | 26.558 | 30.006 |
-| 9 | 292.803 | 249.670 | 218.587 | 26.587 | 31.082 |
-| 10 | 280.551 | 238.637 | 208.660 | 25.234 | 29.977 |
+| Cold | 307.819 | 259.648 | 225.306 | 31.357 | 34.341 |
+| 1 | 304.376 | 256.893 | 224.709 | 31.620 | 32.184 |
+| 2 | 295.938 | 251.467 | 220.166 | 27.667 | 31.300 |
+| 3 | 297.587 | 251.651 | 219.883 | 28.683 | 31.768 |
+| 4 | 301.742 | 256.569 | 222.794 | 28.598 | 33.775 |
+| 5 | 305.591 | 251.547 | 218.657 | 37.267 | 32.889 |
+| 6 | 307.662 | 258.072 | 225.580 | 32.795 | 32.492 |
+| 7 | 322.009 | 276.043 | 243.760 | 30.353 | 32.282 |
+| 8 | 315.013 | 267.344 | 233.983 | 32.558 | 33.361 |
+| 9 | 302.685 | 254.148 | 221.269 | 31.701 | 32.879 |
+| 10 | 295.279 | 251.824 | 219.540 | 27.710 | 32.284 |
 
 The standard deviation is the sample standard deviation (`n - 1`).
 
 | Metric | Mean | Median | Sample SD |
 | --- | ---: | ---: | ---: |
-| Wall | 286.014 | 285.852 | 5.358 |
-| Main | 244.032 | 243.184 | 4.975 |
-| Solver | 213.340 | 212.905 | 4.815 |
-| Startup | 25.589 | 25.387 | 0.818 |
-| Harness | 30.692 | 30.506 | 0.869 |
+| Wall | 304.788 | 303.531 | 8.462 |
+| Main | 257.556 | 255.359 | 8.109 |
+| Solver | 225.034 | 222.031 | 7.968 |
+| Startup | 30.895 | 30.987 | 2.966 |
+| Harness | 32.522 | 32.388 | 0.732 |
 
 ## Day 24 exact rock recovery
 
-Day 24 part 2 now subtracts the hailstone collision cross-product equations to form an exact six-unknown linear system for rock position and velocity. A rank-aware rational Gaussian elimination accepts arbitrarily long singular prefixes instead of assuming the first three stones are independent. Once six independent rows determine a candidate, exact validation against every original hailstone makes the remaining difference rows redundant; a globally rank-five system instead substitutes its affine family into the original quadratic collision equation. The rock's six components must be integral as required by the prompt; collision times remain exact rationals, must agree on all three axes, and must be nonnegative. This removes the previous componentwise velocity bounds, truncating division, parallel-case skips, mutable accumulated search state, and `-1` sentinel.
+Day 24 part 2 now subtracts the hailstone collision cross-product equations to form an exact six-unknown linear system for rock position and velocity. A rank-aware rational Gaussian elimination accepts arbitrarily long singular prefixes instead of assuming the first three stones are independent. Once six independent rows determine a candidate, exact validation against every original hailstone makes the remaining difference rows redundant; a globally rank-five system instead substitutes its affine family into the original quadratic collision equation. If the linear equations have still lower rank, or the rank-five quadratic vanishes identically, an unbounded integer-lattice enumeration covers every possible integral free-component tuple without a guessed coordinate or velocity limit. The rock's six components must be integral as required by the prompt; collision times remain exact rationals, must agree on all three axes, and must be nonnegative. This removes the previous componentwise velocity bounds, truncating division, parallel-case skips, mutable accumulated search state, and `-1` sentinel.
 
-The official sample returns `47`. The personal input yields position `(129723668686742, 353939130278484, 227368817349775)`, velocity `(312, -116, 109)`, and answer `711031616315001`; the solver's exact final validation accepts all hailstones. Forty shuffled synthetic systems additionally covered fractional collision times, initially rank-deficient stones, rock velocities outside every hailstone velocity range, an `x = -1` rock, coordinates beyond `long` multiplication range, missing final newlines, repeat calls on one solver instance, and a perturbed inconsistent trajectory. Exact part 1 checks covered stationary, overlapping, opposing, and separating collinear future paths. The corrected external expected-results record passes all 50 independent solves and all 25 combined solves with checksum `3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f`.
+The official sample returns `47`. The personal input yields position `(129723668686742, 353939130278484, 227368817349775)`, velocity `(312, -116, 109)`, and answer `711031616315001`; the solver's exact final validation accepts all hailstones. Forty shuffled synthetic systems additionally covered fractional collision times, initially rank-deficient stones, rock velocities outside every hailstone velocity range, an `x = -1` rock, coordinates beyond `long` multiplication range, missing final newlines, repeat calls on one solver instance, and a perturbed inconsistent trajectory. Dedicated rank-five and rank-four systems verify the lower-rank lattice fallback. Exact part 1 checks covered stationary, overlapping, opposing, and separating collinear future paths. The corrected external expected-results record passes all 50 independent solves and all 25 combined solves with checksum `3a7181d2751be2eaeaea0d454c243728b7e1f7ee48de10762828623b3101907f`.
 
-The current cold-plus-10 phase table above establishes the new correctness baseline. It is intentionally not compared as a speed win against the prior branch: the previous workload returned the wrong answer and is not a valid performance baseline.
+The current cold-plus-10 phase table above establishes the new correctness baseline. An immediately preceding current-source replication averaged 224.150ms solver and 296.288ms wall, with respective sample standard deviations of 7.884ms and 11.312ms. The drift and elevated dispersion make a speed comparison inconclusive; the lower-rank fallback is not entered by the full-rank personal input. These runs are intentionally not compared as a speed win against the prior branch: the previous workload returned the wrong answer and is not a valid performance baseline.
 
 ## Day 16 stack reuse
 

@@ -213,7 +213,7 @@ public class Day24 implements DayTemplate {
         } else if (rank == 5) {
             rock = solveRankFive(basis, stones);
         } else {
-            throw new IllegalArgumentException("Hailstone equations are underdetermined (rank " + rank + ")");
+            rock = searchIntegralRock(basis, stones);
         }
         if (!isIntegralRock(rock)) {
             throw new IllegalArgumentException("Rock position and velocity must be integral");
@@ -255,7 +255,7 @@ public class Day24 implements DayTemplate {
             }
         }
         if (defining == null) {
-            throw new IllegalArgumentException("Hailstones admit a family of rock trajectories");
+            return searchIntegralRock(basis, stones);
         }
 
         List<Fraction> roots = rationalRoots(defining);
@@ -276,6 +276,71 @@ public class Day24 implements DayTemplate {
             throw new IllegalArgumentException("Hailstone equations have no integral rock trajectory");
         }
         return answer;
+    }
+
+    private Fraction[] searchIntegralRock(Fraction[][] basis, List<Hailstone> stones) {
+        int freeCount = 0;
+        for (Fraction[] row : basis) {
+            if (row == null) {
+                freeCount++;
+            }
+        }
+        int[] freeComponents = new int[freeCount];
+        for (int component = 0, index = 0; component < basis.length; component++) {
+            if (basis[component] == null) {
+                freeComponents[index++] = component;
+            }
+        }
+
+        BigInteger[] parameters = new BigInteger[freeCount];
+        for (BigInteger radius = BigInteger.ZERO; ; radius = radius.add(BigInteger.ONE)) {
+            Fraction[] rock = searchIntegralRock(
+                    basis, stones, freeComponents, parameters, 0, radius, false);
+            if (rock != null) {
+                return rock;
+            }
+        }
+    }
+
+    private Fraction[] searchIntegralRock(Fraction[][] basis, List<Hailstone> stones,
+                                           int[] freeComponents, BigInteger[] parameters,
+                                           int parameterIndex, BigInteger radius,
+                                           boolean onBoundary) {
+        if (parameterIndex == parameters.length) {
+            if (radius.signum() != 0 && !onBoundary) {
+                return null;
+            }
+            Fraction[] rock = new Fraction[6];
+            for (int index = 0; index < freeComponents.length; index++) {
+                rock[freeComponents[index]] = Fraction.of(parameters[index]);
+            }
+            for (int component = 0; component < basis.length; component++) {
+                if (basis[component] == null) {
+                    continue;
+                }
+                Fraction value = basis[component][6];
+                for (int index = 0; index < freeComponents.length; index++) {
+                    value = value.subtract(basis[component][freeComponents[index]]
+                            .multiply(Fraction.of(parameters[index])));
+                }
+                rock[component] = value;
+            }
+            return isIntegralRock(rock) && hitsEveryStone(rock, stones) ? rock : null;
+        }
+
+        BigInteger negativeRadius = radius.negate();
+        for (BigInteger value = negativeRadius;
+             value.compareTo(radius) <= 0;
+             value = value.add(BigInteger.ONE)) {
+            parameters[parameterIndex] = value;
+            Fraction[] rock = searchIntegralRock(
+                    basis, stones, freeComponents, parameters, parameterIndex + 1, radius,
+                    onBoundary || value.equals(negativeRadius) || value.equals(radius));
+            if (rock != null) {
+                return rock;
+            }
+        }
+        return null;
     }
 
     private boolean isIntegralRock(Fraction[] rock) {
