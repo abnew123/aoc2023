@@ -1,6 +1,6 @@
 import java.util.*;
 class Y{
- Map m=new HashMap();int[][]g;int n;
+ Map m=new HashMap();int g[][],n;
  String s(boolean p,String[]I){
   if(!p)return"Merry Christmas!";
   for(var L:I)for(var x:L.split(":? |:"))i(x);
