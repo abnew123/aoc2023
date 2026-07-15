@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import src.meta.BaseTest;
@@ -54,6 +55,33 @@ class Day10Test extends BaseTest {
         } else {
             assertArrayEquals(expectedSolutions, result, "Full solve solution is incorrect");
         }
+    }
+
+    @Test
+    void testOfficialExample() {
+        String input = ".....\n.S-7.\n.|.|.\n.L-J.\n.....";
+        assertArrayEquals(new String[]{"4", "1"},
+                new Day10().fullSolve(new Scanner(input)));
+    }
+
+    @Test
+    void testEveryStartShapeAndBoundaryLoop() {
+        assertArrayEquals(new String[]{"2", "0"},
+                new Day10().fullSolve(new Scanner("S7\nLJ")));
+        assertArrayEquals(new String[]{"4", "0"},
+                new Day10().fullSolve(new Scanner("F-S7\nL--J")));
+        assertArrayEquals(new String[]{"5", "2"},
+                new Day10().fullSolve(new Scanner("S--7\n|..|\nL--J")));
+    }
+
+    @Test
+    void testMalformedGridsAreRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Day10().fullSolve(new Scanner("S-7\nL-JJ")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Day10().fullSolve(new Scanner("S-7\n|S|\nL-J")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Day10().fullSolve(new Scanner("S..\n...")));
     }
 
 }

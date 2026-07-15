@@ -2,24 +2,20 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Day10 implements DayTemplate {
 
-    private char[][] grid;
-    private int[][] distances;
-    private boolean[][] visited;
-    private int width;
-    private int height;
-    private int startX;
-    private int startY;
+    private static final int[] DX = {0, 1, 0, -1};
+    private static final int[] DY = {-1, 0, 1, 0};
+    private static final int[] BIT = {1, 2, 4, 8};
 
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        long loopLength = markLoop();
-        long enclosed = countEnclosedTiles();
-        return new String[]{(loopLength / 2) + "", enclosed + ""};
+        Answers answers = analyze(in);
+        return new String[]{Long.toString(answers.farthest()), Long.toString(answers.enclosed())};
     }
 
     /**
@@ -31,132 +27,131 @@ public class Day10 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        parse(in);
-        long loopLength = markLoop();
-        long answer = part1 ? loopLength / 2 : countEnclosedTiles();
-        return answer + "";
+        Answers answers = analyze(in);
+        return Long.toString(part1 ? answers.farthest() : answers.enclosed());
     }
 
-    private long markLoop() {
-        // The original solution assumes the start connects to the tile directly below it.
-        int prevX = startX;
-        int prevY = startY;
-        int currX = startX;
-        int currY = startY + 1;
-        long length = 1;
+    private Answers analyze(Scanner in) {
+        List<String> rows = new ArrayList<>();
+        while (in.hasNextLine()) {
+            rows.add(in.nextLine());
+        }
+        if (rows.isEmpty() || rows.get(0).isEmpty()) {
+            throw new IllegalArgumentException("Pipe grid must not be empty");
+        }
+        int height = rows.size();
+        int width = rows.get(0).length();
+        int startX = -1;
+        int startY = -1;
+        for (int y = 0; y < height; y++) {
+            String row = rows.get(y);
+            if (row.length() != width) {
+                throw new IllegalArgumentException("Pipe grid must be rectangular");
+            }
+            int found = row.indexOf('S');
+            if (found >= 0) {
+                if (startX >= 0 || row.indexOf('S', found + 1) >= 0) {
+                    throw new IllegalArgumentException("Pipe grid must contain exactly one start");
+                }
+                startX = found;
+                startY = y;
+            }
+        }
+        if (startX < 0) {
+            throw new IllegalArgumentException("Pipe grid is missing its start");
+        }
 
-        visited[prevY][prevX] = true;
-        distances[currX * 2 + 1][currY * 2 + 1] = 1;
-        distances[currX + prevX + 1][currY + prevY + 1] = 1;
+        int startMask = 0;
+        for (int direction = 0; direction < 4; direction++) {
+            int x = startX + DX[direction];
+            int y = startY + DY[direction];
+            if (inside(x, y, width, height)
+                    && (pipeMask(rows.get(y).charAt(x)) & BIT[(direction + 2) & 3]) != 0) {
+                startMask |= BIT[direction];
+            }
+        }
+        if (Integer.bitCount(startMask) != 2) {
+            throw new IllegalArgumentException("Start must have exactly two reciprocal connections");
+        }
 
-        while (!visited[currY][currX]) {
-            visited[currY][currX] = true;
-            int[] dirs = directions(grid[currY][currX]);
-            int nextX1 = currX + dirs[0];
-            int nextY1 = currY + dirs[1];
-            int nextX;
-            int nextY;
-            if (prevX == nextX1 && prevY == nextY1) {
-                nextX = currX + dirs[2];
-                nextY = currY + dirs[3];
-            } else {
-                nextX = nextX1;
-                nextY = nextY1;
+        int firstDirection = Integer.numberOfTrailingZeros(startMask);
+        int previousX = startX;
+        int previousY = startY;
+        int currentX = startX + DX[firstDirection];
+        int currentY = startY + DY[firstDirection];
+        long boundary = 1;
+        long areaTwice = cross(startX, startY, currentX, currentY);
+        long cellLimit = (long) width * height;
+
+        while (currentX != startX || currentY != startY) {
+            int mask = pipeMask(rows.get(currentY).charAt(currentX));
+            if (Integer.bitCount(mask) != 2) {
+                throw new IllegalArgumentException("Loop entered a non-pipe tile");
+            }
+            int incomingDirection = directionTo(currentX, currentY, previousX, previousY);
+            int incomingBit = BIT[incomingDirection];
+            if ((mask & incomingBit) == 0) {
+                throw new IllegalArgumentException("Pipe connection is not reciprocal");
+            }
+            int outgoingBit = mask ^ incomingBit;
+            int outgoingDirection = Integer.numberOfTrailingZeros(outgoingBit);
+            int nextX = currentX + DX[outgoingDirection];
+            int nextY = currentY + DY[outgoingDirection];
+            if (!inside(nextX, nextY, width, height)) {
+                throw new IllegalArgumentException("Pipe loop exits the grid");
+            }
+            int nextMask = nextX == startX && nextY == startY
+                    ? startMask : pipeMask(rows.get(nextY).charAt(nextX));
+            if ((nextMask & BIT[(outgoingDirection + 2) & 3]) == 0) {
+                throw new IllegalArgumentException("Pipe connection is not reciprocal");
             }
 
-            prevX = currX;
-            prevY = currY;
-            currX = nextX;
-            currY = nextY;
-            length++;
-
-            distances[currX * 2 + 1][currY * 2 + 1] = 1;
-            distances[currX + prevX + 1][currY + prevY + 1] = 1;
+            areaTwice += cross(currentX, currentY, nextX, nextY);
+            boundary++;
+            if (boundary > cellLimit) {
+                throw new IllegalArgumentException("Pipe path does not form one simple loop");
+            }
+            previousX = currentX;
+            previousY = currentY;
+            currentX = nextX;
+            currentY = nextY;
         }
-        return length;
+
+        long interiorNumerator = Math.abs(areaTwice) - boundary + 2;
+        if (interiorNumerator < 0 || (interiorNumerator & 1) != 0) {
+            throw new IllegalArgumentException("Pipe path is not a simple lattice loop");
+        }
+        return new Answers(boundary / 2, interiorNumerator / 2);
     }
 
-    private int[] directions(char pipe) {
+    private int pipeMask(char pipe) {
         return switch (pipe) {
-            case '|' -> new int[]{0, 1, 0, -1};
-            case '-' -> new int[]{1, 0, -1, 0};
-            case 'F' -> new int[]{1, 0, 0, 1};
-            case 'J' -> new int[]{0, -1, -1, 0};
-            case '7' -> new int[]{-1, 0, 0, 1};
-            case 'L' -> new int[]{0, -1, 1, 0};
-            default -> throw new IllegalStateException("Unexpected pipe: " + pipe);
+            case '|' -> 1 | 4;
+            case '-' -> 2 | 8;
+            case 'L' -> 1 | 2;
+            case 'J' -> 1 | 8;
+            case '7' -> 4 | 8;
+            case 'F' -> 2 | 4;
+            default -> 0;
         };
     }
 
-    private long countEnclosedTiles() {
-        floodFillOutside();
-        long answer = 0;
-        for (int x = 1; x < distances.length; x += 2) {
-            for (int y = 1; y < distances[x].length; y += 2) {
-                if (distances[x][y] == 2) {
-                    answer++;
-                }
+    private int directionTo(int fromX, int fromY, int toX, int toY) {
+        for (int direction = 0; direction < 4; direction++) {
+            if (fromX + DX[direction] == toX && fromY + DY[direction] == toY) {
+                return direction;
             }
         }
-        return answer;
+        throw new IllegalArgumentException("Pipe path contains a non-adjacent step");
     }
 
-    private void floodFillOutside() {
-        int[] queueX = new int[distances.length * distances[0].length];
-        int[] queueY = new int[queueX.length];
-        int head = 0;
-        int tail = 0;
-        queueX[tail] = 0;
-        queueY[tail++] = 0;
-        distances[0][0] = 0;
-        int[] dx = {-1, 1, 0, 0};
-        int[] dy = {0, 0, -1, 1};
-
-        while (head < tail) {
-            int x = queueX[head];
-            int y = queueY[head++];
-            for (int i = 0; i < 4; i++) {
-                int nextX = x + dx[i];
-                int nextY = y + dy[i];
-                if (nextX >= 0 && nextY >= 0 && nextX < distances.length
-                        && nextY < distances[0].length && distances[nextX][nextY] == 2) {
-                    distances[nextX][nextY] = 0;
-                    queueX[tail] = nextX;
-                    queueY[tail++] = nextY;
-                }
-            }
-        }
+    private boolean inside(int x, int y, int width, int height) {
+        return x >= 0 && y >= 0 && x < width && y < height;
     }
 
-    private void parse(Scanner in) {
-        List<String> lines = new ArrayList<>();
-        while (in.hasNextLine()) {
-            lines.add(in.nextLine());
-        }
-        height = lines.size();
-        width = lines.get(0).length();
-        grid = new char[height][width];
-        visited = new boolean[height][width];
-        distances = new int[width * 2 + 1][height * 2 + 1];
-        for (int y = 0; y < height; y++) {
-            String line = lines.get(y);
-            for (int x = 0; x < width; x++) {
-                char ch = line.charAt(x);
-                grid[y][x] = ch;
-                if (ch == 'S') {
-                    startX = x;
-                    startY = y;
-                } else {
-                    distances[x * 2 + 1][y * 2 + 1] = 2;
-                }
-            }
-        }
-        for (int x = 0; x < distances.length; x++) {
-            for (int y = 0; y < distances[x].length; y++) {
-                if (x % 2 == 0 || y % 2 == 0) {
-                    distances[x][y] = 2;
-                }
-            }
-        }
+    private long cross(int x1, int y1, int x2, int y2) {
+        return (long) x1 * y2 - (long) x2 * y1;
     }
+
+    private record Answers(long farthest, long enclosed) {}
 }

@@ -2,216 +2,394 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 public class Day19 implements DayTemplate {
 
-    protected static final String[] allCategories = new String[]{"x", "m", "a", "s"};
-    Map<String, Workflow> workflows;
-    List<Part> parts;
+    private static final int ACCEPT = -1;
+    private static final int REJECT = -2;
+    private static final long RANGE_MASK = 0xfffL;
+    private static final long INITIAL_LOW = pack(1, 1, 1, 1);
+    private static final long INITIAL_HIGH = pack(4000, 4000, 4000, 4000);
+
+    @Override
+    public String solve(boolean part1, Scanner in) {
+        Problem problem = parse(readAll(in));
+        return part1 ? acceptedRatingSum(problem) : Long.toString(acceptedCombinations(problem));
+    }
 
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        return new String[]{solvePart1() + "", solvePart2() + ""};
+        Problem problem = parse(readAll(in));
+        return new String[]{acceptedRatingSum(problem), Long.toString(acceptedCombinations(problem))};
     }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
-    public String solve(boolean part1, Scanner in) {
-        long answer;
-        parse(in);
-        if (!part1) {
-            answer = solvePart2();
-        } else {
-            answer = solvePart1();
-        }
-        return answer + "";
+    private String readAll(Scanner in) {
+        return in.useDelimiter("\\A").hasNext() ? in.next() : "";
     }
 
-    private long solvePart1(){
-        long answer = 0;
-        List<Part> accepted = new ArrayList<>();
-        for (Part p : parts) {
-            Workflow w = workflows.get("in");
-            String result;
-            while (true) {
-                result = w.process(p);
-                if (result.equals("A") || result.equals("R")) {
-                    if (result.equals("A")) {
-                        accepted.add(p);
-                    }
-                    break;
+    private Problem parse(String input) {
+        ArrayList<RawWorkflow> rawWorkflows = new ArrayList<>();
+        Map<String, Integer> workflowIds = new HashMap<>();
+        int[] parts = new int[64];
+        int partSize = 0;
+        boolean parsingWorkflows = true;
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
                 }
-                w = workflows.get(result);
             }
-        }
-        for (Part p : accepted) {
-            answer += p.vals.get("x") + p.vals.get("m") + p.vals.get("a") + p.vals.get("s");
-        }
-        return answer;
-    }
-
-    private long solvePart2() {
-        long answer = 0;
-        List<SubRangeTuple> accepted = new ArrayList<>();
-        SubRangeTuple tuple = new SubRangeTuple();
-        Workflow w = workflows.get("in");
-        w.getValid(accepted, workflows, tuple);
-        for (SubRangeTuple t : accepted) {
-            long rangeTotal = 1;
-            for (String s : allCategories) {
-                rangeTotal *= t.upper.get(s) - t.lower.get(s) + 1;
+            start = skipWhitespace(input, start, end);
+            end = trimWhitespace(input, start, end);
+            if (start == end) {
+                parsingWorkflows = false;
+                continue;
             }
-            answer += rangeTotal;
-        }
-        return answer;
-    }
-
-    private void parse(Scanner in) {
-        boolean workflow = true;
-        workflows = new HashMap<>();
-        parts = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.equals("")) {
-                workflow = false;
+            if (parsingWorkflows) {
+                RawWorkflow raw = parseWorkflow(input, start, end);
+                if (workflowIds.putIfAbsent(raw.name(), rawWorkflows.size()) != null) {
+                    throw new IllegalArgumentException("Duplicate workflow " + raw.name());
+                }
+                rawWorkflows.add(raw);
             } else {
-                if (workflow) {
-                    String[] pieces = line.split("[{}]");
-                    workflows.put(pieces[0], new Workflow(pieces[1]));
-                } else {
-                    parts.add(new Part(line));
+                if (partSize + 4 > parts.length) {
+                    parts = Arrays.copyOf(parts, parts.length * 2);
+                }
+                parsePart(input, start, end, parts, partSize);
+                partSize += 4;
+            }
+        }
+        Integer startWorkflow = workflowIds.get("in");
+        if (startWorkflow == null) {
+            throw new IllegalArgumentException("Missing in workflow");
+        }
+        Workflow[] workflows = new Workflow[rawWorkflows.size()];
+        for (int id = 0; id < workflows.length; id++) {
+            RawWorkflow raw = rawWorkflows.get(id);
+            int[] destinations = new int[raw.destinationNames().length];
+            for (int i = 0; i < destinations.length; i++) {
+                destinations[i] = destination(raw.destinationNames()[i], workflowIds);
+            }
+            workflows[id] = new Workflow(raw.categories(), raw.greater(), raw.thresholds(),
+                    destinations, destination(raw.fallbackName(), workflowIds));
+        }
+        return new Problem(workflows, startWorkflow, Arrays.copyOf(parts, partSize));
+    }
+
+    private RawWorkflow parseWorkflow(String input, int start, int end) {
+        int open = input.indexOf('{', start);
+        int close = input.lastIndexOf('}', end - 1);
+        if (open < start || open >= end || close < open || close >= end
+                || skipWhitespace(input, close + 1, end) != end) {
+            throw new IllegalArgumentException("Malformed workflow");
+        }
+        String name = token(input, start, open);
+        int segmentCount = 1;
+        for (int i = open + 1; i < close; i++) {
+            if (input.charAt(i) == ',') {
+                segmentCount++;
+            }
+        }
+        byte[] categories = new byte[Math.max(0, segmentCount - 1)];
+        boolean[] greater = new boolean[categories.length];
+        int[] thresholds = new int[categories.length];
+        String[] destinations = new String[categories.length];
+        String fallback = null;
+        int rule = 0;
+        int segmentStart = open + 1;
+        for (int i = segmentStart; i <= close; i++) {
+            if (i != close && input.charAt(i) != ',') {
+                continue;
+            }
+            int left = skipWhitespace(input, segmentStart, i);
+            int right = trimWhitespace(input, left, i);
+            if (left == right) {
+                throw new IllegalArgumentException("Empty workflow rule");
+            }
+            int colon = input.indexOf(':', left);
+            if (colon < 0 || colon >= right) {
+                if (i != close || fallback != null) {
+                    throw new IllegalArgumentException("Fallback must be last");
+                }
+                fallback = token(input, left, right);
+            } else {
+                if (rule >= categories.length) {
+                    throw new IllegalArgumentException("Missing fallback");
+                }
+                int cursor = skipWhitespace(input, left, colon);
+                if (cursor >= colon) {
+                    throw new IllegalArgumentException("Missing category");
+                }
+                categories[rule] = category(input.charAt(cursor++));
+                cursor = skipWhitespace(input, cursor, colon);
+                if (cursor >= colon || (input.charAt(cursor) != '<' && input.charAt(cursor) != '>')) {
+                    throw new IllegalArgumentException("Missing comparison");
+                }
+                greater[rule] = input.charAt(cursor++) == '>';
+                IntToken threshold = integer(input, cursor, colon);
+                if (skipWhitespace(input, threshold.next(), colon) != colon) {
+                    throw new IllegalArgumentException("Malformed threshold");
+                }
+                thresholds[rule] = threshold.value();
+                destinations[rule] = token(input, colon + 1, right);
+                rule++;
+            }
+            segmentStart = i + 1;
+        }
+        if (fallback == null || rule != categories.length) {
+            throw new IllegalArgumentException("Malformed workflow rules");
+        }
+        return new RawWorkflow(name, categories, greater, thresholds, destinations, fallback);
+    }
+
+    private void parsePart(String input, int start, int end, int[] parts, int output) {
+        int open = input.indexOf('{', start);
+        int close = input.lastIndexOf('}', end - 1);
+        if (open < start || close < open || skipWhitespace(input, start, open) != open
+                || skipWhitespace(input, close + 1, end) != end) {
+            throw new IllegalArgumentException("Malformed part");
+        }
+        int seen = 0;
+        int cursor = open + 1;
+        while (true) {
+            cursor = skipWhitespace(input, cursor, close);
+            if (cursor == close) {
+                break;
+            }
+            byte category = category(input.charAt(cursor++));
+            cursor = skipWhitespace(input, cursor, close);
+            if (cursor == close || input.charAt(cursor++) != '=') {
+                throw new IllegalArgumentException("Missing part value");
+            }
+            IntToken value = integer(input, cursor, close);
+            cursor = skipWhitespace(input, value.next(), close);
+            int bit = 1 << category;
+            if ((seen & bit) != 0) {
+                throw new IllegalArgumentException("Duplicate part category");
+            }
+            seen |= bit;
+            parts[output + category] = value.value();
+            if (cursor == close) {
+                break;
+            }
+            if (input.charAt(cursor++) != ',') {
+                throw new IllegalArgumentException("Malformed part fields");
+            }
+        }
+        if (seen != 0b1111) {
+            throw new IllegalArgumentException("Part must contain x, m, a, and s");
+        }
+    }
+
+    private String acceptedRatingSum(Problem problem) {
+        ExactTotal answer = new ExactTotal();
+        int[] marks = new int[problem.workflows().length];
+        int mark = 0;
+        int[] parts = problem.parts();
+        for (int offset = 0; offset < parts.length; offset += 4) {
+            if (++mark == 0) {
+                Arrays.fill(marks, 0);
+                mark = 1;
+            }
+            int destination = problem.startWorkflow();
+            while (destination >= 0) {
+                if (marks[destination] == mark) {
+                    throw new IllegalArgumentException("Non-terminating workflow cycle");
+                }
+                marks[destination] = mark;
+                Workflow workflow = problem.workflows()[destination];
+                destination = workflow.fallback();
+                for (int rule = 0; rule < workflow.categories().length; rule++) {
+                    int value = parts[offset + workflow.categories()[rule]];
+                    if (workflow.greater()[rule] ? value > workflow.thresholds()[rule]
+                            : value < workflow.thresholds()[rule]) {
+                        destination = workflow.destinations()[rule];
+                        break;
+                    }
                 }
             }
-        }
-    }
-}
-
-class Workflow {
-    List<Condition> conditions;
-    String fin;
-
-    public Workflow(String line) {
-        conditions = new ArrayList<>();
-        String[] pieces = line.split(",");
-        for (int i = 0; i < pieces.length - 1; i++) {
-            conditions.add(new Condition(pieces[i]));
-        }
-        fin = pieces[pieces.length - 1];
-    }
-
-    public String process(Part p) {
-        String ret;
-        for (Condition c : conditions) {
-            ret = c.process(p);
-            if (ret != null) {
-                return ret;
+            if (destination == ACCEPT) {
+                long rating = (long) parts[offset] + parts[offset + 1]
+                        + parts[offset + 2] + parts[offset + 3];
+                answer.add(rating);
             }
         }
-        return fin;
+        return answer.toString();
     }
 
-    public void getValid(List<SubRangeTuple> accepted, Map<String, Workflow> workflows, SubRangeTuple tuple) {
-        for (Condition c : conditions) {
-            tuple = c.addValid(accepted, workflows, tuple);
+    private long acceptedCombinations(Problem problem) {
+        return count(problem.workflows(), problem.startWorkflow(), INITIAL_LOW, INITIAL_HIGH);
+    }
+
+    private long count(Workflow[] workflows, int destination, long low, long high) {
+        if (destination == ACCEPT) {
+            long volume = 1;
+            for (int category = 0; category < 4; category++) {
+                volume *= value(high, category) - value(low, category) + 1L;
+            }
+            return volume;
         }
-        if (fin.equals("A") || fin.equals("R")) {
-            if (fin.equals("A")) {
-                accepted.add(tuple);
-            }
-        } else {
-            workflows.get(fin).getValid(accepted, workflows, tuple);
+        if (destination == REJECT) {
+            return 0;
         }
-    }
-}
-
-class Condition {
-
-    private static final String REGEX = "[<>:]";
-    String variable;
-    boolean greater;
-    int threshold;
-    String ifYes;
-
-    public Condition(String l) {
-        greater = l.contains(">");
-        variable = l.split(REGEX)[0];
-        threshold = Integer.parseInt(l.split(REGEX)[1]);
-        ifYes = l.split(REGEX)[2];
-    }
-
-    public String process(Part p) {
-        int value = p.vals.get(variable);
-        if (greater) {
-            return (value > threshold) ? ifYes : null;
-        } else {
-            return (value < threshold) ? ifYes : null;
-        }
-    }
-
-    public SubRangeTuple addValid(List<SubRangeTuple> accepted, Map<String, Workflow> workflows, SubRangeTuple tuple) {
-        SubRangeTuple newTuple = new SubRangeTuple(tuple);
-        SubRangeTuple currTuple = new SubRangeTuple(tuple);
-        if (greater) {
-            if (currTuple.upper.get(variable) <= threshold) {
-                return newTuple;
-            }
-            newTuple.upper.put(variable, threshold);
-            currTuple.lower.put(variable, threshold + 1);
-            if (newTuple.lower.get(variable) >= threshold) {
-                newTuple.upper.put(variable, newTuple.lower.get(variable));
-            }
-        } else {
-            if (currTuple.lower.get(variable) >= threshold) {
-                return newTuple;
-            }
-            newTuple.lower.put(variable, threshold);
-            currTuple.upper.put(variable, threshold - 1);
-            if (newTuple.upper.get(variable) <= threshold) {
-                newTuple.upper.put(variable, newTuple.lower.get(variable));
+        Workflow workflow = workflows[destination];
+        long answer = 0;
+        for (int rule = 0; rule < workflow.categories().length; rule++) {
+            int category = workflow.categories()[rule];
+            int lower = value(low, category);
+            int upper = value(high, category);
+            int threshold = workflow.thresholds()[rule];
+            if (workflow.greater()[rule]) {
+                if (upper > threshold) {
+                    int passLower = Math.max(lower, threshold + 1);
+                    answer += count(workflows, workflow.destinations()[rule],
+                            withValue(low, category, passLower), high);
+                }
+                if (lower > threshold) {
+                    return answer;
+                }
+                high = withValue(high, category, Math.min(upper, threshold));
+            } else {
+                if (lower < threshold) {
+                    int passUpper = Math.min(upper, threshold - 1);
+                    answer += count(workflows, workflow.destinations()[rule],
+                            low, withValue(high, category, passUpper));
+                }
+                if (upper < threshold) {
+                    return answer;
+                }
+                low = withValue(low, category, Math.max(lower, threshold));
             }
         }
-        if (ifYes.equals("A") || ifYes.equals("R")) {
-            if (ifYes.equals("A")) {
-                accepted.add(currTuple);
+        return answer + count(workflows, workflow.fallback(), low, high);
+    }
+
+    private int destination(String name, Map<String, Integer> workflowIds) {
+        if (name.equals("A")) {
+            return ACCEPT;
+        }
+        if (name.equals("R")) {
+            return REJECT;
+        }
+        Integer destination = workflowIds.get(name);
+        if (destination == null) {
+            throw new IllegalArgumentException("Unknown workflow " + name);
+        }
+        return destination;
+    }
+
+    private String token(String input, int start, int end) {
+        start = skipWhitespace(input, start, end);
+        end = trimWhitespace(input, start, end);
+        if (start == end) {
+            throw new IllegalArgumentException("Missing token");
+        }
+        for (int i = start; i < end; i++) {
+            if (!Character.isLetterOrDigit(input.charAt(i)) && input.charAt(i) != '_') {
+                throw new IllegalArgumentException("Malformed token");
             }
-        } else {
-            Workflow w = workflows.get(ifYes);
-            w.getValid(accepted, workflows, currTuple);
         }
-        return newTuple;
+        return input.substring(start, end);
     }
-}
 
-class Part {
-    Map<String, Integer> vals;
-
-    public Part(String line) {
-        String[] pieces = line.split("[{}=,xmas]");
-        vals = Map.of("x", Integer.parseInt(pieces[3]), "m", Integer.parseInt(pieces[6]), "a", Integer.parseInt(pieces[9]), "s", Integer.parseInt(pieces[12]));
-    }
-}
-
-class SubRangeTuple {
-    Map<String, Integer> upper = new HashMap<>();
-    Map<String, Integer> lower = new HashMap<>();
-
-    public SubRangeTuple() {
-        for (String s : Day19.allCategories) {
-            upper.put(s, 4000);
-            lower.put(s, 1);
+    private IntToken integer(String input, int start, int end) {
+        start = skipWhitespace(input, start, end);
+        int numberStart = start;
+        if (start < end && (input.charAt(start) == '+' || input.charAt(start) == '-')) {
+            start++;
+        }
+        int digitStart = start;
+        while (start < end && Character.isDigit(input.charAt(start))) {
+            start++;
+        }
+        if (start == digitStart) {
+            throw new IllegalArgumentException("Missing integer");
+        }
+        try {
+            return new IntToken(Integer.parseInt(input, numberStart, start, 10), start);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Integer is out of range", e);
         }
     }
 
-    public SubRangeTuple(SubRangeTuple tuple) {
-        upper.putAll(tuple.upper);
-        lower.putAll(tuple.lower);
+    private byte category(char category) {
+        return switch (category) {
+            case 'x' -> 0;
+            case 'm' -> 1;
+            case 'a' -> 2;
+            case 's' -> 3;
+            default -> throw new IllegalArgumentException("Unknown category " + category);
+        };
+    }
+
+    private int skipWhitespace(String input, int start, int end) {
+        while (start < end && Character.isWhitespace(input.charAt(start))) {
+            start++;
+        }
+        return start;
+    }
+
+    private int trimWhitespace(String input, int start, int end) {
+        while (end > start && Character.isWhitespace(input.charAt(end - 1))) {
+            end--;
+        }
+        return end;
+    }
+
+    private static long pack(int x, int m, int a, int s) {
+        return x | (long) m << 12 | (long) a << 24 | (long) s << 36;
+    }
+
+    private static int value(long packed, int category) {
+        return (int) (packed >>> (category * 12) & RANGE_MASK);
+    }
+
+    private static long withValue(long packed, int category, int value) {
+        int shift = category * 12;
+        return packed & ~(RANGE_MASK << shift) | (long) value << shift;
+    }
+
+    private record Workflow(byte[] categories, boolean[] greater, int[] thresholds,
+                            int[] destinations, int fallback) {}
+    private record RawWorkflow(String name, byte[] categories, boolean[] greater,
+                               int[] thresholds, String[] destinationNames,
+                               String fallbackName) {}
+    private record Problem(Workflow[] workflows, int startWorkflow, int[] parts) {}
+    private record IntToken(int value, int next) {}
+
+    private static final class ExactTotal {
+        private long small;
+        private BigInteger big;
+
+        private void add(long value) {
+            if (big != null) {
+                big = big.add(BigInteger.valueOf(value));
+                return;
+            }
+            try {
+                small = Math.addExact(small, value);
+            } catch (ArithmeticException e) {
+                big = BigInteger.valueOf(small).add(BigInteger.valueOf(value));
+            }
+        }
+
+        @Override
+        public String toString() {
+            return big == null ? Long.toString(small) : big.toString();
+        }
     }
 }

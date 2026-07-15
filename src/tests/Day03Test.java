@@ -56,4 +56,36 @@ class Day03Test extends BaseTest {
         }
     }
 
+    @Test
+    void testOfficialExample() {
+        String input = """
+                467..114..
+                ...*......
+                ..35..633.
+                ......#...
+                617*......
+                .....+.58.
+                ..592.....
+                ......755.
+                ...$.*....
+                .664.598..
+                """;
+        assertArrayEquals(new String[]{"4361", "467835"},
+                new Day03().fullSolve(new Scanner(input)));
+    }
+
+    @Test
+    void testDistinctNumberAndSymbolSemantics() {
+        assertArrayEquals(new String[]{"123", "0"},
+                new Day03().fullSolve(new Scanner(".*.\n123\n.+.")));
+        assertArrayEquals(new String[]{"12", "0"},
+                new Day03().fullSolve(new Scanner("12\n.*")));
+    }
+
+    @Test
+    void testArbitraryPrecisionGearRatio() {
+        assertArrayEquals(new String[]{"1000000000000000000000001", "1999999999999999999999998"},
+                new Day03().fullSolve(new Scanner("999999999999999999999999*2")));
+    }
+
 }

@@ -2,163 +2,154 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day13 implements DayTemplate {
 
-    List<String> tmp = new ArrayList<>();
-    List<Pattern> patterns = new ArrayList<>();
-
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        long answer1 = 0;
-        long answer2 = 0;
-        for (Pattern pattern : patterns) {
-            List<Long> vals1 = pattern.reflections(0);
-            List<Long> vals2 = pattern.reflections(1);
-            for (Long val : vals1) {
-                if(val < 0){
-                    answer1+= -100 * val;
-                }
-                else{
-                    answer1 += val;
-                }
-            }
-            for (Long val : vals2) {
-                if(val < 0){
-                    answer2+= -100 * val;
-                }
-                else{
-                    answer2 += val;
-                }
-            }
-        }
-        return new String[]{answer1 + "", answer2 + ""};
+        return analyze(readAll(in));
     }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    @Override
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
-        parse(in);
-        for (Pattern pattern : patterns) {
-            List<Long> vals = pattern.reflections(part1 ? 0 : 1);
-            for (Long val : vals) {
-                if(val < 0){
-                    answer+= -100 * val;
+        return analyze(readAll(in))[part1 ? 0 : 1];
+    }
+
+    private String readAll(Scanner in) {
+        in.useDelimiter("\\A");
+        return in.hasNext() ? in.next() : "";
+    }
+
+    private String[] analyze(String input) {
+        ExactTotal exact = new ExactTotal();
+        ExactTotal smudged = new ExactTotal();
+        char[] grid = new char[Math.min(Math.max(input.length(), 16), 4096)];
+        int rows = 0;
+        int columns = -1;
+        int offset = 0;
+
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length()) {
+                char c = input.charAt(offset);
+                if (c == '\n' || c == '\r') {
+                    break;
                 }
-                else{
-                    answer += val;
+                offset++;
+            }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+
+            int width = end - start;
+            if (width == 0) {
+                if (rows != 0) {
+                    score(grid, rows, columns, exact, smudged);
+                    rows = 0;
+                    columns = -1;
+                }
+                continue;
+            }
+            if (columns < 0) {
+                columns = width;
+            } else if (width != columns) {
+                throw new IllegalArgumentException("Pattern rows must have equal widths");
+            }
+            int required = (rows + 1) * columns;
+            if (required > grid.length) {
+                grid = Arrays.copyOf(grid, Math.max(required, grid.length * 2));
+            }
+            for (int column = 0; column < columns; column++) {
+                char c = input.charAt(start + column);
+                if (c != '.' && c != '#') {
+                    throw new IllegalArgumentException("Unexpected pattern character " + c);
+                }
+                grid[rows * columns + column] = c;
+            }
+            rows++;
+        }
+        if (rows != 0) {
+            score(grid, rows, columns, exact, smudged);
+        }
+        return new String[] {exact.toString(), smudged.toString()};
+    }
+
+    private void score(char[] grid, int rows, int columns,
+                       ExactTotal exact, ExactTotal smudged) {
+        for (int split = 1; split < columns; split++) {
+            int mismatches = verticalMismatches(grid, rows, columns, split);
+            if (mismatches == 0) {
+                exact.add(split);
+            } else if (mismatches == 1) {
+                smudged.add(split);
+            }
+        }
+        for (int split = 1; split < rows; split++) {
+            int mismatches = horizontalMismatches(grid, rows, columns, split);
+            if (mismatches == 0) {
+                exact.add(100L * split);
+            } else if (mismatches == 1) {
+                smudged.add(100L * split);
+            }
+        }
+    }
+
+    private int verticalMismatches(char[] grid, int rows, int columns, int split) {
+        int mismatches = 0;
+        for (int left = split - 1, right = split;
+             left >= 0 && right < columns; left--, right++) {
+            for (int row = 0; row < rows; row++) {
+                if (grid[row * columns + left] != grid[row * columns + right]
+                        && ++mismatches > 1) {
+                    return mismatches;
                 }
             }
         }
-        return answer + "";
+        return mismatches;
     }
 
-    private void parse(Scanner in){
-        tmp = new ArrayList<>();
-        patterns = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.isEmpty()) {
-                patterns.add(new Pattern(tmp));
-                tmp = new ArrayList<>();
-            } else {
-                tmp.add(line);
-            }
-        }
-        patterns.add(new Pattern(tmp));
-    }
-
-}
-
-class Pattern {
-    int[][] grid;
-    int rows;
-    int cols;
-
-    public Pattern(List<String> tmp) {
-        rows = tmp.size();
-        cols = tmp.get(0).length();
-        grid = new int[cols][rows];
-        for (int i = 0; i < cols; i++) {
-            for (int j = 0; j < rows; j++) {
-                grid[i][j] = tmp.get(j).charAt(i) == '.' ? 0 : 1;
-            }
-        }
-    }
-
-    public List<Long> reflections(int closeness) {
-        List<Long> ret = new ArrayList<>();
-        ret.addAll(vert(closeness));
-        for(Long h: horiz(closeness)){
-            ret.add(-1 * h);
-        }
-        return ret;
-    }
-
-    private List<Long> vert(int closeness) {
-        List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < cols; i++) {
-            if(vertHelper(i, closeness)){
-                ret.add((long) i);
-            }
-        }
-        return ret;
-    }
-
-    private boolean vertHelper(int i, int closeness){
-        boolean oneOff = false;
-        for (int j = 0; j < rows; j++) {
-            boolean firstHalf = i <= cols / 2;
-            int column = firstHalf ? 1 : cols;
-            while(column != (firstHalf ? i + 1 : i)){
-                if (grid[column - 1][j] != grid[(2 * i + 1) - column - 1][j]) {
-                    if(closeness == 0 || oneOff){
-                        return false;
-                    }
-                    oneOff = true;
+    private int horizontalMismatches(char[] grid, int rows, int columns, int split) {
+        int mismatches = 0;
+        for (int upper = split - 1, lower = split;
+             upper >= 0 && lower < rows; upper--, lower++) {
+            int upperOffset = upper * columns;
+            int lowerOffset = lower * columns;
+            for (int column = 0; column < columns; column++) {
+                if (grid[upperOffset + column] != grid[lowerOffset + column]
+                        && ++mismatches > 1) {
+                    return mismatches;
                 }
-                column += firstHalf ? 1 : -1;
             }
         }
-        return closeness == 0 || oneOff;
+        return mismatches;
     }
 
-    private List<Long> horiz(int closeness) {
-        List<Long> ret = new ArrayList<>();
-        for (int i = 1; i < rows; i++) {
-            if(horizHelper(i, closeness)){
-                ret.add((long) i);
-            }
-        }
-        return ret;
-    }
+    private static final class ExactTotal {
+        private long small;
+        private BigInteger big;
 
-    private boolean horizHelper(int i, int closeness){
-        boolean oneOff = false;
-        for (int j = 0; j < cols; j++) {
-            boolean firstHalf = i <= rows / 2;
-            int row = firstHalf ? 1 : rows;
-            while(row != (firstHalf ? i + 1 : i)){
-                if (grid[j][row - 1] != grid[j][(2 * i + 1) - row - 1]) {
-                    if(closeness == 0 || oneOff){
-                        return false;
-                    }
-                    oneOff = true;
-                }
-                row += firstHalf ? 1 : -1;
+        private void add(long value) {
+            if (big != null) {
+                big = big.add(BigInteger.valueOf(value));
+                return;
+            }
+            try {
+                small = Math.addExact(small, value);
+            } catch (ArithmeticException e) {
+                big = BigInteger.valueOf(small).add(BigInteger.valueOf(value));
             }
         }
-        return closeness == 0 || oneOff;
+
+        @Override
+        public String toString() {
+            return big == null ? Long.toString(small) : big.toString();
+        }
     }
 }

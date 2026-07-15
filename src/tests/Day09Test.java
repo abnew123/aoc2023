@@ -56,4 +56,31 @@ class Day09Test extends BaseTest {
         }
     }
 
+    @Test
+    void testOfficialExample() {
+        String input = """
+                0 3 6 9 12 15
+                1 3 6 10 15 21
+                10 13 16 21 30 45
+                """;
+        assertArrayEquals(new String[]{"114", "2"},
+                new Day09().fullSolve(new Scanner(input)));
+    }
+
+    @Test
+    void testExactFallbackAndFlexibleWhitespace() {
+        String input = " \t9223372036854775808  9223372036854775809\r\n"
+                + "-9223372036854775808\t9223372036854775807";
+        assertArrayEquals(new String[]{"36893488147419103232", "-18446744073709551616"},
+                new Day09().fullSolve(new Scanner(input)));
+    }
+
+    @Test
+    void testEmptyAndSingletonHistories() {
+        assertArrayEquals(new String[]{"0", "0"},
+                new Day09().fullSolve(new Scanner(" \n\t\n")));
+        assertArrayEquals(new String[]{"5", "5"},
+                new Day09().fullSolve(new Scanner("+5")));
+    }
+
 }

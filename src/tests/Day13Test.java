@@ -56,4 +56,29 @@ class Day13Test extends BaseTest {
         }
     }
 
+    @Test
+    void testOfficialSampleAndLineEndings() {
+        String sample = """
+                #.##..##.
+                ..#.##.#.
+                ##......#
+                ##......#
+                ..#.##.#.
+                ..##..##.
+                #.#.##.#.
+
+                #...##..#
+                #....#..#
+                ..##..###
+                #####.##.
+                #####.##.
+                ..##..###
+                #....#..#
+                """;
+        assertArrayEquals(new String[] {"405", "400"},
+                new Day13().fullSolve(new Scanner(sample)));
+        assertArrayEquals(new String[] {"405", "400"},
+                new Day13().fullSolve(new Scanner("\r\n" + sample.replace("\n", "\r\n") + "\r\n")));
+    }
+
 }
