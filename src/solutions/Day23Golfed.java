@@ -9,7 +9,7 @@ return""+d(h[S]-1);
 void A(int[]h,int f,int v,int d){
 int s=0;for(;;){if(!o(v+=D[d]))return;s++;if(h[v]>0){int n=h[v]-1;if(s>g[f][n])g[f][n]=s;return;}int n=4;for(;n-->0;)if(a(G.charAt(v),n)&o(v+D[n])&n!=(d^2))break;if(n<0)return;d=n;}
 }
-int d(int a){if(a==e)return 0;V[a]=true;int b=-L;for(int z=g.length;z-->0;)if(g[a][z]>0&&!V[z])b=Math.max(b,g[a][z]+d(z));V[a]=false;return b;}
+int d(int a){if(a==e)return 0;V[a]=true;int b=-L;for(int z=g.length;z-->0;)if(g[a][z]>0&!V[z])b=Math.max(b,g[a][z]+d(z));V[a]=false;return b;}
 boolean a(char c,int d){return!P|c<47|c==">v<^".charAt(d);}
 int n(int v){int n=0;for(int d:D)if(o(v+d))n++;return n;}
 boolean o(int v){return v>=0&v<L&&G.charAt(v)>35;}
