@@ -1,6 +1,22 @@
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
-Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, and roughly 1 second on my 2024 Macbook Pro. Days 16 & 17 take up the most time.  
+## Performance
+
+Current 25-day timing from 10 separate fresh JVMs; values are arithmetic means in milliseconds. See [PERFORMANCE.md](PERFORMANCE.md) for definitions and A/B evidence.
+
+| Wall | Main | Solver | Startup | Harness |
+|---:|---:|---:|---:|---:|
+| 513.343017 | 465.832746 | 430.768004 | 29.978096 | 35.064741 |
+
+| Days | 01 | 02 | 03 | 04 | 05 |
+|---|---:|---:|---:|---:|---:|
+| 01–05 | 9.348342 | 3.775533 | 5.077062 | 5.912404 | 3.317458 |
+| 06–10 | 2.351767 | 5.867904 | 15.372308 | 2.664967 | 11.573212 |
+| 11–15 | 8.070329 | 8.805796 | 2.100600 | 22.178933 | 7.391996 |
+| 16–20 | 100.521100 | 110.311438 | 1.663254 | 5.220200 | 11.330667 |
+| 21–25 | 7.072142 | 25.070346 | 33.861229 | 14.852417 | 7.056600 |
+
+## Repository
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=abnew123_aoc2023&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=abnew123_aoc2023)

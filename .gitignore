@@ -1,12 +1,6 @@
 .idea/
 data/
-/out/*
-!out/production
-/out/production/*
-!out/production/aoc2023
-/out/production/aoc2023/*
-!out/production/aoc2023/src
-/out/production/aoc2023/src/tests/*
+/out/
 
 # for https://github.com/LiquidFun/aoc_tiles
 .aoc_tiles/*
