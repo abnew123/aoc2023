@@ -6,44 +6,35 @@ import java.util.*;
 
 public class Day22 implements DayTemplate {
 
+    int minX = 0;
     int maxX = 0;
+    int minY = 0;
     int maxY = 0;
-    int maxZ = 0;
-
-    int[] xs = new int[]{1, 0, 0};
-    int[] ys = new int[]{0, 1, 0};
-    int[] zs = new int[]{0, 0, 1};
-
-    int[][][] grid;
 
     List<Brick> bricks = new ArrayList<>();
 
     @Override
     public String[] fullSolve(Scanner in) {
         parse(in);
-        grid = initializeGrid();
-        assignBricksToGrid();
-        simulateBricks();
-        addDependencies();
+        settleBricks();
+        int[][] dependencies = dependencyArrays(true);
+        int[][] dependents = dependencyArrays(false);
         int[] hardDependencies = generateHardDependencies();
         long answer1 = part1(hardDependencies);
-        long answer2 = part2();
+        long answer2 = part2(dependencies, dependents);
         return new String[]{answer1 + "", answer2 + ""};
     }
 
     public String solve(boolean part1, Scanner in) {
         long answer;
         parse(in);
-        grid = initializeGrid();
-        assignBricksToGrid();
-        simulateBricks();
-        addDependencies();
+        settleBricks();
         if(part1){
             int[] hardDependencies = generateHardDependencies();
             answer = part1(hardDependencies);
         }
         else{
-            answer = part2();
+            answer = part2(dependencyArrays(true), dependencyArrays(false));
         }
 
         return answer + "";
@@ -59,117 +50,104 @@ public class Day22 implements DayTemplate {
         return answer;
     }
 
-    private long part2(){
+    private long part2(int[][] dependencies, int[][] dependents){
         long answer = 0;
+        int[] deadStamp = new int[bricks.size()];
+        int[] queue = new int[bricks.size() * 4];
         for (int i = 0; i < bricks.size(); i++) {
-            Set<Integer> deadBricks = new HashSet<>();
-            deadBricks.add(i);
-            Set<Integer> bricksToCheck = bricks.get(i).dependents;
-            while (!bricksToCheck.isEmpty()) {
-                Set<Integer> tmp = new HashSet<>();
-                for (Integer j : bricksToCheck) {
-                    Set<Integer> dependencies = bricks.get(j).dependencies;
-                    boolean allDeps = true;
-                    for (Integer b : dependencies) {
-                        if (!deadBricks.contains(b)) {
-                            allDeps = false;
-                            break;
+            int stamp = i + 1;
+            int fallen = 1;
+            int head = 0;
+            int tail = 0;
+            deadStamp[i] = stamp;
+            for (int dependent : dependents[i]) {
+                queue[tail++] = dependent;
+            }
+            while (head < tail) {
+                int brick = queue[head++];
+                if (deadStamp[brick] == stamp) {
+                    continue;
+                }
+                boolean allDependenciesFallen = true;
+                for (int dependency : dependencies[brick]) {
+                    if (deadStamp[dependency] != stamp) {
+                        allDependenciesFallen = false;
+                        break;
+                    }
+                }
+                if (allDependenciesFallen) {
+                    deadStamp[brick] = stamp;
+                    fallen++;
+                    for (int dependent : dependents[brick]) {
+                        if (tail == queue.length) {
+                            queue = Arrays.copyOf(queue, queue.length * 2);
                         }
+                        queue[tail++] = dependent;
                     }
-                    if (allDeps) {
-                        deadBricks.add(j);
-                        tmp.addAll(bricks.get(j).dependents);
-                    }
-                    bricksToCheck = tmp;
                 }
             }
-            answer += deadBricks.size() - 1;
+            answer += fallen - 1;
         }
         return answer;
     }
 
     private void parse(Scanner in){
+        bricks.clear();
+        minX = Integer.MAX_VALUE;
+        maxX = Integer.MIN_VALUE;
+        minY = Integer.MAX_VALUE;
+        maxY = Integer.MIN_VALUE;
         while (in.hasNext()) {
             String line = in.nextLine();
             Brick b = new Brick(line);
             bricks.add(b);
-            maxX = Math.max(maxX, b.x + b.size);
-            maxY = Math.max(maxY, b.y + b.size);
-            maxZ = Math.max(maxZ, b.z + b.size);
+            minX = Math.min(minX, b.x);
+            maxX = Math.max(maxX, b.x + (b.dir == 0 ? b.size : 1));
+            minY = Math.min(minY, b.y);
+            maxY = Math.max(maxY, b.y + (b.dir == 1 ? b.size : 1));
+        }
+        if (bricks.isEmpty()) {
+            minX = maxX = minY = maxY = 0;
         }
     }
 
-    private int[][][] initializeGrid(){
-        grid = new int[maxX][maxY][maxZ];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                for (int k = 0; k < grid[0][0].length; k++) {
-                    grid[i][j][k] = -1;
-                }
-            }
-        }
-        return grid;
-    }
+    private void settleBricks() {
+        bricks.sort(Comparator.comparingInt(brick -> brick.z));
+        int surfaceHeight = maxY - minY;
+        int[] topHeight = new int[(maxX - minX) * surfaceHeight];
+        int[] topBrick = new int[topHeight.length];
+        Arrays.fill(topBrick, -1);
 
-    private void assignBricksToGrid(){
-        Collections.sort(bricks);
-        Collections.reverse(bricks);
-        for (int i = 0; i < bricks.size(); i++) {
-            bricks.get(i).id = i;
-        }
-        for (Brick b : bricks) {
-            for (int i = 0; i < b.size; i++) {
-                grid[b.x + i * xs[b.dir]][b.y + i * ys[b.dir]][b.z + i * zs[b.dir]] = b.id;
+        for (int id = 0; id < bricks.size(); id++) {
+            Brick brick = bricks.get(id);
+            brick.id = id;
+            int footprintSize = brick.dir == 2 ? 1 : brick.size;
+            int dx = brick.dir == 0 ? 1 : 0;
+            int dy = brick.dir == 1 ? 1 : 0;
+            int supportHeight = 0;
+            for (int offset = 0; offset < footprintSize; offset++) {
+                int cell = (brick.x + offset * dx - minX) * surfaceHeight
+                        + brick.y + offset * dy - minY;
+                supportHeight = Math.max(supportHeight, topHeight[cell]);
             }
-        }
-    }
 
-    private void simulateBricks(){
-        for (Brick b : bricks) {
-            boolean supported = b.z == 1;
-            while (!supported) {
-                supported = supported(b);
-                if (!supported) {
-                    for (int k = 0; k < b.size; k++) {
-                        grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + k * zs[b.dir] - 1] = b.id;
-                        grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + k * zs[b.dir]] = -1;
-                    }
-                    b.z = b.z - 1;
+            brick.z = supportHeight + 1;
+            for (int offset = 0; offset < footprintSize; offset++) {
+                int cell = (brick.x + offset * dx - minX) * surfaceHeight
+                        + brick.y + offset * dy - minY;
+                int supporter = topBrick[cell];
+                if (topHeight[cell] == supportHeight && supporter >= 0
+                        && brick.dependencies.add(supporter)) {
+                    bricks.get(supporter).dependents.add(id);
                 }
             }
-        }
-    }
 
-    private boolean supported(Brick b){
-        boolean supported = b.z == 1;
-        if (b.dir == 2) {
-            if (grid[b.x][b.y][b.z - 1] != -1) {
-                supported = true;
-            }
-        } else {
-            for (int k = 0; k < b.size; k++) {
-                if (grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z - 1] != -1) {
-                    supported = true;
-                    break;
-                }
-            }
-        }
-        return supported;
-    }
-    private void addDependencies(){
-        for (Brick b : bricks) {
-            if (b.dir != 2) {
-                for (int k = 0; k < b.size; k++) {
-                    if (grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1] != -1) {
-                        bricks.get(grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1]).dependencies.add(b.id);
-                        bricks.get(b.id).dependents.add(grid[b.x + k * xs[b.dir]][b.y + k * ys[b.dir]][b.z + 1]);
-                    }
-                }
-            } else {
-                if (grid[b.x][b.y][b.z + b.size] != -1) {
-                    bricks.get(grid[b.x][b.y][b.z + b.size]).dependencies.add(b.id);
-                    bricks.get(b.id).dependents.add(grid[b.x][b.y][b.z + b.size]);
-                }
+            int newTop = brick.z + (brick.dir == 2 ? brick.size - 1 : 0);
+            for (int offset = 0; offset < footprintSize; offset++) {
+                int cell = (brick.x + offset * dx - minX) * surfaceHeight
+                        + brick.y + offset * dy - minY;
+                topHeight[cell] = newTop;
+                topBrick[cell] = id;
             }
         }
     }
@@ -185,9 +163,22 @@ public class Day22 implements DayTemplate {
         }
         return hardDependencies;
     }
+
+    private int[][] dependencyArrays(boolean dependency) {
+        int[][] arrays = new int[bricks.size()][];
+        for (int i = 0; i < bricks.size(); i++) {
+            Set<Integer> source = dependency ? bricks.get(i).dependencies : bricks.get(i).dependents;
+            arrays[i] = new int[source.size()];
+            int index = 0;
+            for (int brick : source) {
+                arrays[i][index++] = brick;
+            }
+        }
+        return arrays;
+    }
 }
 
-class Brick implements Comparable<Brick> {
+class Brick {
     int id;
     int x;
     int y;
@@ -198,13 +189,34 @@ class Brick implements Comparable<Brick> {
     Set<Integer> dependencies = new HashSet<>();
 
     public Brick(String line) {
-        String[] ends = line.split("~");
-        int x1 = Integer.parseInt(ends[0].split(",")[0]);
-        int y1 = Integer.parseInt(ends[0].split(",")[1]);
-        int z1 = Integer.parseInt(ends[0].split(",")[2]);
-        int x2 = Integer.parseInt(ends[1].split(",")[0]);
-        int y2 = Integer.parseInt(ends[1].split(",")[1]);
-        int z2 = Integer.parseInt(ends[1].split(",")[2]);
+        int[] coordinates = new int[6];
+        int coordinate = 0;
+        int value = 0;
+        int sign = 1;
+        boolean reading = false;
+        for (int index = 0; index <= line.length(); index++) {
+            char c = index == line.length() ? ',' : line.charAt(index);
+            if (c == '-') {
+                sign = -1;
+            } else if (c >= '0' && c <= '9') {
+                value = value * 10 + c - '0';
+                reading = true;
+            } else if (reading) {
+                coordinates[coordinate++] = sign * value;
+                value = 0;
+                sign = 1;
+                reading = false;
+            }
+        }
+        if (coordinate != coordinates.length) {
+            throw new IllegalArgumentException("Expected six brick coordinates: " + line);
+        }
+        int x1 = coordinates[0];
+        int y1 = coordinates[1];
+        int z1 = coordinates[2];
+        int x2 = coordinates[3];
+        int y2 = coordinates[4];
+        int z2 = coordinates[5];
         x = Math.min(x1, x2);
         y = Math.min(y1, y2);
         z = Math.min(z1, z2);
@@ -221,23 +233,5 @@ class Brick implements Comparable<Brick> {
             size = Math.abs(z1 - z2);
         }
         size++;
-    }
-
-    @Override
-    public int compareTo(Brick o) {
-        return o.z - z;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof Brick o) {
-            return o.z == z;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return Integer.hashCode(z);
     }
 }
