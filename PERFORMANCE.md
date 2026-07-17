@@ -2,25 +2,25 @@
 
 ## Methodology and current full suite
 
-All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple silicon. The harness compiles the fixed pre-speed source and current source into separate empty classpaths, excludes one true-cold launch per side, then runs 10 separate JVM pairs in counterbalanced A/B order. Solver is the sum of the 25 `fullSolve` calls; main includes solver plus in-process harness work; startup is process launch through the child start marker; harness is main minus solver; wall is the complete child process.
+All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple silicon. The harness compiles the fixed pre-speed source and current source into separate empty classpaths, excludes one true-cold launch per side, then runs separate JVM pairs in counterbalanced A/B order. Normal publication gates use 10 pairs; the current tail batch pools two independent 10-pair sets (n=20). Solver is the sum of the 25 `fullSolve` calls; main includes solver plus in-process harness work; startup is process launch through the child start marker; harness is main minus solver; wall is the complete child process.
 
 Reproduce after compiling both trees with `java -Daoc.data.dir=<data-dir> -cp <current-cp> src.FreshJvmBenchmark --compare <previous-cp> <current-cp>`. Every published state passes all 50 independent solves, all 25 combined solves, and independent/`fullSolve` equivalence.
 
-Current 25-day means:
+Current 25-day means (n=20):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 286.405600 | 241.701354 | 207.685876 | 30.049508 | 34.015479 |
+| 277.827252 | 233.422879 | 199.937818 | 29.604606 | 33.485061 |
 
-Latest publication gate versus the preceding replay tip:
+Latest publication gate versus the preceding replay tip (n=20):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 302.930596 | 286.405600 | -16.524996 | [-25.208196, -7.841796] |
-| main | 257.419646 | 241.701354 | -15.718292 | [-23.372514, -8.064069] |
-| solver | 221.240992 | 207.685876 | -13.555116 | [-21.185293, -5.924939] |
-| startup | 31.870108 | 30.049508 | -1.820600 | [-3.754313, 0.113113] |
-| harness | 36.178654 | 34.015479 | -2.163176 | [-3.159089, -1.167263] |
+| wall | 284.756969 | 277.827252 | -6.929717 | [-13.008757, -0.850677] |
+| main | 239.004668 | 233.422879 | -5.581789 | [-10.596885, -0.566694] |
+| solver | 205.444980 | 199.937818 | -5.507162 | [-10.383532, -0.630791] |
+| startup | 30.288930 | 29.604606 | -0.684323 | [-1.619024, 0.250378] |
+| harness | 33.559689 | 33.485061 | -0.074629 | [-0.466983, 0.317726] |
 
 ## Day 01
 
@@ -33,19 +33,34 @@ One forward scan recognizes numeric and overlapping word digits without line buf
 
 ## Day 02
 
-Unchanged from the pre-PR implementation. Current solver mean: 3.777521 ms.
+Each game is scanned once into three exact maxima, producing feasibility and power together without regex splitting or string-keyed maps.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 3.637939 | — | — |
+| Current | 3.089977 | -0.547963 | [-0.680235, -0.415690] |
 
 ## Day 03
 
-Unchanged from the pre-PR implementation. Current solver mean: 5.179600 ms.
+One grid pass parses each maximal number once and inspects only its perimeter, sharing symbol and gear adjacency for both answers.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 5.234905 | — | — |
+| Current | 3.039173 | -2.195731 | [-2.276206, -2.115256] |
 
 ## Day 04
 
-Unchanged from the pre-PR implementation. Current solver mean: 6.258838 ms.
+Direct token-span membership and range-difference copy propagation replace regex splits, boxed match counts, and per-card maps.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 5.992192 | — | — |
+| Current | 3.727296 | -2.264896 | [-2.389042, -2.140749] |
 
 ## Day 05
 
-Unchanged from the pre-PR implementation. Current solver mean: 3.409400 ms.
+Unchanged from the pre-PR implementation. Current solver mean: 2.751085 ms.
 
 ## Day 06
 
@@ -76,7 +91,12 @@ The network is parsed once into primitive node IDs; shared traversal finds each 
 
 ## Day 09
 
-Unchanged from the pre-PR implementation. Current solver mean: 3.142971 ms.
+One reusable primitive difference triangle derives the next and previous values together, with exact fallback on overflow.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 3.148467 | — | — |
+| Current | 2.607402 | -0.541065 | [-0.691443, -0.390686] |
 
 ## Day 10
 
@@ -152,11 +172,21 @@ A flat state model and bounded integer bucket queue replace object-heavy shortes
 
 ## Day 18
 
-Unchanged from the pre-PR implementation. Current solver mean: 2.292100 ms.
+Both instruction interpretations stream through exact shoelace and boundary accumulators without regexes, objects, or coordinate histories.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 2.304442 | — | — |
+| Current | 1.701760 | -0.602681 | [-0.685590, -0.519773] |
 
 ## Day 19
 
-Unchanged from the pre-PR implementation. Current solver mean: 6.155642 ms.
+Workflows and parts are parsed once into primitive IDs and packed bounds, then ordered range splits accumulate accepted volume directly.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 6.119175 | — | — |
+| Current | 5.309508 | -0.809666 | [-0.973995, -0.645338] |
 
 ## Day 20
 
