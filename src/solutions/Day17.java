@@ -5,139 +5,174 @@ import java.util.*;
 
 public class Day17 implements DayTemplate {
 
-    int[][][] debug;
-
-    int[] xs = new int[]{-1, 0, 0, 1};
-    int[] ys = new int[]{0, -1, 1, 0};
-
-    int[][] turns = new int[][] {new int[]{1,2,3,4}, new int[]{2,3}, new int[]{1,4}, new int[]{1,4}, new int[]{2,3}};
+    private static final int DIRECTION_COUNT = 5;
+    private static final int INF = 1_000_000_000;
+    private static final int[] DX = new int[]{0, -1, 0, 0, 1};
+    private static final int[] DY = new int[]{0, 0, -1, 1, 0};
+    private static final int[][] TURNS = new int[][]{
+            new int[]{1, 2, 3, 4},
+            new int[]{2, 3},
+            new int[]{1, 4},
+            new int[]{1, 4},
+            new int[]{2, 3}
+    };
 
     @Override
     public String[] fullSolve(Scanner in) {
-        int[][] grid = parse(in);
-        initializeDebug(grid);
-        long answer1 = solve(grid,1,3);
-        initializeDebug(grid);
-        return new String[]{answer1 + "", solve(grid,4,10) + ""};
+        Grid grid = parse(in);
+        int answer1 = solve(grid, 1, 3);
+        return new String[]{answer1 + "", solve(grid, 4, 10) + ""};
     }
 
     public String solve(boolean part1, Scanner in) {
-        int[][] grid = parse(in);
-        initializeDebug(grid);
+        Grid grid = parse(in);
         return solve(grid, part1 ? 1 : 4, part1 ? 3 : 10) + "";
     }
 
-    private void initializeDebug(int[][] grid){
-        debug = new int[grid.length][grid[0].length][5];
-        for (int i = 0; i < debug.length; i++) {
-            for (int j = 0; j < debug[0].length; j++) {
-                for (int k = 0; k < debug[0][0].length; k++) {
-                    debug[i][j][k] = 999999;
-                }
+    private Grid parse(Scanner in) {
+        List<String> lines = new ArrayList<>();
+        while (in.hasNextLine()) {
+            String line = in.nextLine();
+            if (!line.isEmpty()) {
+                lines.add(line);
             }
         }
-    }
-
-    private int[][] parse(Scanner in){
-        List<String[]> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            tmp.add(in.nextLine().split(""));
-        }
-        int[][] grid = new int[tmp.getFirst().length][tmp.size()];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                grid[i][j] = Integer.parseInt(tmp.get(j)[i]);
+        int height = lines.size();
+        int width = lines.getFirst().length();
+        int[] heatLoss = new int[width * height];
+        int maxHeatLoss = 0;
+        for (int y = 0; y < height; y++) {
+            String line = lines.get(y);
+            for (int x = 0; x < width; x++) {
+                int heat = line.charAt(x) - '0';
+                heatLoss[cellIndex(x, y, height)] = heat;
+                maxHeatLoss = Math.max(maxHeatLoss, heat);
             }
         }
-        return grid;
+        return new Grid(heatLoss, width, height, maxHeatLoss);
     }
 
-    private long solve(int[][] grid, int min, int max) {
-        long answer = 999999;
-        Queue<Location> queue = new PriorityQueue<>();
-        Set<Location> allSeen = new HashSet<>();
-        queue.add(new Location(0, 0, 0, 0));
+    private int solve(Grid grid, int min, int max) {
+        int stateCount = grid.width * grid.height * DIRECTION_COUNT;
+        int[] best = new int[stateCount];
+        Arrays.fill(best, INF);
+
+        int startState = stateIndex(0, 0, 0, grid.height);
+        best[startState] = 0;
+
+        BucketQueue queue = new BucketQueue(grid.maxHeatLoss * max);
+        queue.add(0, startState);
+
         while (!queue.isEmpty()) {
-            Location c = queue.poll();
-            allSeen.add(c);
-
-            if (isAtBottomRightCorner(c, grid)) {
-                answer = Math.min(answer, c.currBest);
+            long entry = queue.poll();
+            int path = entryCost(entry);
+            int state = entryState(entry);
+            if (path != best[state]) {
+                continue;
             }
-            tryDirection(max, c, grid, min, allSeen, queue);
 
-        }
-        return answer;
-    }
+            int direction = state % DIRECTION_COUNT;
+            int cell = state / DIRECTION_COUNT;
+            int x = cell / grid.height;
+            int y = cell % grid.height;
 
-    private void tryDirection(int max, Location c, int[][] grid, int min, Set<Location> allSeen, Queue<Location> queue){
-        for (int k = 0; k < turns[c.direction].length; k++) {
-            int direction = turns[c.direction][k];
-            int path = c.currBest;
-            for (int j = 1; j <= max; j++) {
-                int newx = c.x + j * xs[direction - 1];
-                int newy = c.y + j * ys[direction - 1];
+            if (x == grid.width - 1 && y == grid.height - 1) {
+                return path;
+            }
 
-                if (isOutOfBounds(newx, newy, grid)) {
-                    break;
-                }
+            for (int turn : TURNS[direction]) {
+                int nextPath = path;
+                for (int length = 1; length <= max; length++) {
+                    int nextX = x + length * DX[turn];
+                    int nextY = y + length * DY[turn];
+                    if (isOutOfBounds(nextX, nextY, grid)) {
+                        break;
+                    }
 
-                path += grid[newx][newy];
+                    nextPath += grid.heatLoss[cellIndex(nextX, nextY, grid.height)];
+                    if (length < min) {
+                        continue;
+                    }
 
-                if (isBetterPath(j, path, newx, newy, direction, debug, min)) {
-                    debug[newx][newy][direction] = path;
-                    Location location = new Location(newx, newy, direction, path);
-
-                    if (!allSeen.contains(location)) {
-                        queue.add(location);
+                    int nextState = stateIndex(nextX, nextY, turn, grid.height);
+                    if (nextPath < best[nextState]) {
+                        best[nextState] = nextPath;
+                        queue.add(nextPath, nextState);
                     }
                 }
             }
         }
-
-    }
-    private boolean isAtBottomRightCorner(Location c, int[][] grid) {
-        return c.x == grid.length - 1 && c.y == grid[0].length - 1;
+        return INF;
     }
 
-    private boolean isOutOfBounds(int x, int y, int[][] grid) {
-        return x < 0 || y < 0 || x >= grid.length || y >= grid[0].length;
+    private int stateIndex(int x, int y, int direction, int height) {
+        return cellIndex(x, y, height) * DIRECTION_COUNT + direction;
     }
 
-    private boolean isBetterPath(int j, int path, int x, int y, int direction, int[][][] debug, int min) {
-        return j >= min && path < debug[x][y][direction];
+    private static int cellIndex(int x, int y, int height) {
+        return x * height + y;
     }
 
-}
-
-class Location implements Comparable<Location> {
-    int x;
-    int y;
-    int direction;
-    int currBest;
-
-    public Location(int x, int y, int direction, int currBest) {
-        this.x = x;
-        this.y = y;
-        this.direction = direction;
-        this.currBest = currBest;
+    private static boolean isOutOfBounds(int x, int y, Grid grid) {
+        return x < 0 || y < 0 || x >= grid.width || y >= grid.height;
     }
 
-    @Override
-    public int compareTo(Location o) {
-        return currBest - o.currBest;
+    // Queue entries sort by heat loss first; the low 32 bits hold the flat state index.
+    private static long queueEntry(int cost, int state) {
+        return ((long) cost << Integer.SIZE) | (state & 0xffffffffL);
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other instanceof Location o) {
-            return o.x == x && o.y == y && o.direction == direction;
+    private static int entryCost(long entry) {
+        return (int) (entry >>> Integer.SIZE);
+    }
+
+    private static int entryState(long entry) {
+        return (int) entry;
+    }
+
+    private record Grid(int[] heatLoss, int width, int height, int maxHeatLoss) {
+    }
+
+    private static class BucketQueue {
+        private final int[][] buckets;
+        private final int[] bucketSizes;
+        private int currentCost;
+        private int size;
+
+        BucketQueue(int maxEdgeCost) {
+            buckets = new int[maxEdgeCost + 1][];
+            bucketSizes = new int[buckets.length];
         }
-        return false;
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(x, y, direction);
+        boolean isEmpty() {
+            return size == 0;
+        }
+
+        void add(int cost, int state) {
+            int bucket = cost % buckets.length;
+            int bucketSize = bucketSizes[bucket];
+            int[] values = buckets[bucket];
+            if (values == null) {
+                values = new int[16];
+                buckets[bucket] = values;
+            } else if (bucketSize == values.length) {
+                values = Arrays.copyOf(values, values.length * 2);
+                buckets[bucket] = values;
+            }
+            values[bucketSize] = state;
+            bucketSizes[bucket] = bucketSize + 1;
+            size++;
+        }
+
+        long poll() {
+            int bucket = currentCost % buckets.length;
+            while (bucketSizes[bucket] == 0) {
+                currentCost++;
+                bucket = currentCost % buckets.length;
+            }
+            int state = buckets[bucket][--bucketSizes[bucket]];
+            size--;
+            return queueEntry(currentCost, state);
+        }
     }
 }
