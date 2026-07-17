@@ -1,23 +1,34 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-import src.objects.Coordinate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Day16 implements DayTemplate {
 
-    int[][] dirChart;
-    int[] xs = new int[]{-1, 1, 0, 0};
-    int[] ys = new int[]{0, 0, -1, 1};
-    Set<Coordinate> pointsOfInterest;
-    Set<Beam> exited;
+    private static final int LEFT = 0;
+    private static final int RIGHT = 1;
+    private static final int UP = 2;
+    private static final int DOWN = 3;
+
+    private static final int[] DX = {-1, 1, 0, 0};
+    private static final int[] DY = {0, 0, -1, 1};
+
+    private char[][] grid;
+    private int rows;
+    private int cols;
+    private int[] seen;
+    private int[] energized;
+    private int stamp = 1;
 
     @Override
     public String[] fullSolve(Scanner in) {
-        int[][] graph = generateGraph(in);
-        long answer1 = tryFromLocation(graph, -1, 0, 1);
-        long answer2 = runFromAllPoints(graph);
+        generateGraph(in);
+        int[] traversalStack = newTraversalStack();
+        int answer1 = tryFromLocation(-1, 0, RIGHT, traversalStack);
+        int answer2 = runFromAllPoints(traversalStack);
         return new String[]{answer1 + "", answer2 + ""};
     }
 
@@ -30,159 +41,132 @@ public class Day16 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        int answer;
-        int[][] graph = generateGraph(in);
-        if (part1) {
-            answer = tryFromLocation(graph, -1, 0, 1);
-        } else {
-            answer = runFromAllPoints(graph);
-        }
+        generateGraph(in);
+        int[] traversalStack = newTraversalStack();
+        int answer = part1
+                ? tryFromLocation(-1, 0, RIGHT, traversalStack)
+                : runFromAllPoints(traversalStack);
         return answer + "";
     }
 
-    private int[][] generateGraph(Scanner in){
-        exited = new HashSet<>();
-        List<String[]> tmpGraph = new ArrayList<>();
-        while (in.hasNext()) {
-            String[] line = in.nextLine().split("");
-            tmpGraph.add(line);
+    private void generateGraph(Scanner in) {
+        List<String> lines = new ArrayList<>();
+        while (in.hasNextLine()) {
+            lines.add(in.nextLine());
         }
-        pointsOfInterest = new HashSet<>();
-        // yes this is an atrocity, but hardcoding ray split saves cycles computing during actual ray movement
-        String precomputedDirChart = "321023012223010033230111";
-        dirChart = new int[6][4];
-        for (int i = 0; i < dirChart.length; i++) {
-            for (int j = 0; j < dirChart[0].length; j++) {
-                dirChart[i][j] = Integer.parseInt(precomputedDirChart.substring(4 * i + j, 4 * i + j + 1));
-            }
+
+        rows = lines.size();
+        cols = lines.get(0).length();
+        grid = new char[rows][cols];
+        for (int y = 0; y < rows; y++) {
+            grid[y] = lines.get(y).toCharArray();
         }
-        int[][] graph = new int[tmpGraph.size()][tmpGraph.get(0).length];
-        Map<String, Integer> graphConvert = Map.of(".", 1, "/", 2, "\\", 3, "|", 4, "-", 5);
-        for (int i = 0; i < graph.length; i++) {
-            for (int j = 0; j < graph[0].length; j++) {
-                graph[i][j] = graphConvert.get(tmpGraph.get(j)[i]);
-                if (graph[i][j] != 1) {
-                    pointsOfInterest.add(new Coordinate(i, j));
-                }
-            }
-        }
-        return graph;
+
+        int stateCount = rows * cols * 4;
+        seen = new int[stateCount];
+        energized = new int[rows * cols];
+        stamp = 1;
     }
 
-    private int runFromAllPoints(int[][] graph){
-        exited = new HashSet<>();
+    private int[] newTraversalStack() {
+        return new int[seen.length + 4];
+    }
+
+    private int runFromAllPoints(int[] traversalStack) {
         int currBest = 0;
-        for (int i = 0; i < graph.length; i++) {
-            int result1 = tryFromLocation(graph, -1, i, 1);
-            if (result1 > currBest) {
-                currBest = result1;
-            }
-            int result2 = tryFromLocation(graph, graph.length, i, 0);
-            if (result2 > currBest) {
-                currBest = result2;
-            }
-            int result3 = tryFromLocation(graph, i, -1, 3);
-            if (result3 > currBest) {
-                currBest = result3;
-            }
-            int result4 = tryFromLocation(graph, i, graph.length, 2);
-            if (result4 > currBest) {
-                currBest = result4;
-            }
+        for (int y = 0; y < rows; y++) {
+            currBest = Math.max(currBest, tryFromLocation(-1, y, RIGHT, traversalStack));
+            currBest = Math.max(currBest, tryFromLocation(cols, y, LEFT, traversalStack));
+        }
+        for (int x = 0; x < cols; x++) {
+            currBest = Math.max(currBest, tryFromLocation(x, -1, DOWN, traversalStack));
+            currBest = Math.max(currBest, tryFromLocation(x, rows, UP, traversalStack));
         }
         return currBest;
     }
 
-    private int tryFromLocation(int[][] graph, int x, int y, int dir) {
-        Beam startingBeam = new Beam(x,y,dir);
-        if(exited.contains(startingBeam)){
-            return -1;
-        }
-        Set<Beam> beams = new HashSet<>();
-        Set<Beam> seen = new HashSet<>();
-        assert graph.length > 0;
-        int[][] energized = new int[graph.length][graph[0].length];
-        beams.add(startingBeam);
-        while (!beams.isEmpty()) {
-            beams = oneCycle(graph, energized, beams, seen);
-        }
-        return totalEnergized(energized);
-    }
+    private int tryFromLocation(int startX, int startY, int startDir, int[] traversalStack) {
+        int currentStamp = nextStamp();
+        int energizedCount = 0;
+        int x = startX;
+        int y = startY;
+        int dir = startDir;
 
-    private int totalEnergized(int[][] energized) {
-        int answer = 0;
-        for (int i = 0; i < energized.length; i++) {
-            for (int j = 0; j < energized[0].length; j++) {
-                if (energized[i][j] > 0) {
-                    answer++;
+        int stackSize = 0;
+        while (true) {
+            x += DX[dir];
+            y += DY[dir];
+            if (x < 0 || y < 0 || x >= cols || y >= rows) {
+                if (stackSize == 0) {
+                    return energizedCount;
                 }
-            }
-        }
-        return answer;
-    }
-
-    private Set<Beam> oneCycle(int[][] graph, int[][] energized, Set<Beam> beams, Set<Beam> seen) {
-        Set<Beam> newBeams = new HashSet<>();
-        for (Beam beam : beams) {
-            int dir = beam.direction;
-            int newx = beam.x + xs[dir];
-            int newy = beam.y + ys[dir];
-            if(!inBounds(newx, newy, graph)){
-                exited.add(new Beam(newx, newy, 3 - ((dir + 2)%4)));
-            }
-            while (!pointsOfInterest.contains(new Coordinate(newx, newy)) && inBounds(newx, newy, graph)) {
-                energized[newx][newy]++;
-                newx += xs[dir];
-                newy += ys[dir];
-            }
-            if (!inBounds(newx, newy, graph)) {
-                exited.add(new Beam(newx, newy, 3 - ((dir + 2)%4)));
+                int packed = traversalStack[--stackSize];
+                dir = packed & 3;
+                int pos = packed >> 2;
+                x = pos % cols;
+                y = pos / cols;
                 continue;
             }
-            energized[newx][newy]++;
-            int str = graph[newx][newy];
-            if (str < 4) {
-                newBeams.add(new Beam(newx, newy, dirChart[str - 2][dir]));
-            } else {
-                newBeams.add(new Beam(newx, newy, dirChart[str - 2][dir]));
-                newBeams.add(new Beam(newx, newy, dirChart[str][dir]));
+
+            int cell = y * cols + x;
+            int state = (cell << 2) | dir;
+            if (seen[state] == currentStamp) {
+                if (stackSize == 0) {
+                    return energizedCount;
+                }
+                int packed = traversalStack[--stackSize];
+                dir = packed & 3;
+                int pos = packed >> 2;
+                x = pos % cols;
+                y = pos / cols;
+                continue;
+            }
+            seen[state] = currentStamp;
+
+            if (energized[cell] != currentStamp) {
+                energized[cell] = currentStamp;
+                energizedCount++;
+            }
+
+            char tile = grid[y][x];
+            if (tile == '/') {
+                dir = slashDirection(dir);
+            } else if (tile == '\\') {
+                dir = backslashDirection(dir);
+            } else if (tile == '|' && (dir == LEFT || dir == RIGHT)) {
+                traversalStack[stackSize++] = (cell << 2) | DOWN;
+                dir = UP;
+            } else if (tile == '-' && (dir == UP || dir == DOWN)) {
+                traversalStack[stackSize++] = (cell << 2) | RIGHT;
+                dir = LEFT;
             }
         }
-        newBeams.removeAll(seen);
-        seen.addAll(newBeams);
-        return newBeams;
     }
 
-    public boolean inBounds(int x, int y, int[][] graph) {
-        return x >= 0 && y >= 0 && x < graph.length && y < graph.length;
-    }
-}
-
-class Beam {
-    int x;
-    int y;
-    int direction;
-
-    public Beam(int x, int y, int direction) {
-        this.x = x;
-        this.y = y;
-        this.direction = direction;
+    private int nextStamp() {
+        if (stamp == Integer.MAX_VALUE) {
+            seen = new int[seen.length];
+            energized = new int[energized.length];
+            stamp = 1;
+        }
+        return stamp++;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Beam beam = (Beam) o;
-        return x == beam.x && y == beam.y && direction == beam.direction;
+    private int slashDirection(int dir) {
+        return switch (dir) {
+            case LEFT -> DOWN;
+            case RIGHT -> UP;
+            case UP -> RIGHT;
+            default -> LEFT;
+        };
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(x, y, direction);
-    }
-
-    public String toString(){
-        return x + " " + y + " " + direction;
+    private int backslashDirection(int dir) {
+        return switch (dir) {
+            case LEFT -> UP;
+            case RIGHT -> DOWN;
+            case UP -> LEFT;
+            default -> RIGHT;
+        };
     }
 }
