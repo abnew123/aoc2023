@@ -11,6 +11,6 @@ class Y{
   }
   return"";
  }
- boolean f(int x,int t){if(x==t)return true;q[x]=1;c++;for(int j=n;j-->0;)if(q[j]<1&&r[x][j]>0&&f(j,t)){r[x][j]--;r[j][x]++;return true;}return false;}
+ boolean f(int x,int t){if(x==t)return true;q[x]=1;c++;for(int j=n;j-->0;)if(q[j]<1&r[x][j]>0&&f(j,t)){r[x][j]--;r[j][x]++;return true;}return false;}
  int i(String s){return(int)m.computeIfAbsent(s,k->n++);}
 }
