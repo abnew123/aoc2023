@@ -11,6 +11,12 @@ public class Day21 implements DayTemplate {
 
     int[][] grid;
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        fillReachableDistances(in, Integer.MAX_VALUE);
+        return new String[]{solvePart1() + "", solvePart2() + ""};
+    }
+
     /**
      * Main solving method.
      *
@@ -20,13 +26,24 @@ public class Day21 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
+        fillReachableDistances(in, part1 ? 64 : Integer.MAX_VALUE);
+        long answer;
+        if (part1) {
+            answer = solvePart1();
+        } else {
+            answer = solvePart2();
+        }
+        return answer + "";
+    }
+
+    private void fillReachableDistances(Scanner in, int maxSteps) {
         List<Coordinate> reachablePoints = new ArrayList<>();
         reachablePoints.add(buildGridAndGetStart(in));
         int[] xs = new int[]{-1, 1, 0, 0};
         int[] ys = new int[]{0, 0, -1, 1};
         int index = 0;
-        while (index < (part1 ? 64 : grid.length)) {
+        int limit = Math.min(maxSteps, grid.length);
+        while (index < limit) {
             index++;
             List<Coordinate> tmp2 = new ArrayList<>();
             for (Coordinate c : reachablePoints) {
@@ -42,13 +59,6 @@ public class Day21 implements DayTemplate {
             }
             reachablePoints = tmp2;
         }
-        if (part1) {
-            answer = solvePart1();
-        }
-        if (!part1) {
-            answer = solvePart2();
-        }
-        return answer + "";
     }
 
     private Coordinate buildGridAndGetStart(Scanner in){
@@ -59,9 +69,11 @@ public class Day21 implements DayTemplate {
         }
         int x = 0;
         int y = 0;
-        grid = new int[tmp.get(0).length][tmp.size()];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
+        int rows = tmp.size();
+        int cols = tmp.get(0).length;
+        grid = new int[cols][rows];
+        for (int i = 0; i < cols; i++) {
+            for (int j = 0; j < rows; j++) {
                 if (tmp.get(j)[i].equals("S")) {
                     x = i;
                     y = j;
@@ -76,8 +88,10 @@ public class Day21 implements DayTemplate {
 
     private long solvePart1(){
         long answer = 0;
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 if (grid[i][j] % 2 == 0 && grid[i][j] <= 64) {
                     answer++;
                 }
@@ -88,17 +102,19 @@ public class Day21 implements DayTemplate {
 
     private long solvePart2(){
         long[] evenOddLarge = new long[4];
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 if (grid[i][j] != -1 && grid[i][j] != 9999) {
                     evenOddLarge[(i + j) % 2]++;
-                    if(grid[i][j] > grid.length / 2){
+                    if(grid[i][j] > rows / 2){
                         evenOddLarge[(i + j) % 2 + 2]++;
                     }
                 }
             }
         }
-        long size = 26501365 / grid.length;
+        long size = 26501365 / rows;
         return ((size + 1) * (size + 1) * evenOddLarge[1]) + (size * size * evenOddLarge[0]) - ((size + 1) * evenOddLarge[3]) + (size * evenOddLarge[2]);
     }
 }

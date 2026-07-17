@@ -15,7 +15,19 @@ public class Day23 implements DayTemplate {
 
     Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        String input = in.useDelimiter("\\A").hasNext() ? in.next() : "";
+        return new String[]{
+                new Day23().solve(true, new Scanner(input)),
+                new Day23().solve(false, new Scanner(input))
+        };
+    }
+
     public String solve(boolean part1, Scanner in) {
+        nodeGrid = new Coordinate[6][6];
+        nextStates = new HashSet<>();
+        neighbors = new HashMap<>();
         int answer = 0;
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {
@@ -103,7 +115,14 @@ public class Day23 implements DayTemplate {
                 nextStates = new HashSet<>();
             }
             for (State state : states) {
-                if (state.dpState.equals("     +")) {
+                // Check if the state ends with "     +"
+                if (state.dpState.length >= 6 && 
+                    state.dpState[state.dpState.length - 6] == ' ' &&
+                    state.dpState[state.dpState.length - 5] == ' ' &&
+                    state.dpState[state.dpState.length - 4] == ' ' &&
+                    state.dpState[state.dpState.length - 3] == ' ' &&
+                    state.dpState[state.dpState.length - 2] == ' ' &&
+                    state.dpState[state.dpState.length - 1] == '+') {
                     answer += state.val;
                 }
             }
@@ -119,9 +138,9 @@ public class Day23 implements DayTemplate {
             return;
         }
         List<String> nextConnections = new ArrayList<>();
-        String above = state.dpState.substring(column, column + 1);
+        char above = state.dpState[column];
         String newState = null;
-        if (above.equals(" ")) {
+        if (above == ' ') {
             if (left.equals(" ")) {
                 // node has no connections from above or left. It can either not have any connections at all, or start a new sub loop
                 nextConnections.add("  ");
@@ -138,7 +157,7 @@ public class Day23 implements DayTemplate {
                 }
             }
         }
-        if (above.equals("+")) {
+        if (above == '+') {
             if (left.equals(" ")) {
                 // node has connection from above but not from the eft. It can either pass its connection down or to the right
                 if (column < nodeGrid[row].length - 1) {
@@ -150,18 +169,24 @@ public class Day23 implements DayTemplate {
             if (left.equals("+")) {
                 // node is joining two loops together with different polarity. It cannot take more connections
                 // to correct the polarity issue, find the original - that matches with the current + that's being turned into a -. Set that - to a + to keep balance.
-                int index = possibility.dpState.length();
+                int index = possibility.dpState.length;
                 int amount = 1;
                 while (amount != 0) {
                     index++;
-                    if (state.dpState.charAt(index) == '+') {
+                    if (state.dpState[index] == '+') {
                         amount++;
                     }
-                    if (state.dpState.charAt(index) == '-') {
+                    if (state.dpState[index] == '-') {
                         amount--;
                     }
                 }
-                newState = state.dpState.substring(0, index) + "+" + state.dpState.substring(index + 1);
+                // Create new state with corrected polarity
+                char[] newStateArray = new char[state.dpState.length];
+                System.arraycopy(state.dpState, 0, newStateArray, 0, state.dpState.length);
+                newStateArray[index] = '+';
+                State fixedState = new State("", 0);
+                fixedState.dpState = newStateArray;
+                newState = new String(newStateArray);
                 nextConnections.add("  !");
             }
             if (left.equals("-")) {
@@ -169,7 +194,7 @@ public class Day23 implements DayTemplate {
                 nextConnections.add("  ");
             }
         }
-        if (above.equals("-")) {
+        if (above == '-') {
             // node has connection from above but not from the eft. It can either pass its connection down or to the right
             if (left.equals(" ")) {
                 if (column < nodeGrid[row].length - 1) {
@@ -184,23 +209,23 @@ public class Day23 implements DayTemplate {
             if (left.equals("-")) {
                 // node is joining two loops together with different polarity. It cannot take more connections
                 // to correct the polarity issue, find the original + that matches with the current - that's being turned into a +. Set that + to a - to keep balance.
-                int index = possibility.dpState.length();
+                int index = possibility.dpState.length;
                 int amount = 1;
                 while (amount != 0) {
                     index--;
-                    if (possibility.dpState.charAt(index) == '+') {
+                    if (possibility.dpState[index] == '+') {
                         amount--;
                     }
-                    if (possibility.dpState.charAt(index) == '-') {
+                    if (possibility.dpState[index] == '-') {
                         amount++;
                     }
                 }
-                possibility.dpState = possibility.dpState.substring(0, index) + "-" + possibility.dpState.substring(index + 1);
+                possibility.dpState[index] = '-';
                 nextConnections.add("  ");
             }
         }
         for (String nextConnection : nextConnections) {
-            State next = new State(possibility, nextConnection.substring(0, 1));
+            State next = new State(possibility, nextConnection.charAt(0));
             if (nextConnection.charAt(1) != ' ') {
                 Coordinate node = nodeGrid[row][column];
                 Coordinate rightNode = nodeGrid[row][column + 1];
@@ -231,8 +256,13 @@ public class Day23 implements DayTemplate {
                 }
             }
             if (nextConnection.length() > 2) {
-                State fixedState = new State(state, "");
-                fixedState.dpState = newState;
+                State fixedState = new State("", 0);
+                fixedState.dpState = new char[state.dpState.length];
+                System.arraycopy(state.dpState, 0, fixedState.dpState, 0, state.dpState.length);
+                // Apply the newState correction
+                if (newState != null) {
+                    fixedState.dpState = newState.toCharArray();
+                }
                 addNextRow(fixedState, row, column + 1, nextConnection.substring(1, 2), next);
             } else {
                 addNextRow(state, row, column + 1, nextConnection.substring(1, 2), next);
@@ -245,8 +275,17 @@ public class Day23 implements DayTemplate {
             nextStates.add(possibility);
         } else {
             for (State state : nextStates) {
-                if (state.dpState.equals(possibility.dpState) && possibility.val > state.val) {
-                    state.val = possibility.val;
+                if (state.dpState.length == possibility.dpState.length) {
+                    boolean equal = true;
+                    for (int i = 0; i < state.dpState.length; i++) {
+                        if (state.dpState[i] != possibility.dpState[i]) {
+                            equal = false;
+                            break;
+                        }
+                    }
+                    if (equal && possibility.val > state.val) {
+                        state.val = possibility.val;
+                    }
                 }
             }
         }
@@ -254,11 +293,11 @@ public class Day23 implements DayTemplate {
 
     private boolean validSigns(State possibility) {
         int sign = 0;
-        for (String s : possibility.dpState.split("")) {
-            if (s.equals("+")) {
+        for (char c : possibility.dpState) {
+            if (c == '+') {
                 sign++;
             }
-            if (s.equals("-")) {
+            if (c == '-') {
                 sign--;
             }
         }
@@ -348,29 +387,46 @@ class Path {
 }
 
 class State {
-    String dpState;
+    char[] dpState;
     int val;
 
     public State(String dpState, int val) {
-        this.dpState = dpState;
+        this.dpState = dpState.toCharArray();
         this.val = val;
     }
 
     public State(State original, String append) {
-        dpState = original.dpState + append;
-        val = original.val;
+        this.dpState = new char[original.dpState.length + 1];
+        System.arraycopy(original.dpState, 0, this.dpState, 0, original.dpState.length);
+        this.dpState[original.dpState.length] = append.charAt(0);
+        this.val = original.val;
+    }
+
+    public State(State original, char append) {
+        this.dpState = new char[original.dpState.length + 1];
+        System.arraycopy(original.dpState, 0, this.dpState, 0, original.dpState.length);
+        this.dpState[original.dpState.length] = append;
+        this.val = original.val;
     }
 
     @Override
     public boolean equals(Object o) {
         if (o instanceof State other) {
-            return dpState.equals(other.dpState);
+            if (dpState.length != other.dpState.length) return false;
+            for (int i = 0; i < dpState.length; i++) {
+                if (dpState[i] != other.dpState[i]) return false;
+            }
+            return true;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return dpState.hashCode();
+        int result = 1;
+        for (char c : dpState) {
+            result = 31 * result + c;
+        }
+        return result;
     }
 }

@@ -6,6 +6,15 @@ import java.util.*;
 
 public class Day08 implements DayTemplate {
 
+    @Override
+    public String[] fullSolve(Scanner in) {
+        Network network = parse(in);
+        return new String[]{
+                stepsToEnds(network, new int[]{network.aaa}, true) + "",
+                stepsToEnds(network, network.starts, false) + ""
+        };
+    }
+
     /**
      * Main solving method.
      *
@@ -15,42 +24,82 @@ public class Day08 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
-        List<String> currSteps = new ArrayList<>();
-        Map<String, Step> map = new HashMap<>();
-        String[] instructions = in.nextLine().split("");
+        Network network = parse(in);
+        int[] starts = part1 ? new int[]{network.aaa} : network.starts;
+        return stepsToEnds(network, starts, part1) + "";
+    }
+
+    private Network parse(Scanner in) {
+        char[] instructions = in.nextLine().toCharArray();
         in.nextLine();
+        List<String> lines = new ArrayList<>();
+        Map<String, Integer> ids = new HashMap<>();
         while (in.hasNext()) {
-            Step step = new Step(in.nextLine());
-            map.put(step.name, step);
-            if (step.name.substring(2).equals("A") && (step.name.equals("AAA") || !part1)) {
-                currSteps.add(step.name);
+            String line = in.nextLine();
+            lines.add(line);
+            id(line.substring(0, 3), ids);
+        }
+        int[] left = new int[ids.size()];
+        int[] right = new int[ids.size()];
+        int[] starts = new int[ids.size()];
+        int startCount = 0;
+        int aaa = -1;
+        int zzz = -1;
+        boolean[] zEnds = new boolean[ids.size()];
+        for (String line : lines) {
+            int source = ids.get(line.substring(0, 3));
+            String leftName = line.substring(7, 10);
+            String rightName = line.substring(12, 15);
+            left[source] = id(leftName, ids);
+            right[source] = id(rightName, ids);
+            if (line.charAt(2) == 'A') {
+                starts[startCount++] = source;
+            }
+            if (line.charAt(2) == 'Z') {
+                zEnds[source] = true;
+            }
+            if (line.startsWith("AAA")) {
+                aaa = source;
+            }
+            if (line.startsWith("ZZZ")) {
+                zzz = source;
             }
         }
+        return new Network(instructions, left, right, Arrays.copyOf(starts, startCount), aaa, zzz, zEnds);
+    }
+
+    private int id(String name, Map<String, Integer> ids) {
+        Integer existing = ids.get(name);
+        if (existing != null) {
+            return existing;
+        }
+        int next = ids.size();
+        ids.put(name, next);
+        return next;
+    }
+
+    private long stepsToEnds(Network network, int[] starts, boolean part1) {
         int index = 0;
-        int[] loops = new int[currSteps.size()];
-        while (!check(currSteps, index, loops, part1)) {
-            for (int i = 0; i < currSteps.size(); i++) {
-                Step step = map.get(currSteps.get(i));
-                if (instructions[index % instructions.length].equals("L")) {
-                    currSteps.set(i, step.left);
-                } else {
-                    currSteps.set(i, step.right);
-                }
+        int[] currSteps = Arrays.copyOf(starts, starts.length);
+        int[] loops = new int[currSteps.length];
+        while (!check(currSteps, index, loops, part1, network)) {
+            boolean goLeft = network.instructions[index % network.instructions.length] == 'L';
+            int[] next = goLeft ? network.left : network.right;
+            for (int i = 0; i < currSteps.length; i++) {
+                currSteps[i] = next[currSteps[i]];
             }
             index++;
         }
-        answer = lcm(loops);
-        return answer + "";
+        return lcm(loops);
     }
 
-    private boolean check(List<String> currSteps, int index, int[] loops, boolean part1) {
+    private boolean check(int[] currSteps, int index, int[] loops, boolean part1, Network network) {
         boolean ret = true;
-        for (int i = 0; i < currSteps.size(); i++) {
+        for (int i = 0; i < currSteps.length; i++) {
             if (loops[i] != 0) {
                 continue;
             }
-            if ((currSteps.get(i).substring(2).equals("Z") && !part1) || currSteps.get(i).equals("ZZZ")) {
+            if ((!part1 && network.zEnds[currSteps[i]]) || currSteps[i] == network.zzz) {
                 loops[i] = index;
             } else {
                 ret = false;
@@ -69,6 +118,9 @@ public class Day08 implements DayTemplate {
 
     private long gcd(long a, long b) {
         return (b == 0) ? a : gcd(b, a % b);
+    }
+
+    private record Network(char[] instructions, int[] left, int[] right, int[] starts, int aaa, int zzz, boolean[] zEnds) {
     }
 }
 
