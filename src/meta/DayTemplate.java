@@ -5,34 +5,6 @@ import java.util.Scanner;
 public interface DayTemplate {
 
     /**
-     * Times execution of the solve method
-     *
-     * @param part1 Param for which part solve() will solve.
-     * @param in    Param for data solve() will read.
-     * @return Time in milliseconds (not nanoseconds) for execution of the method.
-     */
-    default double timer(boolean part1, Scanner in) {
-        Long startTime = System.nanoTime();
-        solve(part1, in);
-        Long endTime = System.nanoTime();
-        return (endTime - startTime) / 1000000.0;
-    }
-
-    /**
-     * Times execution of an entire day
-     *
-     * @param in    Param for data solve() will read.
-     * @return Time in milliseconds (not nanoseconds) for execution of the method.
-     */
-    default double dayTimer(Scanner in) {
-        Long startTime = System.nanoTime();
-        fullSolve(in);
-        Long endTime = System.nanoTime();
-        return (endTime - startTime) / 1000000.0;
-    }
-
-
-    /**
      * Main solving method.
      *
      * @param part1 The solver will solve part 1 if param is set to true.
@@ -48,7 +20,23 @@ public interface DayTemplate {
      * @param in    The solver will read data from this Scanner.
      * @return Returns answer as a string array, with part 1 as index 0 and part 2 as index 1
      */
-    default String[] fullSolve(Scanner in) { return new String[2]; }
+    default String[] fullSolve(Scanner in) {
+        String input = in.findWithinHorizon("(?s).*", 0);
+        try (Scanner part1Input = new Scanner(input);
+             Scanner part2Input = new Scanner(input)) {
+            return new String[]{freshSolver().solve(true, part1Input),
+                    freshSolver().solve(false, part2Input)};
+        }
+    }
+
+    private DayTemplate freshSolver() {
+        try {
+            return getClass().getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(
+                    "Solver must have an accessible no-argument constructor", exception);
+        }
+    }
 
     /**
      * Some classes require additional, non code steps (e.g. judge an image output).

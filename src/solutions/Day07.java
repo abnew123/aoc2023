@@ -12,10 +12,16 @@ public class Day07 implements DayTemplate {
         long answer2 = 0;
         List<Hand> hands1 = new ArrayList<>();
         List<Hand> hands2 = new ArrayList<>();
-        while (in.hasNext()) {
+        while (in.hasNextLine()) {
             String line = in.nextLine();
-            hands1.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), true));
-            hands2.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), false));
+            if (line.isBlank()) {
+                continue;
+            }
+            StringTokenizer tokens = new StringTokenizer(line);
+            String cards = tokens.nextToken();
+            int bid = Integer.parseInt(tokens.nextToken());
+            hands1.add(new Hand(cards, bid, true));
+            hands2.add(new Hand(cards, bid, false));
         }
         Collections.sort(hands1);
         Collections.sort(hands2);
@@ -37,9 +43,13 @@ public class Day07 implements DayTemplate {
     public String solve(boolean part1, Scanner in) {
         long answer = 0;
         List<Hand> hands = new ArrayList<>();
-        while (in.hasNext()) {
+        while (in.hasNextLine()) {
             String line = in.nextLine();
-            hands.add(new Hand(line.split(" ")[0], Integer.parseInt(line.split(" ")[1]), part1));
+            if (line.isBlank()) {
+                continue;
+            }
+            StringTokenizer tokens = new StringTokenizer(line);
+            hands.add(new Hand(tokens.nextToken(), Integer.parseInt(tokens.nextToken()), part1));
         }
         Collections.sort(hands);
         for (int i = 0; i < hands.size(); i++) {
@@ -52,36 +62,57 @@ public class Day07 implements DayTemplate {
 class Hand implements Comparable<Hand> {
     int bid;
     int strength;
-    int[] freqs = new int[13];
     int[] cards = new int[5];
-    String[] ranks = new String[]{"A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"};
 
     public Hand(String line, int bid, boolean part1) {
-        if (!part1) {
-            ranks = new String[]{"A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J"};
-        }
         this.bid = bid;
+        int[] frequencies = new int[13];
         int numJokers = 0;
-        String[] s = line.split("");
-        for (int i = 0; i < s.length; i++) {
-            for (int j = 0; j < ranks.length; j++) {
-                if (s[i].equals(ranks[j])) {
-                    if (!s[i].equals("J") || part1) {
-                        freqs[j]++;
-                    }
-                    if (s[i].equals("J") && !part1) {
-                        numJokers++;
-                    }
-                    cards[i] = j;
-                }
+        for (int i = 0; i < cards.length; i++) {
+            char card = line.charAt(i);
+            int rank = rank(card, part1);
+            cards[i] = rank;
+            if (card == 'J' && !part1) {
+                numJokers++;
+            } else {
+                frequencies[rank]++;
             }
         }
-        Arrays.sort(freqs);
-        freqs[freqs.length - 1] += numJokers;
-        strength = 2 * freqs[freqs.length - 1];
-        if (freqs[freqs.length - 2] == 2) {
+
+        int largest = 0;
+        int secondLargest = 0;
+        for (int frequency : frequencies) {
+            if (frequency > largest) {
+                secondLargest = largest;
+                largest = frequency;
+            } else if (frequency > secondLargest) {
+                secondLargest = frequency;
+            }
+        }
+        largest += numJokers;
+        strength = 2 * largest;
+        if (secondLargest == 2) {
             strength += 1; //for full house and two pair
         }
+    }
+
+    private int rank(char card, boolean part1) {
+        return switch (card) {
+            case 'A' -> 0;
+            case 'K' -> 1;
+            case 'Q' -> 2;
+            case 'J' -> part1 ? 3 : 12;
+            case 'T' -> part1 ? 4 : 3;
+            case '9' -> part1 ? 5 : 4;
+            case '8' -> part1 ? 6 : 5;
+            case '7' -> part1 ? 7 : 6;
+            case '6' -> part1 ? 8 : 7;
+            case '5' -> part1 ? 9 : 8;
+            case '4' -> part1 ? 10 : 9;
+            case '3' -> part1 ? 11 : 10;
+            case '2' -> part1 ? 12 : 11;
+            default -> throw new IllegalArgumentException("Unknown card: " + card);
+        };
     }
 
     @Override
