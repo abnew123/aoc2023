@@ -5,17 +5,10 @@ import java.util.*;
 
 public class Day17 implements DayTemplate {
 
-    private static final int DIRECTION_COUNT = 5;
+    private static final int AXIS_COUNT = 2;
+    private static final int HORIZONTAL = 0;
+    private static final int VERTICAL = 1;
     private static final int INF = 1_000_000_000;
-    private static final int[] DX = new int[]{0, -1, 0, 0, 1};
-    private static final int[] DY = new int[]{0, 0, -1, 1, 0};
-    private static final int[][] TURNS = new int[][]{
-            new int[]{1, 2, 3, 4},
-            new int[]{2, 3},
-            new int[]{1, 4},
-            new int[]{1, 4},
-            new int[]{2, 3}
-    };
 
     @Override
     public String[] fullSolve(Scanner in) {
@@ -53,15 +46,17 @@ public class Day17 implements DayTemplate {
     }
 
     private int solve(Grid grid, int min, int max) {
-        int stateCount = grid.width * grid.height * DIRECTION_COUNT;
+        int stateCount = grid.width * grid.height * AXIS_COUNT;
         int[] best = new int[stateCount];
         Arrays.fill(best, INF);
 
-        int startState = stateIndex(0, 0, 0, grid.height);
-        best[startState] = 0;
-
         BucketQueue queue = new BucketQueue(grid.maxHeatLoss * max);
-        queue.add(0, startState);
+        int horizontalStart = stateIndex(0, 0, HORIZONTAL, grid.height);
+        int verticalStart = stateIndex(0, 0, VERTICAL, grid.height);
+        best[horizontalStart] = 0;
+        best[verticalStart] = 0;
+        queue.add(0, horizontalStart);
+        queue.add(0, verticalStart);
 
         while (!queue.isEmpty()) {
             long entry = queue.poll();
@@ -71,8 +66,8 @@ public class Day17 implements DayTemplate {
                 continue;
             }
 
-            int direction = state % DIRECTION_COUNT;
-            int cell = state / DIRECTION_COUNT;
+            int axis = state % AXIS_COUNT;
+            int cell = state / AXIS_COUNT;
             int x = cell / grid.height;
             int y = cell % grid.height;
 
@@ -80,11 +75,13 @@ public class Day17 implements DayTemplate {
                 return path;
             }
 
-            for (int turn : TURNS[direction]) {
+            for (int step = -1; step <= 1; step += 2) {
+                int dx = axis == HORIZONTAL ? step : 0;
+                int dy = axis == VERTICAL ? step : 0;
                 int nextPath = path;
                 for (int length = 1; length <= max; length++) {
-                    int nextX = x + length * DX[turn];
-                    int nextY = y + length * DY[turn];
+                    int nextX = x + length * dx;
+                    int nextY = y + length * dy;
                     if (isOutOfBounds(nextX, nextY, grid)) {
                         break;
                     }
@@ -94,7 +91,7 @@ public class Day17 implements DayTemplate {
                         continue;
                     }
 
-                    int nextState = stateIndex(nextX, nextY, turn, grid.height);
+                    int nextState = stateIndex(nextX, nextY, axis ^ 1, grid.height);
                     if (nextPath < best[nextState]) {
                         best[nextState] = nextPath;
                         queue.add(nextPath, nextState);
@@ -105,8 +102,8 @@ public class Day17 implements DayTemplate {
         return INF;
     }
 
-    private int stateIndex(int x, int y, int direction, int height) {
-        return cellIndex(x, y, height) * DIRECTION_COUNT + direction;
+    private int stateIndex(int x, int y, int axis, int height) {
+        return cellIndex(x, y, height) * AXIS_COUNT + axis;
     }
 
     private static int cellIndex(int x, int y, int height) {

@@ -2,18 +2,18 @@
 
 ## Performance
 
-Current 25-day timing from 20 separate fresh-JVM pairs; values are arithmetic means in milliseconds. See [PERFORMANCE.md](PERFORMANCE.md) for definitions and A/B evidence.
+Current 25-day timing from 10 separate fresh-JVM pairs; values are arithmetic means in milliseconds. See [PERFORMANCE.md](PERFORMANCE.md) for definitions and A/B evidence.
 
 | Wall | Main | Solver | Startup | Harness |
 |---:|---:|---:|---:|---:|
-| 277.827252 | 233.422879 | 199.937818 | 29.604606 | 33.485061 |
+| 261.123817 | 218.182933 | 184.904613 | 29.795621 | 33.278321 |
 
 | Days | 01 | 02 | 03 | 04 | 05 |
 |---|---:|---:|---:|---:|---:|
 | 01–05 | 6.781355 | 3.089977 | 3.039173 | 3.727296 | 2.751085 |
 | 06–10 | 0.295379 | 3.232061 | 3.526454 | 2.607402 | 2.673869 |
 | 11–15 | 0.910032 | 8.718029 | 1.796077 | 18.634617 | 3.195735 |
-| 16–20 | 16.629266 | 27.234715 | 1.701760 | 5.309508 | 12.641952 |
+| 16–20 | 16.629266 | 16.707950 | 1.701760 | 5.309508 | 8.417954 |
 | 21–25 | 6.647644 | 6.885379 | 38.197227 | 11.167583 | 8.544244 |
 
 ## Repository

@@ -14,13 +14,9 @@ public class Day20 implements DayTemplate {
 
     @Override
     public String[] fullSolve(Scanner in) {
-        List<String> lines = readLines(in);
-        Network part1Network = new Network(lines);
-        Network part2Network = new Network(lines);
-        return new String[]{
-                part1(part1Network) + "",
-                part2(part2Network, part2Network.rxInput) + ""
-        };
+        Network network = new Network(readLines(in));
+        long[] answers = bothParts(network);
+        return new String[]{answers[0] + "", answers[1] + ""};
     }
 
     /**
@@ -52,13 +48,13 @@ public class Day20 implements DayTemplate {
             network.clearQueue();
             network.enqueue(false, network.broadcaster, network.button);
             while (network.hasPulse()) {
-                Pulse pulse = network.nextPulse();
-                if (pulse.high) {
+                network.nextPulse();
+                if (network.pulseHigh) {
                     highPulses++;
                 } else {
                     lowPulses++;
                 }
-                network.sendPulse(pulse);
+                network.sendPulse();
             }
         }
         return highPulses * lowPulses;
@@ -73,22 +69,62 @@ public class Day20 implements DayTemplate {
             network.clearQueue();
             network.enqueue(false, network.broadcaster, network.button);
             while (network.hasPulse()) {
-                Pulse pulse = network.nextPulse();
-                if (pulse.high) {
+                network.nextPulse();
+                if (network.pulseHigh) {
                     for (int j = 0; j < allInputs.length; j++) {
-                        if (pulse.input == allInputs[j] && recordedSuccesses[j] == 0) {
+                        if (network.pulseInput == allInputs[j] && recordedSuccesses[j] == 0) {
                             recordedSuccesses[j] = i;
                             recordedSoFar++;
                         }
                     }
                 }
-                network.sendPulse(pulse);
+                network.sendPulse();
             }
         }
         for (int success : recordedSuccesses) {
             answer *= success;
         }
         return answer;
+    }
+
+    private long[] bothParts(Network network) {
+        long highPulses = 0;
+        long lowPulses = 0;
+        int[] allInputs = network.inputsTo(network.rxInput);
+        int[] recordedSuccesses = new int[allInputs.length];
+        int recordedSoFar = 0;
+
+        for (int press = 1;
+             press < 10000 && (press <= 1000 || recordedSoFar < allInputs.length);
+             press++) {
+            network.clearQueue();
+            network.enqueue(false, network.broadcaster, network.button);
+            while (network.hasPulse()) {
+                network.nextPulse();
+                if (press <= 1000) {
+                    if (network.pulseHigh) {
+                        highPulses++;
+                    } else {
+                        lowPulses++;
+                    }
+                }
+                if (network.pulseHigh && recordedSoFar < allInputs.length) {
+                    for (int i = 0; i < allInputs.length; i++) {
+                        if (network.pulseInput == allInputs[i] && recordedSuccesses[i] == 0) {
+                            recordedSuccesses[i] = press;
+                            recordedSoFar++;
+                        }
+                    }
+                }
+                network.sendPulse();
+            }
+        }
+
+        long part2Answer = 1;
+        for (int success : recordedSuccesses) {
+            part2Answer *= success;
+        }
+        return new long[]{highPulses * lowPulses, part2Answer};
     }
 
     private static final class Network {
@@ -111,6 +147,9 @@ public class Day20 implements DayTemplate {
         private boolean[] queueHigh = new boolean[256];
         private int head;
         private int tail;
+        private boolean pulseHigh;
+        private int pulseTarget;
+        private int pulseInput;
 
         Network(List<String> lines) {
             button = id("button");
@@ -216,8 +255,10 @@ public class Day20 implements DayTemplate {
             return head < tail;
         }
 
-        private Pulse nextPulse() {
-            return new Pulse(queueHigh[head], queueTarget[head], queueInput[head++]);
+        private void nextPulse() {
+            pulseHigh = queueHigh[head];
+            pulseTarget = queueTarget[head];
+            pulseInput = queueInput[head++];
         }
 
         private void enqueue(boolean high, int target, int input) {
@@ -233,24 +274,24 @@ public class Day20 implements DayTemplate {
             tail++;
         }
 
-        private void sendPulse(Pulse pulse) {
-            int type = types[pulse.target];
+        private void sendPulse() {
+            int type = types[pulseTarget];
             if (type == OUTPUT) {
                 return;
             }
             if (type == BROADCAST) {
-                sendToTargets(false, pulse.target);
+                sendToTargets(false, pulseTarget);
             } else if (type == FLIP_FLOP) {
-                if (!pulse.high) {
-                    flipFlopOn[pulse.target] = !flipFlopOn[pulse.target];
-                    sendToTargets(flipFlopOn[pulse.target], pulse.target);
+                if (!pulseHigh) {
+                    flipFlopOn[pulseTarget] = !flipFlopOn[pulseTarget];
+                    sendToTargets(flipFlopOn[pulseTarget], pulseTarget);
                 }
             } else {
-                boolean[] memory = conjunctionMemory[pulse.target];
-                int[] conjunctionInputs = inputs[pulse.target];
+                boolean[] memory = conjunctionMemory[pulseTarget];
+                int[] conjunctionInputs = inputs[pulseTarget];
                 for (int i = 0; i < conjunctionInputs.length; i++) {
-                    if (conjunctionInputs[i] == pulse.input) {
-                        memory[i] = pulse.high;
+                    if (conjunctionInputs[i] == pulseInput) {
+                        memory[i] = pulseHigh;
                         break;
                     }
                 }
@@ -262,7 +303,7 @@ public class Day20 implements DayTemplate {
                         break;
                     }
                 }
-                sendToTargets(!allHigh, pulse.target);
+                sendToTargets(!allHigh, pulseTarget);
             }
         }
 
@@ -273,6 +314,4 @@ public class Day20 implements DayTemplate {
         }
     }
 
-    private record Pulse(boolean high, int target, int input) {
-    }
 }

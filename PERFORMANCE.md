@@ -2,25 +2,25 @@
 
 ## Methodology and current full suite
 
-All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple silicon. The harness compiles the fixed pre-speed source and current source into separate empty classpaths, excludes one true-cold launch per side, then runs separate JVM pairs in counterbalanced A/B order. Normal publication gates use 10 pairs; the current tail batch pools two independent 10-pair sets (n=20). Solver is the sum of the 25 `fullSolve` calls; main includes solver plus in-process harness work; startup is process launch through the child start marker; harness is main minus solver; wall is the complete child process.
+All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple silicon. The harness compiles the fixed pre-speed source and current source into separate empty classpaths, excludes one true-cold launch per side, then runs 10 separate JVM pairs in counterbalanced A/B order. Solver is the sum of the 25 `fullSolve` calls; main includes solver plus in-process harness work; startup is process launch through the child start marker; harness is main minus solver; wall is the complete child process.
 
 Reproduce after compiling both trees with `java -Daoc.data.dir=<data-dir> -cp <current-cp> src.FreshJvmBenchmark --compare <previous-cp> <current-cp>`. Every published state passes all 50 independent solves, all 25 combined solves, and independent/`fullSolve` equivalence.
 
-Current 25-day means (n=20):
+Current 25-day means (n=10):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 277.827252 | 233.422879 | 199.937818 | 29.604606 | 33.485061 |
+| 261.123817 | 218.182933 | 184.904613 | 29.795621 | 33.278321 |
 
-Latest publication gate versus the preceding replay tip (n=20):
+Latest publication gate versus the preceding replay tip (n=10):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 284.756969 | 277.827252 | -6.929717 | [-13.008757, -0.850677] |
-| main | 239.004668 | 233.422879 | -5.581789 | [-10.596885, -0.566694] |
-| solver | 205.444980 | 199.937818 | -5.507162 | [-10.383532, -0.630791] |
-| startup | 30.288930 | 29.604606 | -0.684323 | [-1.619024, 0.250378] |
-| harness | 33.559689 | 33.485061 | -0.074629 | [-0.466983, 0.317726] |
+| wall | 274.089938 | 261.123817 | -12.966121 | [-26.564145, 0.631904] |
+| main | 232.958562 | 218.182933 | -14.775629 | [-24.968839, -4.582419] |
+| solver | 199.858292 | 184.904613 | -14.953679 | [-24.985288, -4.922070] |
+| startup | 30.117204 | 29.795621 | -0.321583 | [-1.561694, 0.918528] |
+| harness | 33.100271 | 33.278321 | 0.178050 | [-0.574115, 0.930214] |
 
 ## Day 01
 
@@ -163,12 +163,12 @@ Stamped primitive beam states and a reusable traversal stack replace per-start o
 
 ## Day 17
 
-A flat state model and bounded integer bucket queue replace object-heavy shortest-path states and a general priority queue.
+An axis-collapsed segment graph searches only the next horizontal or vertical run, while a bounded integer bucket queue orders the primitive states.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 111.916142 | — | — |
-| Current | 31.164063 | -80.752079 | [-87.750467, -73.753691] |
+| Pre-PR | 103.350354 | — | — |
+| Current | 16.705496 | -86.644858 | [-91.030952, -82.258764] |
 
 ## Day 18
 
@@ -190,12 +190,12 @@ Workflows and parts are parsed once into primitive IDs and packed bounds, then o
 
 ## Day 20
 
-Modules are parsed once into primitive IDs and arrays; one queue-driven pulse engine supplies the thousand-press count and cycle periods.
+Modules are parsed once into primitive arrays; one record-free pulse stream simultaneously supplies the thousand-press count and cycle observations.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 36.403233 | — | — |
-| Current | 11.330667 | -25.072567 | [-26.535352, -23.609781] |
+| Pre-PR | 35.083462 | — | — |
+| Current | 8.101187 | -26.982275 | [-28.475862, -25.488687] |
 
 ## Day 21
 
