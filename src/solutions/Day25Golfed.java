@@ -2,7 +2,6 @@ import java.util.*;
 class Y{
  Map m=new HashMap();int[][]g,r;int n,c,q[];
  String s(boolean p,String[]I){
-  if(!p)return"";
   for(var L:I)for(var x:L.split(":? "))i(x);
   g=new int[n][n];
   for(var L:I){var a=L.split(":? ");int x=i(a[0]);for(int j=1,y;j<a.length;g[x][y]=g[y][x]=1)y=i(a[j++]);}
