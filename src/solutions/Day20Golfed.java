@@ -1,7 +1,7 @@
 import java.util.*;class T{
 int R,X,u,v,j,k,z,t[]=new int[677],q[]=new int[512],M[]=t.clone(),o[][]=new int[677][];Map Z=new HashMap();
 String s(boolean P,String[]I){
-for(var L:I){var a=L.split(" -> ");var w=a[1].split(", ");int c=a[0].charAt(0),y=c<39?78-c*2:1,n=i(a[0].substring(y<2?0:1));R=(t[n]=y)<2?n:R;o[n]=new int[w.length];for(j=0;j<w.length;){o[n][j]=i(w[j]);if(w[j++].equals("rx"))X=n;}}
+for(var L:I){var a=L.split(" -> |, ");int c=a[0].charAt(0),y=c<39?78-c*2:1,n=i(a[0].substring(1-y%2));R=(t[n]=y)<2?n:R;o[n]=new int[a.length-1];for(j=1;j<a.length;){o[n][j-1]=i(a[j]);if(a[j++].equals("rx"))X=n;}}
 for(j=677;j-->0;)if(t[j]>0)for(k=o[j].length;k-->0;)if(t[z=o[j][k]]%8==2)o[j][k]|=(t[z]+=8)/8<<10;
 return""+(P?P():C());
 }
