@@ -3,7 +3,7 @@ int R,X,u,v,j,k,z,t[]=new int[677],q[]=new int[512],M[]=t.clone(),o[][]=new int[
 String s(boolean p,String[]I){
 for(var L:I){var a=L.split(" -> |, ");u=a[0].charAt(0);v=u<39?78-u*2:1;z=i(a[0].substring(1-v%2));R=(t[z]=v)<2?z:R;o[z]=new int[a.length-1];for(j=1;j<a.length;){o[z][j-1]=i(a[j]);if(a[j++].equals("rx"))X=z;}}
 for(j=677;j-->0;)if(t[j]>0)for(k=o[j].length;k-->0;)if(t[z=o[j][k]]%8==2)o[j][k]|=(t[z]+=8)/8<<10;
-if(p){long H=0,L=0;for(j=1000;j-->0;){e();while(u<v){if(q[u]<0)H++;L++;d(q[u++]);}}return""+H*(L-H);}int W=t[X]/8,s[]=new int[W+1];for(int P=0,F=0;++P<1e4&F<W;){e();while(u<v){z=q[u++];j=z>>10&1023;if(z<0&(z&1023)==X&&s[j]<1){s[j]=P;F++;}d(z);}}long A=1;while(W>0)A*=s[W--];return""+A;
+if(p){long H=0,L=0;for(j=1000;j-->0;){e();while(u<v){H-=q[u]>>31;L++;d(q[u++]);}}return""+H*(L-H);}int W=t[X]/8,s[]=new int[W+1];for(k=0;++k<1e4;){e();while(u<v){z=q[u++];if(z<0&(z&1023)==X&&s[j=z>>10&1023]<1)s[j]=k;d(z);}}long A=1;while(W>0)A*=s[W--];return""+A;
 }
 int i(String s){return(int)Z.computeIfAbsent(s,k->Z.size());}
 void e(){u=v=0;A(0>1,R);}
