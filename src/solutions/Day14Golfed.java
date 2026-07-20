@@ -1,7 +1,1 @@
-import java.util.*;
-class N{
-char[]g;int r,c,d;
-String s(boolean p,String[]l){r=l.length;c=l[0].length();g=String.join("",l).toCharArray();if(p)t(0);else{var m=new HashMap();for(int i=0;i<1e9;i++){q();var q=(Integer)m.put(new String(g),i);if(q!=null){for(int j=(999999999-i)%(i-q);j-->0;)q();break;}}}int a=0;for(d=g.length;d-->0;)if(g[d]==79)a+=r-d/c;return a+"";}
-void q(){for(d=0;d<4;)t(d++);}
-void t(int d){int a,b,k,x,l,z=d>1?-1:1;var h=d%2>0;l=h?c:r;for(a=h?r:c;a-->0;){k=d>1?l-1:0;for(b=k;b>=0&b<l;b+=z){x=h?a*c+b:b*c+a;if(g[x]==35)k=b+z;else if(g[x]==79){g[x]=46;g[h?a*c+k:k*c+a]=79;k+=z;}}}}
-}
+import java.util.*;class N{char[]g;int r,c,d;String s(boolean p,String[]l){r=l.length;c=l[0].length()+1;g=String.join("\n",l).toCharArray();if(p)t(3);else{var m=new HashMap();for(int i=0;i<1e9;i++){q();var q=(Integer)m.put(new String(g),i);if(q!=null){for(int j=(999999999-i)%(i-q);j-->0;)q();break;}}}int a=0;for(d=g.length;d-->0;)if(g[d]==79)a+=r-d/c;return a+"";}void q(){for(d=4;d-->0;)t(d);}void t(int d){int i,x;boolean m=true;for(;m;){m=false;for(i=g.length;i-->0;)if((x=i+(d%2<1?1-d:(2-d)*c))>=0&x<g.length&&g[i]==79&g[x]==46){g[x]=79;g[i]=46;m=true;}}}}
