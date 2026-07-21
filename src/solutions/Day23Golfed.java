@@ -1,6 +1,6 @@
 class W{
-int D[],g[],L;String G;boolean P;
-String s(boolean p,String[]Z){P=p;G=String.join("\n",Z);int w=G.indexOf(10)+1,N=0,h[]=new int[L=G.length()],v;D=new int[]{1,w,-1,-w};
+int g[],L;String G;boolean P;
+String s(boolean p,String[]Z){P=p;G=String.join("\n",Z);int w=G.indexOf(10)+1,N=0,h[]=new int[L=G.length()],v,D[]={1,w,-1,-w};
 for(v=L;v-->0;)if(o(v)){w=0;for(int d:D)if(o(v+d))w++;if(w!=2)h[v]=N+=5;}
 g=new int[N];
 for(v=L;v-->0;)if(h[v]>0)for(N=4;N-->0;)if(a(G.charAt(v),N))for(int f=h[v]-5,x=v,t=N,s=0;;){if(!o(x+=D[t]))break;s++;if(h[x]>0){g[f+N]=h[x]/5*L-L+s;break;}w=4;while(w-->0&&!(a(G.charAt(x),w)&o(x+D[w])&w!=(t^2)));if(w<0)break;t=w;}
