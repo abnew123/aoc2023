@@ -16,12 +16,42 @@ public class Day23 implements DayTemplate {
     Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
 
     public String solve(boolean part1, Scanner in) {
-        int answer = 0;
+        return run(part1, parse(in));
+    }
+
+    /**
+     * Solves both parts of the day.
+     *
+     * @param in The solver will read data from this Scanner.
+     * @return Returns answer as a string array, with part 1 as index 0 and part 2 as index 1
+     */
+    @Override
+    public String[] fullSolve(Scanner in) {
+        // Only the raw character grid can be shared. The two parts walk different
+        // graphs: part 1 honours the slopes, part 2 flattens them, so the neighbour
+        // map has to be rebuilt from scratch for each part.
+        List<String[]> tmp = parse(in);
+        return new String[]{run(true, tmp), run(false, tmp)};
+    }
+
+    private List<String[]> parse(Scanner in) {
         List<String[]> tmp = new ArrayList<>();
         while (in.hasNext()) {
             String line = in.nextLine();
             tmp.add(line.split(""));
         }
+        return tmp;
+    }
+
+    private String run(boolean part1, List<String[]> tmp) {
+        // Reset every field this class carries. solve() always gets a fresh instance
+        // so this is a no-op there, but fullSolve() runs both parts on one instance
+        // and bfs() uses putIfAbsent: without the reset, part 2 would keep part 1's
+        // slope-respecting edges and add its own on top, searching a merged graph.
+        nodeGrid = new Coordinate[6][6];
+        nextStates = new HashSet<>();
+        neighbors = new HashMap<>();
+        int answer = 0;
         int[][] grid = new int[tmp.get(0).length][tmp.size()];
         Map<String, Integer> gridBuilder = Map.of(".", 1, "#", 2, ">", 3, "v", 4, "<", 5, "^", 6);
         for (int i = 0; i < grid.length; i++) {
