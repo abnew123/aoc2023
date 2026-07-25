@@ -23,10 +23,59 @@ public class Day21 implements DayTemplate {
         long answer = 0;
         List<Coordinate> reachablePoints = new ArrayList<>();
         reachablePoints.add(buildGridAndGetStart(in));
+        walk(reachablePoints, 0, part1 ? 64 : grid.length);
+        if (part1) {
+            answer = solvePart1();
+        }
+        if (!part1) {
+            answer = solvePart2();
+        }
+        return answer + "";
+    }
+
+    /**
+     * Solves both parts of the day.
+     *
+     * @param in The solver will read data from this Scanner.
+     * @return Returns answer as a string array, with part 1 as index 0 and part 2 as index 1
+     */
+    @Override
+    public String[] fullSolve(Scanner in) {
+        List<Coordinate> reachablePoints = new ArrayList<>();
+        reachablePoints.add(buildGridAndGetStart(in));
+        int part2Steps = grid.length;
+        String answer1;
+        String answer2;
+        if (part2Steps >= 64) {
+            // The flood fill writes each cell's shortest distance from the start, so
+            // walking further never changes a distance that was already written.
+            // solvePart1() only counts cells with a distance of at most 64, which makes
+            // the deeper walk that part 2 needs safe to share with part 1.
+            walk(reachablePoints, 0, part2Steps);
+            answer1 = solvePart1() + "";
+            answer2 = solvePart2() + "";
+        } else {
+            // solvePart2() counts every cell the walk reached, so it has to be read
+            // before the walk is extended past grid.length for part 1.
+            reachablePoints = walk(reachablePoints, 0, part2Steps);
+            answer2 = solvePart2() + "";
+            walk(reachablePoints, part2Steps, 64);
+            answer1 = solvePart1() + "";
+        }
+        return new String[]{answer1, answer2};
+    }
+
+    /**
+     * Flood fills the grid, stamping each newly reached cell with the step count at
+     * which it was reached. Resumable: pass the frontier and step count of a previous
+     * call to continue the same walk.
+     *
+     * @return the frontier after the last step.
+     */
+    private List<Coordinate> walk(List<Coordinate> reachablePoints, int index, int steps) {
         int[] xs = new int[]{-1, 1, 0, 0};
         int[] ys = new int[]{0, 0, -1, 1};
-        int index = 0;
-        while (index < (part1 ? 64 : grid.length)) {
+        while (index < steps) {
             index++;
             List<Coordinate> tmp2 = new ArrayList<>();
             for (Coordinate c : reachablePoints) {
@@ -42,13 +91,7 @@ public class Day21 implements DayTemplate {
             }
             reachablePoints = tmp2;
         }
-        if (part1) {
-            answer = solvePart1();
-        }
-        if (!part1) {
-            answer = solvePart2();
-        }
-        return answer + "";
+        return reachablePoints;
     }
 
     private Coordinate buildGridAndGetStart(Scanner in){

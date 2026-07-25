@@ -15,16 +15,50 @@ public class Day08 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
-        List<String> currSteps = new ArrayList<>();
         Map<String, Step> map = new HashMap<>();
+        List<String> names = new ArrayList<>();
+        String[] instructions = parse(in, map, names);
+        return walk(part1, instructions, map, names);
+    }
+
+    /**
+     * Solves both parts of the day.
+     *
+     * @param in The solver will read data from this Scanner.
+     * @return Returns answer as a string array, with part 1 as index 0 and part 2 as index 1
+     */
+    @Override
+    public String[] fullSolve(Scanner in) {
+        Map<String, Step> map = new HashMap<>();
+        List<String> names = new ArrayList<>();
+        String[] instructions = parse(in, map, names);
+        return new String[]{walk(true, instructions, map, names), walk(false, instructions, map, names)};
+    }
+
+    /**
+     * Reads the instruction line and every node. Neither the node map nor the
+     * ordered name list depends on which part is being solved, so both parts can
+     * share them. Nothing here is mutated by {@link #walk}.
+     *
+     * @return the instruction characters.
+     */
+    private String[] parse(Scanner in, Map<String, Step> map, List<String> names) {
         String[] instructions = in.nextLine().split("");
         in.nextLine();
         while (in.hasNext()) {
             Step step = new Step(in.nextLine());
             map.put(step.name, step);
-            if (step.name.substring(2).equals("A") && (step.name.equals("AAA") || !part1)) {
-                currSteps.add(step.name);
+            names.add(step.name);
+        }
+        return instructions;
+    }
+
+    private String walk(boolean part1, String[] instructions, Map<String, Step> map, List<String> names) {
+        long answer = 0;
+        List<String> currSteps = new ArrayList<>();
+        for (String name : names) {
+            if (name.substring(2).equals("A") && (name.equals("AAA") || !part1)) {
+                currSteps.add(name);
             }
         }
         int index = 0;
