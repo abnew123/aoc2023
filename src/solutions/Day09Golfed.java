@@ -1,1 +1,1 @@
-class I{String s(boolean p,String[]I){long r=0;int i,n,a[]=new int[21];for(var L:I){for(i=n=21;i-->0;)a[i]=new Integer(L.split(" ")[p?i:20-i]);for(;n-->0;r+=a[n])for(i=0;i<n;)a[i]=a[i+1]-a[i++];}return r+"";}}
+class I{long r,b;int k;String s(boolean p,String[]I){for(var L:I)for(b=-1,k=0;k++<21;)r+=(b=b*(k-22)/k)*new Long(L.split(" ")[p?21-k:k-1]);return r+"";}}
