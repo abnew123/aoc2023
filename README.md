@@ -142,12 +142,12 @@ The table below counts **all characters, including whitespace** in each normal s
 | 17 | [Source](src/solutions/Day17.java) | [Golfed](src/solutions/Day17Golfed.java) | 4,299 | 358 |
 | 18 | [Source](src/solutions/Day18.java) | [Golfed](src/solutions/Day18Golfed.java) | 5,105 | 201 |
 | 19 | [Source](src/solutions/Day19.java) | [Golfed](src/solutions/Day19Golfed.java) | 6,514 | 632 |
-| 20 | [Source](src/solutions/Day20.java) | [Golfed](src/solutions/Day20Golfed.java) | 7,803 | 618 |
+| 20 | [Source](src/solutions/Day20.java) | [Golfed](src/solutions/Day20Golfed.java) | 7,803 | 608 |
 | 21 | [Source](src/solutions/Day21.java) | [Golfed](src/solutions/Day21Golfed.java) | 3,455 | 307 |
 | 22 | [Source](src/solutions/Day22.java) | [Golfed](src/solutions/Day22Golfed.java) | 7,203 | 462 |
 | 23 | [Source](src/solutions/Day23.java) | [Golfed](src/solutions/Day23Golfed.java) | 14,958 | 561 |
 | 24 | [Source](src/solutions/Day24.java) | [Golfed](src/solutions/Day24Golfed.java) | 7,206 | 843 |
 | 25 | [Source](src/solutions/Day25.java) | [Golfed](src/solutions/Day25Golfed.java) | 4,328 | 435 |
-| Total |  |  | 121,163 | 9,298 |
+| Total |  |  | 121,163 | 9,288 |
 
 <!-- CHAR COUNTS END -->
