@@ -1,1 +1,1 @@
-class F{String s(boolean p,String[]x){var a=(p?x[0]:x[0].replace(" ","")).split("\\D+");var b=(p?x[1]:x[1].replace(" ","")).split("\\D+");long r=1;for(int i=a.length;i-->1;){long t=new Long(a[i]),d=new Long(b[i]),n=0,z=0;for(;n<t;n++)if(n>d/(t-n))z++;r*=z;}return r+"";}}
+class F{String s(boolean p,String[]x){var a=(x[0]+x[1]).replace(p?"":" ","").split("\\D+");long r=1;for(int i=a.length/2,m=i;i>0;i--){long t=new Long(a[i]),d=new Long(a[i+m]),n=0;for(;n*(t-n)<=d;n++);r*=t+1-2*n;}return r+"";}}
