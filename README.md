@@ -145,9 +145,9 @@ The table below counts **all characters, including whitespace** in each normal s
 | 20 | [Source](src/solutions/Day20.java) | [Golfed](src/solutions/Day20Golfed.java) | 7,803 | 608 |
 | 21 | [Source](src/solutions/Day21.java) | [Golfed](src/solutions/Day21Golfed.java) | 3,455 | 307 |
 | 22 | [Source](src/solutions/Day22.java) | [Golfed](src/solutions/Day22Golfed.java) | 7,203 | 462 |
-| 23 | [Source](src/solutions/Day23.java) | [Golfed](src/solutions/Day23Golfed.java) | 14,958 | 561 |
-| 24 | [Source](src/solutions/Day24.java) | [Golfed](src/solutions/Day24Golfed.java) | 7,206 | 843 |
+| 23 | [Source](src/solutions/Day23.java) | [Golfed](src/solutions/Day23Golfed.java) | 14,958 | 302 |
+| 24 | [Source](src/solutions/Day24.java) | [Golfed](src/solutions/Day24Golfed.java) | 7,206 | 712 |
 | 25 | [Source](src/solutions/Day25.java) | [Golfed](src/solutions/Day25Golfed.java) | 4,328 | 435 |
-| Total |  |  | 121,163 | 9,288 |
+| Total |  |  | 121,163 | 8,898 |
 
 <!-- CHAR COUNTS END -->
