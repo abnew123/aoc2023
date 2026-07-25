@@ -1,2 +1,1 @@
-import java.util.*;
-class F{String s(boolean p,String x){if(!p)x=x.replace(" ","");var a=new Scanner(x).useDelimiter("\\D+").tokens().mapToLong(Long::parseLong).toArray();long r=1;for(int i=0;i<a.length/2;i++){long t=a[i],d=a[i+a.length/2],n=(long)Math.ceil((t-Math.sqrt(t*t-4.0*d))/2);r*=t-2*n+1;}return r+"";}}
+class F{String s(boolean p,String[]x){var a=(p?x[0]:x[0].replace(" ","")).split("\\D+");var b=(p?x[1]:x[1].replace(" ","")).split("\\D+");long r=1;for(int i=a.length;i-->1;){long t=new Long(a[i]),d=new Long(b[i]),n=0,z=0;for(;n<t;n++)if(n>d/(t-n))z++;r*=z;}return r+"";}}
