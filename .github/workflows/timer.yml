@@ -1,0 +1,48 @@
+name: Solution Timer
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-timer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 21
+          distribution: 'corretto'
+
+      - name: Build and run solutions
+        run: |
+          java -cp out/production/advent-of-code-2025 src.meta.TimerRunner
+
+      - name: Compare timing
+        id: compare-timing
+        run: |
+          if [ -f timing-baseline.txt ]; then
+            echo "Comparing with baseline..."
+            diff timing-baseline.txt timing-output.txt || true
+          else
+            echo "No baseline found. Creating baseline."
+            cp timing-output.txt timing-baseline.txt
+        continue-on-error: true
+
+      - name: Post PR comment with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const timingOutput = fs.readFileSync('timing-output.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Timing results:\n\n${timingOutput}`,
+            });
