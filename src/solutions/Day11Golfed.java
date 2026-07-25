@@ -1,1 +1,1 @@
-class K{String s(boolean p,String[]l){long A=0,d,u;int a=2,i,j,c;for(;a-->0;){d=u=0;for(i=0;i<(a>0?l.length:l[0].length());i++){c=0;for(j=a>0?l[0].length():l.length;j-->0;)if(l[a>0?i:j].charAt(a>0?j:i)<40)c++;A+=d*c;u+=c;d+=u*(c>0?1:p?2:1000000);}}return A+"";}}
+class K{String s(boolean p,String[]l){long A=0,d,u;int a=2,i,j,c,W=l[0].length(),H=l.length;for(;a-->0;){d=u=0;for(i=0;i<(a>0?H:W);i++){c=0;for(j=a>0?W:H;j-->0;)if(l[a>0?i:j].charAt(a>0?j:i)<40)c++;A+=d*c;u+=c;d+=u*(c>0?1:p?2:1000000);}}return A+"";}}
