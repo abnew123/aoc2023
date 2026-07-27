@@ -1,1 +1,1 @@
-class J{int x,y,X,Y,n,d=4,c,A;String s(boolean p,String[]l){for(;(x=l[y].indexOf(83))<0;y++);for(;916216320<<l[Y=y+(--d-2)%2].charAt(X=x+~-d%2)%20%7*4+d>=0;);for(;c!=83;A+=x*Y-X*y,c=l[y=Y].charAt(x=X),d^=4867>>c%7*2&3,X+=~-d%2,Y+=(d-2)%2,n++);return""+(p?n:(A<0?-A:A)-n+2)/2;}}
+class J{int x,y,X,Y,n,d=4,c,A;Object s(boolean p,String[]l){for(;(x=l[y].indexOf(83))<0;y++);for(;916216320<<l[Y=y+(--d-2)%2].charAt(X=x+~-d%2)%20%7*4+d>=0;);for(;c!=83;A+=x*Y-X*y,c=l[y=Y].charAt(x=X),d^=4867>>c%7*2&3,X+=~-d%2,Y+=(d-2)%2,n++);return(p?n:(A<0?-A:A)-n+2)/2;}}

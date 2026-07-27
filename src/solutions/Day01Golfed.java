@@ -1,1 +1,1 @@
-class A{String s(boolean p,String[]I){int a=0,j;for(var s:I){j=1;if(!p)for(var w:"one two three four five six seven eight nine".split(" "))s=s.replace(w,w+j+++w);var b=s.replaceAll("\\D","").getBytes();a+=b[0]*10+b[b.length-1]-528;}return a+"";}}
+class A{Object s(boolean p,String[]I){int a=0,j;for(var s:I){j=1;if(!p)for(var w:"one two three four five six seven eight nine".split(" "))s=s.replace(w,w+j+++w);var b=s.replaceAll("\\D","").getBytes();a+=b[0]*10+b[b.length-1]-528;}return a;}}

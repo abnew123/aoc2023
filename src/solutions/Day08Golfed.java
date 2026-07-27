@@ -1,1 +1,1 @@
-class H{int c,k;long A=1;String s(boolean p,String[]I){var G="".join("",I);int L=I[0].length();for(var x:I)if((x=x.split(" ")[0]).endsWith(p?"AAA":"A")){for(c=0;x.charAt(2)<90;c++)x=G.substring(k=G.indexOf(x+" ")+2+G.charAt(c%L)%5*5,k+3);A*=c/L;}return""+A*L;}}
+class H{int c,k;long A=1;Object s(boolean p,String[]I){var G="".join("",I);int L=I[0].length();for(var x:I)if((x=x.split(" ")[0]).endsWith(p?"AAA":"A")){for(c=0;x.charAt(2)<90;c++)x=G.substring(k=G.indexOf(x+" ")+2+G.charAt(c%L)%5*5,k+3);A*=c/L;}return A*L;}}

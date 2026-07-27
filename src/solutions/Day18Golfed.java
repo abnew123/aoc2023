@@ -1,1 +1,1 @@
-class R{long x,a,e=2;String s(boolean p,String[]I){for(var L:I){long v=Long.decode(L.split("[ ()]")[p?1:3]),d=p?L.charAt(0)%35&3:v%4;v/=p?1:16;x-=~-d%2*v;a+=(2-d)%2*x*v;e+=v;}return(a<0?-a:a)+e/2+"";}}
+class R{long x,a,e=2;Object s(boolean p,String[]I){for(var L:I){long v=Long.decode(L.split("[ ()]")[p?1:3]),d=p?L.charAt(0)%35&3:v%4;v/=p?1:16;x-=~-d%2*v;a+=(2-d)%2*x*v;e+=v;}return(a<0?-a:a)+e/2;}}
