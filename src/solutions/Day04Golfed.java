@@ -1,1 +1,1 @@
-class D{String s(boolean p,String[]L){int c[]=new int[L.length],i=0,n;long A=0;for(;i<L.length;i++){var a=L[i].split("[:|]");n=0;for(var x:a[2].trim().split("\\s+"))if(a[1].contains(" "+x+" "))n++;A+=p?1L<<n>>1:++c[i];while(!p&n-->0)c[i+n+1]+=c[i];}return A+"";}}
+class D{int c[]=new int[9999],i,n,j;long A;Object s(boolean p,String[]L){for(var l:L){for(n=10,j=9;j<38;)n+=l.indexOf(l.substring(j,j+=3),40)>>31;for(A+=p?1<<n>>1:++c[i];n>0;)c[i+n--]+=c[i];i++;}return A;}}

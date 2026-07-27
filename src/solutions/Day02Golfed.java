@@ -1,1 +1,1 @@
-class B{String s(boolean p,String[]I){int A=0;for(var L:I){int c[]=new int[3],n=0,g=0;for(var x:L.toCharArray())if(x>47&x<58)n=n*10+x-48;else if(x==58){n-=g=n;}else if(x>96){if(c[x%3]<n)c[x%3]=n;n=0;}A+=p?c[0]<13&c[1]<14&c[2]<15?g:0:c[0]*c[1]*c[2];}return A+"";}}
+class B{Object s(boolean p,String[]I){int A=0,n=0,g=0,c[];for(var L:I){c=new int[3];for(var x:L.getBytes())n=x>47&x<58?n*10+x-48:x==58?n-=g=n:x>96?c[x%=3]<n&&(c[x]=n)>12+x?g=0:0:n;A+=p?g:c[0]*c[1]*c[2];}return A;}}
