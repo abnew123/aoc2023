@@ -2,150 +2,171 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.util.Scanner;
 
+/**
+ * Hot Springs: counts spring arrangements with a bottom-up table DP over
+ * (pattern position, groups placed), iterated as rolling primitive long[] rows
+ * restricted to the feasible "wiggle" band. Each input line is parsed once into
+ * persistent primitive buffers, counted for part 1 as-is, unfolded x5 in place
+ * ('?' joins), and counted again for part 2 — a single streaming pass with zero
+ * steady-state allocation per line beyond the Scanner's own line String.
+ */
 public class Day12 implements DayTemplate {
-    int[] possibleCount;
-    List<String> conditionRecords;
-    List<int[]> vals;
+
+    /** Pattern bytes plus trailing '.' sentinel; sized for the unfolded record. */
+    private byte[] pattern = new byte[256];
+    /** Damage-group lengths; sized for the unfolded (x5) group list. */
+    private int[] groups = new int[64];
+    /** prefix[i] = number of non-'.' chars in pattern[0..i). */
+    private int[] prefix = new int[257];
+    /** Two rolling DP rows, reused across lines and parts. */
+    private long[] rowA = new long[256];
+    private long[] rowB = new long[256];
 
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        long answer1 = solveRecords();
-        generateNewRecords();
-        long answer2 = solveRecords();
-        return new String[]{String.valueOf(answer1), String.valueOf(answer2)};
+        long[] answers = process(in, true, true);
+        return new String[]{String.valueOf(answers[0]), String.valueOf(answers[1])};
     }
 
     public String solve(boolean part1, Scanner in) {
-        parse(in);
-        if (!part1) {
-            generateNewRecords();
-        }
-        long answer = solveRecords();
-        return String.valueOf(answer);
+        long[] answers = process(in, part1, !part1);
+        return String.valueOf(part1 ? answers[0] : answers[1]);
     }
 
-    private void generateNewRecords(){
-        List<String> newRecords = new ArrayList<>(conditionRecords.size());
-        List<int[]> newGroups = new ArrayList<>(vals.size());
-
-        for (int i = 0; i < conditionRecords.size(); i++) {
-            String record = conditionRecords.get(i);
-            int[] groups = vals.get(i);
-
-            // Use StringBuilder for efficient string concatenation with pre-allocated capacity
-            StringBuilder sb = new StringBuilder(record.length() * 5 + 4);
-            sb.append(record);
-            for (int j = 1; j < 5; j++) {
-                sb.append('?').append(record);
-            }
-            newRecords.add(sb.toString());
-
-            // Create new array with 5x the groups using System.arraycopy for efficiency
-            int[] newGroupArray = new int[groups.length * 5];
-            for (int j = 0; j < 5; j++) {
-                System.arraycopy(groups, 0, newGroupArray, j * groups.length, groups.length);
-            }
-            newGroups.add(newGroupArray);
-        }
-        conditionRecords = newRecords;
-        vals = newGroups;
-    }
-
-    private long solveRecords(){
-        long answer = 0;
-        for (int i = 0; i < conditionRecords.size(); i++) {
-            String recordWithDot = conditionRecords.get(i) + ".";
-            possibleCount = precomputePossible(recordWithDot);
-            answer += solveOne(recordWithDot, vals.get(i));
-        }
-        return answer;
-    }
-
-    private void parse(Scanner in){
-        conditionRecords = new ArrayList<>();
-        vals = new ArrayList<>();
-
+    /** Streams the input once, accumulating whichever parts are requested. */
+    private long[] process(Scanner in, boolean doPart1, boolean doPart2) {
+        long answer1 = 0;
+        long answer2 = 0;
         while (in.hasNext()) {
             String line = in.nextLine();
-            String[] parts = line.split(" ");
-            conditionRecords.add(parts[0]);
+            int len = line.length();
 
-            String[] groupStrings = parts[1].split(",");
-            int[] groups = new int[groupStrings.length];
-            for (int i = 0; i < groupStrings.length; i++) {
-                groups[i] = Integer.parseInt(groupStrings[i]);
+            int n = 0;
+            while (n < len && line.charAt(n) != ' ') {
+                n++;
             }
-            vals.add(groups);
+            ensureCapacity(5 * n + 5, 5 * ((len - n) / 2 + 1));
+
+            byte[] pat = pattern;
+            for (int i = 0; i < n; i++) {
+                pat[i] = (byte) line.charAt(i);
+            }
+
+            int[] gs = groups;
+            int g = 0;
+            int value = 0;
+            for (int i = n + 1; i < len; i++) {
+                char c = line.charAt(i);
+                if (c >= '0' && c <= '9') {
+                    value = value * 10 + (c - '0');
+                } else if (c == ',') {
+                    gs[g++] = value;
+                    value = 0;
+                }
+            }
+            gs[g++] = value;
+
+            if (doPart1) {
+                pat[n] = '.';
+                answer1 += count(n + 1, g);
+            }
+            if (doPart2) {
+                for (int copy = 1; copy < 5; copy++) {
+                    int base = copy * (n + 1);
+                    pat[base - 1] = '?';
+                    System.arraycopy(pat, 0, pat, base, n);
+                    System.arraycopy(gs, 0, gs, copy * g, g);
+                }
+                int unfolded = 5 * n + 4;
+                pat[unfolded] = '.';
+                answer2 += count(unfolded + 1, 5 * g);
+            }
         }
+        return new long[]{answer1, answer2};
     }
 
-    private long solveOne(String conditionRecord, int[] groups) {
-        int totalSprings = 0;
-        for (int group : groups) {
-            totalSprings += group;
+    /**
+     * Counts arrangements for pattern[0..m) (last char is the '.' sentinel)
+     * against groups[0..groupCount). Row r holds, per band offset, the number
+     * of ways to place groups 0..r with every '#' up to the current frontier
+     * covered; '.'/'?'-as-operational carries counts forward along the row
+     * (reset when an uncovered '#' appears at the frontier), and '?'/'#'-as-
+     * damaged placements are admitted via the prefix-sum feasibility test
+     * (no '.' inside the span, preceding boundary not '#').
+     */
+    private long count(int m, int groupCount) {
+        byte[] pat = pattern;
+        int[] gs = groups;
+        int total = 0;
+        for (int i = 0; i < groupCount; i++) {
+            total += gs[i];
         }
-        int recordLength = conditionRecord.length();
-        int wiggle = recordLength - totalSprings - groups.length + 1;
+        int wiggle = m - total - groupCount + 1;
         if (wiggle <= 0) {
             return 0;
         }
-        long[] previous = new long[wiggle];
-        long[] current = new long[wiggle];
 
-        boolean noHashesToLeft = true;
-        long sum = 0;
-        int firstGroup = groups[0];
-
-        for (int i = 0; i < wiggle; i++) {
-            if (conditionRecord.charAt(i + firstGroup) == '#') {
-                sum = 0;
-            } else {
-                if (noHashesToLeft && (possibleCount[i + firstGroup] - possibleCount[i]) == firstGroup) {
-                    sum++;
-                }
+        int[] pre = prefix;
+        int nonOperational = 0;
+        pre[0] = 0;
+        for (int i = 0; i < m; i++) {
+            if (pat[i] != '.') {
+                nonOperational++;
             }
-            previous[i] = sum;
-            noHashesToLeft &= (conditionRecord.charAt(i) != '#');
+            pre[i + 1] = nonOperational;
         }
 
-        int start = firstGroup + 1;
-        for (int i = 1; i < groups.length; i++) {
-            sum = 0;
-            int currentGroup = groups[i];
+        long[] previous = rowA;
+        long[] current = rowB;
 
+        long sum = 0;
+        int first = gs[0];
+        boolean noHashesToLeft = true;
+        for (int i = 0; i < wiggle; i++) {
+            if (pat[i + first] == '#') {
+                sum = 0;
+            } else if (noHashesToLeft && pre[i + first] - pre[i] == first) {
+                sum++;
+            }
+            previous[i] = sum;
+            noHashesToLeft &= pat[i] != '#';
+        }
+
+        int start = first + 1;
+        for (int r = 1; r < groupCount; r++) {
+            sum = 0;
+            int length = gs[r];
             for (int offset = 0; offset < wiggle; offset++) {
                 int j = start + offset;
-                if (conditionRecord.charAt(j + currentGroup) == '#') {
+                if (pat[j + length] == '#') {
                     sum = 0;
-                } else {
-                    if (previous[offset] > 0 && (conditionRecord.charAt(j - 1) != '#') &&
-                            (possibleCount[j + currentGroup] - possibleCount[j]) == currentGroup) {
-                        sum += previous[offset];
-                    }
+                } else if (previous[offset] > 0 && pat[j - 1] != '#'
+                        && pre[j + length] - pre[j] == length) {
+                    sum += previous[offset];
                 }
                 current[offset] = sum;
             }
             long[] swap = previous;
             previous = current;
             current = swap;
-            start += currentGroup + 1;
+            start += length + 1;
         }
         return sum;
     }
 
-    private int[] precomputePossible(String conditionRecord) {
-        int[] counts = new int[conditionRecord.length() + 1];
-        int count = 0;
-        for (int i = 0; i < conditionRecord.length(); i++) {
-            char c = conditionRecord.charAt(i);
-            if (c == '#' || c == '?') {
-                count++;
-            }
-            counts[i + 1] = count;
+    /** Grows the persistent buffers; steady state performs no allocation. */
+    private void ensureCapacity(int patternLength, int groupCapacity) {
+        if (pattern.length < patternLength) {
+            int size = Math.max(patternLength, pattern.length * 2);
+            pattern = new byte[size];
+            prefix = new int[size + 1];
+            rowA = new long[size];
+            rowB = new long[size];
         }
-        return counts;
+        if (groups.length < groupCapacity) {
+            groups = new int[Math.max(groupCapacity, groups.length * 2)];
+        }
     }
 }

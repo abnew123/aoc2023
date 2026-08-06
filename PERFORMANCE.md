@@ -10,26 +10,26 @@ Current 25-day means (n=100):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 193.308 | 158.453 | 125.282 | 22.636 | 33.171 |
+| 180.077 | 146.016 | 114.741 | 21.707 | 31.275 |
 
 Latest publication gate versus the preceding replay tip (n=100):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 252.245 | 193.308 | -58.937 | [-60.556, -57.319] |
-| main | 214.050 | 158.453 | -55.598 | [-56.753, -54.442] |
-| solver | 181.078 | 125.282 | -55.796 | [-56.906, -54.686] |
-| startup | 22.673 | 22.636 | -0.037 | [-0.294, 0.220] |
-| harness | 32.973 | 33.171 | 0.198 | [0.039, 0.358] |
+| wall | 189.976 | 180.077 | -9.899 | [-11.346, -8.451] |
+| main | 154.983 | 146.016 | -8.967 | [-9.574, -8.359] |
+| solver | 123.828 | 114.741 | -9.087 | [-9.544, -8.630] |
+| startup | 21.914 | 21.707 | -0.207 | [-0.620, 0.207] |
+| harness | 31.155 | 31.275 | 0.121 | [-0.146, 0.387] |
 
 ## Day 01
 
-One forward scan recognizes numeric and overlapping word digits without line buffering, substrings, or four separate searches.
+One slurped buffer feeds a single forward scan that computes both parts at once — literal digits and switch-plus-lookahead word digits with no per-line strings, no regex iteration, and no character-table lookups.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 9.891250 | — | — |
-| Current | 6.917529 | -2.973721 | [-4.010371, -1.937070] |
+| Previous | 6.517810 | — | — |
+| Current | 3.166629 | -3.351180 | [-3.406301, -3.296059] |
 
 ## Day 02
 
@@ -123,12 +123,12 @@ Primitive row and column counts plus prefix aggregates replace galaxy objects, p
 
 ## Day 12
 
-Each record uses two rolling dynamic-programming columns instead of a full record-by-group matrix, sharing parsed work across both parts.
+The unchanged rolling dynamic program now runs in a streaming per-line pipeline: manual character parsing, an in-place fivefold unfold, and persistent primitive buffers sized to the unfolded maximum, with zero steady-state allocation per record.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 9.825717 | — | — |
-| Current | 7.410284 | -2.415433 | [-3.171659, -1.659207] |
+| Previous | 8.671268 | — | — |
+| Current | 4.415836 | -4.255433 | [-4.351045, -4.159820] |
 
 ## Day 13
 
@@ -240,9 +240,9 @@ Checked-long intersections with exact fallback and rank-aware rational rock reco
 
 ## Day 25
 
-An exact global three-wire minimum cut replaces the path-removal heuristic and reuses one deduplicated primitive graph.
+The exact three-wire cut now aims its capped max-flow at the BFS-farthest node first (with an exact all-candidates fallback), and an open-addressing token interner with flat adjacency replaces the boxed parse — five flow traversals instead of seventy-two.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 7.967013 | — | — |
-| Current | 8.606029 | 0.639017 | [-0.421396, 1.699429] |
+| Previous | 7.743114 | — | — |
+| Current | 1.980520 | -5.762594 | [-5.861740, -5.663449] |

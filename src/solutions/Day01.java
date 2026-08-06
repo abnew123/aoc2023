@@ -7,15 +7,9 @@ import java.util.Scanner;
 public class Day01 implements DayTemplate {
 
     @Override
-    public String[] fullSolve(Scanner in){
-        long answer1 = 0;
-        long answer2 = 0;
-        while (in.hasNext()) {
-            long values = scanBoth(in.nextLine());
-            answer1 += (int) (values >> 32);
-            answer2 += (int) values;
-        }
-        return new String[]{answer1 + "", answer2+ ""};
+    public String[] fullSolve(Scanner in) {
+        long[] sums = scan(slurp(in));
+        return new String[]{sums[0] + "", sums[1] + ""};
     }
 
     /**
@@ -27,71 +21,90 @@ public class Day01 implements DayTemplate {
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        long answer = 0;
-        while (in.hasNext()) {
-            answer += scanLine(in.nextLine(), !part1);
-        }
-        return answer + "";
+        long[] sums = scan(slurp(in));
+        return (part1 ? sums[0] : sums[1]) + "";
     }
 
-    private long scanBoth(String line) {
-        int firstNumeric = -1;
-        int lastNumeric = -1;
-        int firstToken = -1;
-        int lastToken = -1;
-        for (int index = 0; index < line.length(); index++) {
-            char current = line.charAt(index);
-            int numeric = Character.isDigit(current) ? Character.digit(current, 10) : -1;
-            if (numeric >= 0) {
-                if (firstNumeric < 0) {
-                    firstNumeric = numeric;
-                }
-                lastNumeric = numeric;
-            }
-            int token = numeric >= 0 ? numeric : wordAt(line, index);
-            if (token >= 0) {
-                if (firstToken < 0) {
-                    firstToken = token;
-                }
-                lastToken = token;
-            }
-        }
-        int part1 = 10 * firstNumeric + lastNumeric;
-        int part2 = 10 * firstToken + lastToken;
-        return ((long) part1 << 32) | (part2 & 0xffffffffL);
+    /** Reads the entire remaining input in one shot; empty input yields "". */
+    private static String slurp(Scanner in) {
+        in.useDelimiter("\\A");
+        return in.hasNext() ? in.next() : "";
     }
 
-    private int scanLine(String line, boolean includeWords) {
-        int first = -1;
-        int last = -1;
-        for (int index = 0; index < line.length(); index++) {
-            char current = line.charAt(index);
-            int value = Character.isDigit(current) ? Character.digit(current, 10) : -1;
-            if (value < 0 && includeWords) {
-                value = wordAt(line, index);
-            }
-            if (value >= 0) {
-                if (first < 0) {
-                    first = value;
+    /**
+     * Single forward scan over the whole input, computing both parts at once.
+     * Literal digits feed the part-1 and part-2 first/last registers; spelled
+     * digits (one..nine, matched by direct char lookahead so overlaps such as
+     * "twone" fall out of scanning every position) feed part 2 only. A line
+     * with no match contributes 10 * (-1) + (-1) = -11 to the affected part,
+     * matching the previous per-line implementation. Trailing whitespace-only
+     * lines are ignored, mirroring Scanner#hasNext-gated line reading; CR, LF
+     * and CRLF terminators are all accepted.
+     */
+    private static long[] scan(String input) {
+        char[] chars = input.toCharArray();
+        int n = chars.length;
+        int limit = n;
+        while (limit > 0 && Character.isWhitespace(chars[limit - 1])) {
+            limit--;
+        }
+        long sum1 = 0;
+        long sum2 = 0;
+        int first1 = -1;
+        int last1 = -1;
+        int first2 = -1;
+        int last2 = -1;
+        for (int i = 0; i < limit; i++) {
+            char c = chars[i];
+            if (c == '\n' || c == '\r') {
+                sum1 += 10 * first1 + last1;
+                sum2 += 10 * first2 + last2;
+                first1 = last1 = first2 = last2 = -1;
+                if (c == '\r' && i + 1 < limit && chars[i + 1] == '\n') {
+                    i++;
                 }
-                last = value;
+                continue;
+            }
+            if (c >= '0' && c <= '9') {
+                int digit = c - '0';
+                if (first1 < 0) {
+                    first1 = digit;
+                }
+                last1 = digit;
+                if (first2 < 0) {
+                    first2 = digit;
+                }
+                last2 = digit;
+                continue;
+            }
+            // Word lookahead may safely read past `limit` (only whitespace
+            // lives there) but never crosses a line: '\n'/'\r' match no letter.
+            int word = switch (c) {
+                case 'o' -> i + 2 < n && chars[i + 1] == 'n' && chars[i + 2] == 'e' ? 1 : -1;
+                case 't' -> i + 2 < n && chars[i + 1] == 'w' && chars[i + 2] == 'o' ? 2
+                        : i + 4 < n && chars[i + 1] == 'h' && chars[i + 2] == 'r'
+                                && chars[i + 3] == 'e' && chars[i + 4] == 'e' ? 3 : -1;
+                case 'f' -> i + 3 < n && chars[i + 1] == 'o' && chars[i + 2] == 'u' && chars[i + 3] == 'r' ? 4
+                        : i + 3 < n && chars[i + 1] == 'i' && chars[i + 2] == 'v' && chars[i + 3] == 'e' ? 5 : -1;
+                case 's' -> i + 2 < n && chars[i + 1] == 'i' && chars[i + 2] == 'x' ? 6
+                        : i + 4 < n && chars[i + 1] == 'e' && chars[i + 2] == 'v'
+                                && chars[i + 3] == 'e' && chars[i + 4] == 'n' ? 7 : -1;
+                case 'e' -> i + 4 < n && chars[i + 1] == 'i' && chars[i + 2] == 'g'
+                        && chars[i + 3] == 'h' && chars[i + 4] == 't' ? 8 : -1;
+                case 'n' -> i + 3 < n && chars[i + 1] == 'i' && chars[i + 2] == 'n' && chars[i + 3] == 'e' ? 9 : -1;
+                default -> -1;
+            };
+            if (word >= 0) {
+                if (first2 < 0) {
+                    first2 = word;
+                }
+                last2 = word;
             }
         }
-        return 10 * first + last;
-    }
-
-    private int wordAt(String line, int index) {
-        return switch (line.charAt(index)) {
-            case 'o' -> line.startsWith("one", index) ? 1 : -1;
-            case 't' -> line.startsWith("two", index) ? 2
-                    : line.startsWith("three", index) ? 3 : -1;
-            case 'f' -> line.startsWith("four", index) ? 4
-                    : line.startsWith("five", index) ? 5 : -1;
-            case 's' -> line.startsWith("six", index) ? 6
-                    : line.startsWith("seven", index) ? 7 : -1;
-            case 'e' -> line.startsWith("eight", index) ? 8 : -1;
-            case 'n' -> line.startsWith("nine", index) ? 9 : -1;
-            default -> -1;
-        };
+        if (limit > 0) {
+            sum1 += 10 * first1 + last1;
+            sum2 += 10 * first2 + last2;
+        }
+        return new long[]{sum1, sum2};
     }
 }
