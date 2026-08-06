@@ -2,236 +2,224 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Scanner;
 
+/**
+ * Day 22: Sand Slabs.
+ *
+ * Bricks settle through a per-cell height map (top height + top brick per
+ * ground cell), and both answers then come from the dominator tree of the
+ * support DAG instead of one cascade walk per brick.
+ *
+ * Settling in ascending original height numbers every supporter before the
+ * brick it supports, so settle order is a topological order of the support
+ * DAG. Over a DAG in topological order the immediate dominator of a node is
+ * the nearest common ancestor of its supporters in the dominator tree built
+ * so far, so a single pass with pairwise NCA intersection (walking the
+ * larger id up its idom chain) builds the whole tree while the bricks drop.
+ *
+ * Disintegrating brick B makes brick F fall exactly when every path from the
+ * ground to F passes through B, i.e. when B strictly dominates F. Therefore
+ * part 2 is the sum over bricks of (dominator-tree depth - 1), counting the
+ * virtual ground root as depth 0, and part 1 counts the bricks that are
+ * nobody's immediate dominator (a brick strictly dominates some brick if and
+ * only if it is the immediate dominator of some brick).
+ */
 public class Day22 implements DayTemplate {
-
-    int minX = 0;
-    int maxX = 0;
-    int minY = 0;
-    int maxY = 0;
-
-    List<Brick> bricks = new ArrayList<>();
 
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        settleBricks();
-        int[][] dependencies = dependencyArrays(true);
-        int[][] dependents = dependencyArrays(false);
-        int[] hardDependencies = generateHardDependencies();
-        long answer1 = part1(hardDependencies);
-        long answer2 = part2(dependencies, dependents);
-        return new String[]{answer1 + "", answer2 + ""};
+        long[] answers = solveBoth(in);
+        return new String[]{answers[0] + "", answers[1] + ""};
     }
 
+    @Override
     public String solve(boolean part1, Scanner in) {
-        long answer;
-        parse(in);
-        settleBricks();
-        if(part1){
-            int[] hardDependencies = generateHardDependencies();
-            answer = part1(hardDependencies);
-        }
-        else{
-            answer = part2(dependencyArrays(true), dependencyArrays(false));
-        }
-
-        return answer + "";
+        long[] answers = solveBoth(in);
+        return (part1 ? answers[0] : answers[1]) + "";
     }
 
-    private long part1(int[] hardDependencies){
-        long answer = 0;
-        for (int hardDependency : hardDependencies) {
-            if (hardDependency == 0) {
-                answer++;
+    private static long[] solveBoth(Scanner in) {
+        String text = in.findWithinHorizon("(?s).*", 0);
+        int length = text == null ? 0 : text.length();
+
+        int n = 0;
+        for (int i = 0; i < length; i++) {
+            if (text.charAt(i) == '~') {
+                n++;
             }
         }
-        return answer;
-    }
+        if (n == 0) {
+            return new long[]{0, 0};
+        }
 
-    private long part2(int[][] dependencies, int[][] dependents){
-        long answer = 0;
-        int[] deadStamp = new int[bricks.size()];
-        int[] queue = new int[bricks.size() * 4];
-        for (int i = 0; i < bricks.size(); i++) {
-            int stamp = i + 1;
-            int fallen = 1;
-            int head = 0;
-            int tail = 0;
-            deadStamp[i] = stamp;
-            for (int dependent : dependents[i]) {
-                queue[tail++] = dependent;
-            }
-            while (head < tail) {
-                int brick = queue[head++];
-                if (deadStamp[brick] == stamp) {
-                    continue;
+        int[] xLo = new int[n];
+        int[] yLo = new int[n];
+        int[] zLo = new int[n];
+        int[] xHi = new int[n];
+        int[] yHi = new int[n];
+        int[] zHi = new int[n];
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        int[] values = new int[6];
+        int valueCount = 0;
+        int count = 0;
+        int index = 0;
+        while (index < length && count < n) {
+            char c = text.charAt(index);
+            if (c == '-' || (c >= '0' && c <= '9')) {
+                int sign = 1;
+                if (c == '-') {
+                    sign = -1;
+                    index++;
                 }
-                boolean allDependenciesFallen = true;
-                for (int dependency : dependencies[brick]) {
-                    if (deadStamp[dependency] != stamp) {
-                        allDependenciesFallen = false;
+                int value = 0;
+                boolean any = false;
+                while (index < length) {
+                    c = text.charAt(index);
+                    if (c < '0' || c > '9') {
                         break;
                     }
+                    value = value * 10 + (c - '0');
+                    any = true;
+                    index++;
                 }
-                if (allDependenciesFallen) {
-                    deadStamp[brick] = stamp;
-                    fallen++;
-                    for (int dependent : dependents[brick]) {
-                        if (tail == queue.length) {
-                            queue = Arrays.copyOf(queue, queue.length * 2);
+                if (any) {
+                    values[valueCount++] = sign * value;
+                    if (valueCount == 6) {
+                        valueCount = 0;
+                        int x0 = Math.min(values[0], values[3]);
+                        int y0 = Math.min(values[1], values[4]);
+                        xLo[count] = x0;
+                        yLo[count] = y0;
+                        zLo[count] = Math.min(values[2], values[5]);
+                        xHi[count] = Math.max(values[0], values[3]);
+                        yHi[count] = Math.max(values[1], values[4]);
+                        zHi[count] = Math.max(values[2], values[5]);
+                        if (x0 < minX) {
+                            minX = x0;
                         }
-                        queue[tail++] = dependent;
+                        if (xHi[count] > maxX) {
+                            maxX = xHi[count];
+                        }
+                        if (y0 < minY) {
+                            minY = y0;
+                        }
+                        if (yHi[count] > maxY) {
+                            maxY = yHi[count];
+                        }
+                        count++;
+                    }
+                }
+            } else {
+                index++;
+            }
+        }
+        n = count;
+        if (n == 0) {
+            return new long[]{0, 0};
+        }
+
+        long[] order = new long[n];
+        for (int i = 0; i < n; i++) {
+            order[i] = ((long) zLo[i] << 32) | i;
+        }
+        Arrays.sort(order);
+
+        int gridHeight = maxY - minY + 1;
+        int cells = (maxX - minX + 1) * gridHeight;
+        int[] topHeight = new int[cells];
+        int[] topBrick = new int[cells];
+        Arrays.fill(topBrick, -1);
+
+        int[] idom = new int[n];
+        int[] depth = new int[n];
+        boolean[] fellsSomething = new boolean[n];
+        long chainSum = 0;
+
+        for (int id = 0; id < n; id++) {
+            int brick = (int) order[id];
+            int x0 = xLo[brick] - minX;
+            int x1 = xHi[brick] - minX;
+            int y0 = yLo[brick] - minY;
+            int y1 = yHi[brick] - minY;
+
+            int support = 0;
+            for (int x = x0; x <= x1; x++) {
+                int base = x * gridHeight;
+                for (int y = y0; y <= y1; y++) {
+                    int h = topHeight[base + y];
+                    if (h > support) {
+                        support = h;
                     }
                 }
             }
-            answer += fallen - 1;
-        }
-        return answer;
-    }
 
-    private void parse(Scanner in){
-        bricks.clear();
-        minX = Integer.MAX_VALUE;
-        maxX = Integer.MIN_VALUE;
-        minY = Integer.MAX_VALUE;
-        maxY = Integer.MIN_VALUE;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            Brick b = new Brick(line);
-            bricks.add(b);
-            minX = Math.min(minX, b.x);
-            maxX = Math.max(maxX, b.x + (b.dir == 0 ? b.size : 1));
-            minY = Math.min(minY, b.y);
-            maxY = Math.max(maxY, b.y + (b.dir == 1 ? b.size : 1));
-        }
-        if (bricks.isEmpty()) {
-            minX = maxX = minY = maxY = 0;
-        }
-    }
-
-    private void settleBricks() {
-        bricks.sort(Comparator.comparingInt(brick -> brick.z));
-        int surfaceHeight = maxY - minY;
-        int[] topHeight = new int[(maxX - minX) * surfaceHeight];
-        int[] topBrick = new int[topHeight.length];
-        Arrays.fill(topBrick, -1);
-
-        for (int id = 0; id < bricks.size(); id++) {
-            Brick brick = bricks.get(id);
-            brick.id = id;
-            int footprintSize = brick.dir == 2 ? 1 : brick.size;
-            int dx = brick.dir == 0 ? 1 : 0;
-            int dy = brick.dir == 1 ? 1 : 0;
-            int supportHeight = 0;
-            for (int offset = 0; offset < footprintSize; offset++) {
-                int cell = (brick.x + offset * dx - minX) * surfaceHeight
-                        + brick.y + offset * dy - minY;
-                supportHeight = Math.max(supportHeight, topHeight[cell]);
-            }
-
-            brick.z = supportHeight + 1;
-            for (int offset = 0; offset < footprintSize; offset++) {
-                int cell = (brick.x + offset * dx - minX) * surfaceHeight
-                        + brick.y + offset * dy - minY;
-                int supporter = topBrick[cell];
-                if (topHeight[cell] == supportHeight && supporter >= 0
-                        && brick.dependencies.add(supporter)) {
-                    bricks.get(supporter).dependents.add(id);
+            int dom = -2;
+            if (support > 0) {
+                int last = -1;
+                for (int x = x0; x <= x1; x++) {
+                    int base = x * gridHeight;
+                    for (int y = y0; y <= y1; y++) {
+                        int cell = base + y;
+                        if (topHeight[cell] != support) {
+                            continue;
+                        }
+                        int s = topBrick[cell];
+                        if (s == last) {
+                            continue;
+                        }
+                        last = s;
+                        if (dom == -2) {
+                            dom = s;
+                        } else if (dom != s) {
+                            int a = dom;
+                            int b = s;
+                            while (a != b) {
+                                while (a > b) {
+                                    a = idom[a];
+                                }
+                                while (b > a) {
+                                    b = idom[b];
+                                }
+                            }
+                            dom = a;
+                        }
+                    }
                 }
             }
-
-            int newTop = brick.z + (brick.dir == 2 ? brick.size - 1 : 0);
-            for (int offset = 0; offset < footprintSize; offset++) {
-                int cell = (brick.x + offset * dx - minX) * surfaceHeight
-                        + brick.y + offset * dy - minY;
-                topHeight[cell] = newTop;
-                topBrick[cell] = id;
+            if (dom == -2) {
+                dom = -1;
             }
-        }
-    }
 
-    private int[] generateHardDependencies(){
-        int[] hardDependencies = new int[bricks.size()];
-        for (Brick b : bricks) {
-            if (b.dependencies.size() == 1) {
-                for (Integer i : b.dependencies) {
-                    hardDependencies[i]++;
+            idom[id] = dom;
+            int d = dom < 0 ? 1 : depth[dom] + 1;
+            depth[id] = d;
+            chainSum += d - 1;
+            if (dom >= 0) {
+                fellsSomething[dom] = true;
+            }
+
+            int newTop = support + zHi[brick] - zLo[brick] + 1;
+            for (int x = x0; x <= x1; x++) {
+                int base = x * gridHeight;
+                for (int y = y0; y <= y1; y++) {
+                    topHeight[base + y] = newTop;
+                    topBrick[base + y] = id;
                 }
             }
         }
-        return hardDependencies;
-    }
 
-    private int[][] dependencyArrays(boolean dependency) {
-        int[][] arrays = new int[bricks.size()][];
-        for (int i = 0; i < bricks.size(); i++) {
-            Set<Integer> source = dependency ? bricks.get(i).dependencies : bricks.get(i).dependents;
-            arrays[i] = new int[source.size()];
-            int index = 0;
-            for (int brick : source) {
-                arrays[i][index++] = brick;
+        long safe = 0;
+        for (int id = 0; id < n; id++) {
+            if (!fellsSomething[id]) {
+                safe++;
             }
         }
-        return arrays;
-    }
-}
-
-class Brick {
-    int id;
-    int x;
-    int y;
-    int z;
-    int size;
-    int dir;
-    Set<Integer> dependents = new HashSet<>();
-    Set<Integer> dependencies = new HashSet<>();
-
-    public Brick(String line) {
-        int[] coordinates = new int[6];
-        int coordinate = 0;
-        int value = 0;
-        int sign = 1;
-        boolean reading = false;
-        for (int index = 0; index <= line.length(); index++) {
-            char c = index == line.length() ? ',' : line.charAt(index);
-            if (c == '-') {
-                sign = -1;
-            } else if (c >= '0' && c <= '9') {
-                value = value * 10 + c - '0';
-                reading = true;
-            } else if (reading) {
-                coordinates[coordinate++] = sign * value;
-                value = 0;
-                sign = 1;
-                reading = false;
-            }
-        }
-        if (coordinate != coordinates.length) {
-            throw new IllegalArgumentException("Expected six brick coordinates: " + line);
-        }
-        int x1 = coordinates[0];
-        int y1 = coordinates[1];
-        int z1 = coordinates[2];
-        int x2 = coordinates[3];
-        int y2 = coordinates[4];
-        int z2 = coordinates[5];
-        x = Math.min(x1, x2);
-        y = Math.min(y1, y2);
-        z = Math.min(z1, z2);
-        if (x1 != x2) {
-            dir = 0;
-            size = Math.abs(x1 - x2);
-        }
-        if (y1 != y2) {
-            dir = 1;
-            size = Math.abs(y1 - y2);
-        }
-        if (z1 != z2) {
-            dir = 2;
-            size = Math.abs(z1 - z2);
-        }
-        size++;
+        return new long[]{safe, chainSum};
     }
 }

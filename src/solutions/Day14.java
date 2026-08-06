@@ -7,6 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+/**
+ * Segment-count solver. The board is materialized only once, during parsing.
+ * Afterwards the state is the number of round rocks per segment (maximal run
+ * of non-cube cells) along the axis of the most recent tilt; piled rocks
+ * occupy a segment prefix, so the count vector determines the configuration
+ * exactly. A tilt scatters one increment per rock into the orthogonal segment
+ * structure through tables precomputed per direction, costing
+ * O(rocks + segments) instead of O(cells). Cycle detection hashes the east
+ * count vector, and loads are computed in closed form from count vectors.
+ */
 public class Day14 implements DayTemplate {
     private static final byte EMPTY = 0;
     private static final byte BLOCK = 1;
@@ -15,54 +25,27 @@ public class Day14 implements DayTemplate {
 
     @Override
     public String[] fullSolve(Scanner in) {
-        Grid grid = parse(in);
-        byte[] north = grid.cells().clone();
-        tiltNorth(north, grid.rows(), grid.columns());
+        Dish dish = parse(in);
         return new String[] {
-                Long.toString(load(north, grid.rows(), grid.columns())),
-                Long.toString(loadAfterCycles(grid.cells(), grid.rows(), grid.columns(), SPIN_CYCLES))
+                Long.toString(dish.northTiltLoad()),
+                Long.toString(dish.loadAfterSpins(SPIN_CYCLES))
         };
     }
 
     @Override
     public String solve(boolean part1, Scanner in) {
-        Grid grid = parse(in);
-        if (part1) {
-            tiltNorth(grid.cells(), grid.rows(), grid.columns());
-            return Long.toString(load(grid.cells(), grid.rows(), grid.columns()));
-        }
-        return Long.toString(loadAfterCycles(grid.cells(), grid.rows(), grid.columns(), SPIN_CYCLES));
+        Dish dish = parse(in);
+        return Long.toString(part1 ? dish.northTiltLoad() : dish.loadAfterSpins(SPIN_CYCLES));
     }
 
     public long loadAfterCycles(Scanner in, long cycles) {
         if (cycles < 0) {
             throw new IllegalArgumentException("Cycle count must be nonnegative");
         }
-        Grid grid = parse(in);
-        return loadAfterCycles(grid.cells(), grid.rows(), grid.columns(), cycles);
+        return parse(in).loadAfterSpins(cycles);
     }
 
-    private long loadAfterCycles(byte[] cells, int rows, int columns, long cycles) {
-        Map<GridState, Long> seen = new HashMap<>();
-        seen.put(new GridState(cells.clone()), 0L);
-        long completed = 0;
-        while (completed < cycles) {
-            spin(cells, rows, columns);
-            completed++;
-            GridState state = new GridState(cells.clone());
-            Long previous = seen.putIfAbsent(state, completed);
-            if (previous != null) {
-                long remaining = (cycles - completed) % (completed - previous);
-                while (remaining-- > 0) {
-                    spin(cells, rows, columns);
-                }
-                break;
-            }
-        }
-        return load(cells, rows, columns);
-    }
-
-    private Grid parse(Scanner in) {
+    private Dish parse(Scanner in) {
         in.useDelimiter("\\A");
         String input = in.hasNext() ? in.next() : "";
         byte[] cells = new byte[Math.min(Math.max(input.length(), 16), 4096)];
@@ -109,115 +92,219 @@ public class Day14 implements DayTemplate {
             rows++;
         }
         if (rows == 0) {
-            return new Grid(new byte[0], 0, 0);
+            return new Dish(new byte[0], 0, 0);
         }
-        return new Grid(Arrays.copyOf(cells, rows * columns), rows, columns);
+        return new Dish(cells, rows, columns);
     }
 
-    private void spin(byte[] cells, int rows, int columns) {
-        tiltNorth(cells, rows, columns);
-        tiltWest(cells, rows, columns);
-        tiltSouth(cells, rows, columns);
-        tiltEast(cells, rows, columns);
-    }
+    private static final class Dish {
+        private final int rows;
+        private final long rawLoad;
+        private final int colSegCount;
+        private final int rowSegCount;
+        private final int[] offCol;
+        private final int[] offRow;
+        private final int[] northTargets;
+        private final int[] westTargets;
+        private final int[] southTargets;
+        private final int[] eastTargets;
+        private final int[] colSegStartRow;
+        private final int[] rowSegWeight;
+        private final int[] initialColCounts;
 
-    private void tiltNorth(byte[] cells, int rows, int columns) {
-        for (int column = 0; column < columns; column++) {
-            int target = 0;
-            for (int row = 0; row < rows; row++) {
-                int index = row * columns + column;
-                if (cells[index] == BLOCK) {
-                    target = row + 1;
-                } else if (cells[index] == ROUND) {
-                    int destination = target++ * columns + column;
-                    if (destination != index) {
-                        cells[index] = EMPTY;
-                        cells[destination] = ROUND;
+        Dish(byte[] cells, int rows, int columns) {
+            this.rows = rows;
+            int cellCount = rows * columns;
+            int blocks = 0;
+            for (int i = 0; i < cellCount; i++) {
+                if (cells[i] == BLOCK) {
+                    blocks++;
+                }
+            }
+
+            int[] rowSegOf = new int[cellCount];
+            int rowSegLimit = blocks + rows + 1;
+            int[] rowSegRow = new int[rowSegLimit];
+            int[] rowSegStartCol = new int[rowSegLimit];
+            int[] rowSegLen = new int[rowSegLimit];
+            int rowSegs = 0;
+            long rawLoadAcc = 0;
+            for (int r = 0; r < rows; r++) {
+                int current = -1;
+                int base = r * columns;
+                for (int c = 0; c < columns; c++) {
+                    byte cell = cells[base + c];
+                    if (cell == BLOCK) {
+                        current = -1;
+                        continue;
+                    }
+                    if (current < 0) {
+                        current = rowSegs++;
+                        rowSegRow[current] = r;
+                        rowSegStartCol[current] = c;
+                    }
+                    rowSegLen[current]++;
+                    rowSegOf[base + c] = current;
+                    if (cell == ROUND) {
+                        rawLoadAcc += rows - r;
                     }
                 }
             }
-        }
-    }
+            this.rawLoad = rawLoadAcc;
 
-    private void tiltSouth(byte[] cells, int rows, int columns) {
-        for (int column = 0; column < columns; column++) {
-            int target = rows - 1;
-            for (int row = rows - 1; row >= 0; row--) {
-                int index = row * columns + column;
-                if (cells[index] == BLOCK) {
-                    target = row - 1;
-                } else if (cells[index] == ROUND) {
-                    int destination = target-- * columns + column;
-                    if (destination != index) {
-                        cells[index] = EMPTY;
-                        cells[destination] = ROUND;
+            int[] colSegOf = new int[cellCount];
+            int colSegLimit = blocks + columns + 1;
+            int[] colSegStart = new int[colSegLimit];
+            int[] colSegColumn = new int[colSegLimit];
+            int[] colSegLen = new int[colSegLimit];
+            int[] initCounts = new int[colSegLimit];
+            int colSegs = 0;
+            for (int c = 0; c < columns; c++) {
+                int current = -1;
+                for (int r = 0; r < rows; r++) {
+                    byte cell = cells[r * columns + c];
+                    if (cell == BLOCK) {
+                        current = -1;
+                        continue;
+                    }
+                    if (current < 0) {
+                        current = colSegs++;
+                        colSegStart[current] = r;
+                        colSegColumn[current] = c;
+                    }
+                    colSegLen[current]++;
+                    colSegOf[r * columns + c] = current;
+                    if (cell == ROUND) {
+                        initCounts[current]++;
                     }
                 }
             }
-        }
-    }
 
-    private void tiltWest(byte[] cells, int rows, int columns) {
-        for (int row = 0; row < rows; row++) {
-            int target = 0;
-            int rowOffset = row * columns;
-            for (int column = 0; column < columns; column++) {
-                int index = rowOffset + column;
-                if (cells[index] == BLOCK) {
-                    target = column + 1;
-                } else if (cells[index] == ROUND) {
-                    int destination = rowOffset + target++;
-                    if (destination != index) {
-                        cells[index] = EMPTY;
-                        cells[destination] = ROUND;
-                    }
+            this.rowSegCount = rowSegs;
+            this.colSegCount = colSegs;
+            this.offRow = prefixSums(rowSegLen, rowSegs);
+            this.offCol = prefixSums(colSegLen, colSegs);
+            int freeCells = offRow[rowSegs];
+
+            this.northTargets = new int[freeCells];
+            this.southTargets = new int[freeCells];
+            for (int s = 0; s < colSegs; s++) {
+                int column = colSegColumn[s];
+                int startRow = colSegStart[s];
+                int length = colSegLen[s];
+                int base = offCol[s];
+                int lastRow = startRow + length - 1;
+                for (int k = 0; k < length; k++) {
+                    northTargets[base + k] = rowSegOf[(startRow + k) * columns + column];
+                    southTargets[base + k] = rowSegOf[(lastRow - k) * columns + column];
+                }
+            }
+            this.westTargets = new int[freeCells];
+            this.eastTargets = new int[freeCells];
+            for (int s = 0; s < rowSegs; s++) {
+                int rowBase = rowSegRow[s] * columns;
+                int startCol = rowSegStartCol[s];
+                int length = rowSegLen[s];
+                int base = offRow[s];
+                int lastCol = startCol + length - 1;
+                for (int k = 0; k < length; k++) {
+                    westTargets[base + k] = colSegOf[rowBase + startCol + k];
+                    eastTargets[base + k] = colSegOf[rowBase + lastCol - k];
+                }
+            }
+
+            this.colSegStartRow = Arrays.copyOf(colSegStart, colSegs);
+            this.initialColCounts = Arrays.copyOf(initCounts, colSegs);
+            int[] weights = new int[rowSegs];
+            for (int s = 0; s < rowSegs; s++) {
+                weights[s] = rows - rowSegRow[s];
+            }
+            this.rowSegWeight = weights;
+        }
+
+        private static int[] prefixSums(int[] lengths, int count) {
+            int[] offsets = new int[count + 1];
+            int total = 0;
+            for (int s = 0; s < count; s++) {
+                offsets[s] = total;
+                total += lengths[s];
+            }
+            offsets[count] = total;
+            return offsets;
+        }
+
+        long northTiltLoad() {
+            long load = 0;
+            for (int s = 0; s < colSegCount; s++) {
+                long count = initialColCounts[s];
+                if (count > 0) {
+                    load += count * (rows - colSegStartRow[s]) - count * (count - 1) / 2;
+                }
+            }
+            return load;
+        }
+
+        long loadAfterSpins(long totalSpins) {
+            if (totalSpins == 0) {
+                return rawLoad;
+            }
+            int[] colCounts = initialColCounts.clone();
+            int[] rowCounts = new int[rowSegCount];
+            Map<CountState, Long> seen = new HashMap<>(512);
+            long[] loads = new long[256];
+            long spins = 0;
+            while (true) {
+                if (spins > 0) {
+                    scatter(eastTargets, offRow, rowCounts, colCounts);
+                }
+                scatter(northTargets, offCol, colCounts, rowCounts);
+                scatter(westTargets, offRow, rowCounts, colCounts);
+                scatter(southTargets, offCol, colCounts, rowCounts);
+                spins++;
+                long load = loadFromEastCounts(rowCounts);
+                if (spins > loads.length) {
+                    loads = Arrays.copyOf(loads, loads.length * 2);
+                }
+                loads[(int) (spins - 1)] = load;
+                if (spins == totalSpins) {
+                    return load;
+                }
+                Long previous = seen.putIfAbsent(new CountState(rowCounts.clone()), spins);
+                if (previous != null) {
+                    long period = spins - previous;
+                    long index = previous + (totalSpins - previous) % period;
+                    return loads[(int) (index - 1)];
                 }
             }
         }
-    }
 
-    private void tiltEast(byte[] cells, int rows, int columns) {
-        for (int row = 0; row < rows; row++) {
-            int target = columns - 1;
-            int rowOffset = row * columns;
-            for (int column = columns - 1; column >= 0; column--) {
-                int index = rowOffset + column;
-                if (cells[index] == BLOCK) {
-                    target = column - 1;
-                } else if (cells[index] == ROUND) {
-                    int destination = rowOffset + target--;
-                    if (destination != index) {
-                        cells[index] = EMPTY;
-                        cells[destination] = ROUND;
-                    }
+        private static void scatter(int[] targets, int[] offsets, int[] source, int[] destination) {
+            Arrays.fill(destination, 0);
+            for (int s = 0; s < source.length; s++) {
+                int base = offsets[s];
+                int end = base + source[s];
+                for (int k = base; k < end; k++) {
+                    destination[targets[k]]++;
                 }
             }
         }
-    }
 
-    private long load(byte[] cells, int rows, int columns) {
-        long result = 0;
-        for (int row = 0; row < rows; row++) {
-            long weight = rows - row;
-            int end = (row + 1) * columns;
-            for (int index = row * columns; index < end; index++) {
-                if (cells[index] == ROUND) {
-                    result += weight;
-                }
+        private long loadFromEastCounts(int[] rowCounts) {
+            long load = 0;
+            for (int s = 0; s < rowSegCount; s++) {
+                load += (long) rowCounts[s] * rowSegWeight[s];
             }
+            return load;
         }
-        return result;
     }
 
-    private record Grid(byte[] cells, int rows, int columns) {}
-
-    private static final class GridState {
-        private final byte[] cells;
+    private static final class CountState {
+        private final int[] counts;
         private final int hash;
 
-        private GridState(byte[] cells) {
-            this.cells = cells;
-            hash = Arrays.hashCode(cells);
+        private CountState(int[] counts) {
+            this.counts = counts;
+            hash = Arrays.hashCode(counts);
         }
 
         @Override
@@ -227,7 +314,7 @@ public class Day14 implements DayTemplate {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof GridState state && Arrays.equals(cells, state.cells);
+            return other instanceof CountState state && Arrays.equals(counts, state.counts);
         }
     }
 }

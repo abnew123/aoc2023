@@ -12,17 +12,17 @@ Current 25-day means (n=100):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 180.077 | 146.016 | 114.741 | 21.707 | 31.275 |
+| 156.658 | 121.121 | 91.477 | 21.079 | 29.644 |
 
 Latest publication gate versus the preceding replay tip (n=100):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 189.976 | 180.077 | -9.899 | [-11.346, -8.451] |
-| main | 154.983 | 146.016 | -8.967 | [-9.574, -8.359] |
-| solver | 123.828 | 114.741 | -9.087 | [-9.544, -8.630] |
-| startup | 21.914 | 21.707 | -0.207 | [-0.620, 0.207] |
-| harness | 31.155 | 31.275 | 0.121 | [-0.146, 0.387] |
+| wall | 177.643 | 156.658 | -20.984 | [-22.804, -19.164] |
+| main | 141.332 | 121.121 | -20.212 | [-20.599, -19.825] |
+| solver | 111.768 | 91.477 | -20.291 | [-20.634, -19.948] |
+| startup | 20.825 | 21.079 | +0.254 | [+0.043, +0.465] |
+| harness | 29.564 | 29.644 | +0.079 | [-0.073, +0.231] |
 
 ## Day 01
 
@@ -149,14 +149,14 @@ Flat character storage counts mirrored mismatches once per split and stops after
 
 ## Day 14
 
-A flat row-major board with self-move-skipping tilts feeds exact-state cycle detection keyed on the full cloned board (collision-proof, cached hash), parsed by one delimiter-free slurp.
+Tilting moves per-segment stone counts through four precomputed pile-position tables (O(stones + segments) per tilt); the board is materialized only at parse, cycle states hash the east-piled count vector, and loads come from closed forms.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 21.278437 | — | — |
-| Current | 11.935072 | -9.343365 | — |
+| Current | 6.499235 | -14.779202 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -2.243760 [-2.321982, -2.165538].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.973 [-5.048, -4.899].*
 
 ## Day 15
 
@@ -180,14 +180,14 @@ The mirror graph is condensed once — deterministic beam traces between canonic
 
 ## Day 17
 
-The axis-collapsed bucket-queue search becomes A* with an exact relaxed-walk heuristic: one backward unconstrained Dijkstra from the goal, shared by both parts, steers the crucible search through a provable subset of the plain Dijkstra frontier on a widened bucket ring.
+An uninformed cost-layered dial search (axis-collapsed states, power-of-two bucket ring, cumulative-cost run expansion) replaces the guided search — on a cold JVM the heuristic pass cost more than its guidance saved — fed by a one-shot anchor-token drain parse.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 103.350354 | — | — |
-| Current | 11.389749 | -91.960605 | — |
+| Current | 7.053280 | -96.297074 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -6.129061 [-7.208054, -5.050068].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.914 [-4.014, -3.814].*
 
 ## Day 18
 
@@ -209,30 +209,36 @@ Workflows and parts are parsed once into primitive IDs and packed bounds, then o
 
 ## Day 20
 
-Modules are parsed once into primitive arrays; one record-free pulse stream simultaneously supplies the thousand-press count and cycle observations.
+The module graph compiles to one encoded long per edge (level bit, destination id, conjunction memory bit), so firing a module is a constant copy into a long ring; conjunction decisions are O(1) via a shared bitset with high-counts, and sink pulses are counted, never enqueued. Part 2 proves feeder periodicity by a reset-state check (second-high and direct-simulation fallbacks retained) and combines periods with the LCM.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 35.083462 | — | — |
 | Current | 8.101187 | -26.982275 | [-28.475862, -25.488687] |
 
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.870 [-3.907, -3.834].*
+
 ## Day 21
 
-One parsed garden and shared reachable-distance pass provide the finite-step count and the quadratic infinite-grid extrapolation.
+A flat int-queue BFS computes exact tile distances once; part 1 reads parities, and part 2 derives the three diamond samples from the distance tallies and Newton-extrapolates — after validating the quadratic preconditions, with an exact tiled-BFS fallback for grids (like the official example) that lack them.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 7.754142 | — | — |
 | Current | 4.968513 | -2.785629 | [-3.091764, -2.479494] |
 
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.702 [-4.761, -4.642].*
+
 ## Day 22
 
-Bricks settle once against an exact top surface, directly producing the support graph reused for removal and cascade counts.
+Bricks settle through the height map while immediate dominators fold inline (topological nearest-common-ancestor intersection); part 2 is the dominator-tree depth sum and part 1 counts bricks that dominate nothing — one linear pass replaces the per-brick cascade walk.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 28.294933 | — | — |
 | Current | 7.307504 | -20.987429 | [-22.131220, -19.843638] |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.312 [-3.523, -3.101].*
 
 ## Day 23
 
