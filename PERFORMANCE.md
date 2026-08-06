@@ -6,6 +6,8 @@ All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple 
 
 Reproduce after compiling both trees with `java -Daoc.data.dir=<data-dir> -cp <current-cp> src.FreshJvmBenchmark --compare <previous-cp> <current-cp>`. Every published state passes all 50 independent solves, all 25 combined solves, and independent/`fullSolve` equivalence. The tables below come from a 100-pair run of the same child protocol with seeded random within-pair order and the cold pair excluded; the checked-in n=10 counterbalanced mode remains the quick reproduction default.
 
+A fresh pre-speed-versus-current paired suite run is no longer possible: the harness requires cross-side answer equality, and the pre-speed source's Day 24 part 2 answer was wrong (truncated division — fixed by the Day 24 rewrite noted in its block, and verified against the expected-results record). Day-block Pre-PR values therefore carry the documented freeze-era measurements rather than a re-run.
+
 Current 25-day means (n=100):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
@@ -28,8 +30,10 @@ One slurped buffer feeds a single forward scan that computes both parts at once 
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 6.517810 | — | — |
-| Current | 3.166629 | -3.351180 | [-3.406301, -3.296059] |
+| Pre-PR | 9.89125 | — | — |
+| Current | 3.166629 | -6.724621 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.351180 [-3.406301, -3.296059].*
 
 ## Day 02
 
@@ -82,8 +86,10 @@ Each hand becomes one flat integer key (category times 13^5 plus a base-13 tie-b
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 3.273533 | — | — |
-| Current | 2.374669 | -0.898864 | [-0.945032, -0.852695] |
+| Pre-PR | 6.08685 | — | — |
+| Current | 2.374669 | -3.712181 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.898864 [-0.945032, -0.852695].*
 
 ## Day 08
 
@@ -127,8 +133,10 @@ The unchanged rolling dynamic program now runs in a streaming per-line pipeline:
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 8.671268 | — | — |
-| Current | 4.415836 | -4.255433 | [-4.351045, -4.159820] |
+| Pre-PR | 9.825717 | — | — |
+| Current | 4.415836 | -5.409881 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.255433 [-4.351045, -4.159820].*
 
 ## Day 13
 
@@ -145,8 +153,10 @@ A flat row-major board with self-move-skipping tilts feeds exact-state cycle det
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 14.178832 | — | — |
-| Current | 11.935072 | -2.243760 | [-2.321982, -2.165538] |
+| Pre-PR | 21.278437 | — | — |
+| Current | 11.935072 | -9.343365 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -2.243760 [-2.321982, -2.165538].*
 
 ## Day 15
 
@@ -163,8 +173,10 @@ The mirror graph is condensed once — deterministic beam traces between canonic
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 16.112807 | — | — |
-| Current | 3.458243 | -12.654564 | [-12.720342, -12.588787] |
+| Pre-PR | 88.265783 | — | — |
+| Current | 3.458243 | -84.807540 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -12.654564 [-12.720342, -12.588787].*
 
 ## Day 17
 
@@ -172,8 +184,10 @@ The axis-collapsed bucket-queue search becomes A* with an exact relaxed-walk heu
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 17.518810 | — | — |
-| Current | 11.389749 | -6.129061 | [-7.208054, -5.050068] |
+| Pre-PR | 103.350354 | — | — |
+| Current | 11.389749 | -91.960605 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -6.129061 [-7.208054, -5.050068].*
 
 ## Day 18
 
@@ -226,8 +240,10 @@ Input-adaptive junction contraction feeds an iterative bitmask depth-first searc
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 39.464276 | — | — |
-| Current | 7.957705 | -31.506571 | [-31.844003, -31.169140] |
+| Pre-PR | 36.417317 | — | — |
+| Current | 7.957705 | -28.459612 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -31.506571 [-31.844003, -31.169140].*
 
 ## Day 24
 
@@ -244,5 +260,7 @@ The exact three-wire cut now aims its capped max-flow at the BFS-farthest node f
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Previous | 7.743114 | — | — |
-| Current | 1.980520 | -5.762594 | [-5.861740, -5.663449] |
+| Pre-PR | 7.967013 | — | — |
+| Current | 1.980520 | -5.986493 | — |
+
+*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -5.762594 [-5.861740, -5.663449].*
