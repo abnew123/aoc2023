@@ -65,4 +65,21 @@ public class MasterSolver {
         }
         return allCorrect;
     }
+
+    private static String className(int day, String zeroFilledDay) {
+        return useGolfed ? GOLFED_DAYS[day - 1] : SOLUTIONS_DAY + zeroFilledDay;
+    }
+
+    private static String solve(Class<?> cls, boolean part1, File file) throws Exception {
+        Object solver = cls.getDeclaredConstructor().newInstance();
+        if (useGolfed) {
+            Method m = cls.getDeclaredMethod("s", boolean.class, String[].class);
+            m.setAccessible(true);
+            return (String) m.invoke(solver, part1, Files.readAllLines(file.toPath()).toArray(String[]::new));
+        }
+        try (Scanner in = new Scanner(file)) {
+            Method m = cls.getDeclaredMethod("solve", boolean.class, Scanner.class);
+            return (String) m.invoke(solver, part1, in);
+        }
+    }
 }
