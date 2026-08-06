@@ -13,13 +13,14 @@ public class Day17 implements DayTemplate {
     @Override
     public String[] fullSolve(Scanner in) {
         Grid grid = parse(in);
-        int answer1 = solve(grid, 1, 3);
-        return new String[]{answer1 + "", solve(grid, 4, 10) + ""};
+        int[] lowerBound = goalLowerBounds(grid);
+        int answer1 = solve(grid, lowerBound, 1, 3);
+        return new String[]{answer1 + "", solve(grid, lowerBound, 4, 10) + ""};
     }
 
     public String solve(boolean part1, Scanner in) {
         Grid grid = parse(in);
-        return solve(grid, part1 ? 1 : 4, part1 ? 3 : 10) + "";
+        return solve(grid, goalLowerBounds(grid), part1 ? 1 : 4, part1 ? 3 : 10) + "";
     }
 
     private Grid parse(Scanner in) {
@@ -45,29 +46,87 @@ public class Day17 implements DayTemplate {
         return new Grid(heatLoss, width, height, maxHeatLoss);
     }
 
-    private int solve(Grid grid, int min, int max) {
+    /**
+     * Exact cost of an unconstrained (run-length-free) walk from each cell to the goal,
+     * via backward Dijkstra on a Dial bucket queue. Entering a cell costs its heat loss,
+     * so relaxing a popped cell into a neighbour uses the popped cell's heat as weight.
+     * Every crucible path is also an unconstrained walk, so this is an admissible and
+     * consistent A* heuristic, and it is independent of the run-length limits, letting
+     * both parts share a single pass.
+     */
+    private int[] goalLowerBounds(Grid grid) {
+        int[] lowerBound = new int[grid.width * grid.height];
+        Arrays.fill(lowerBound, INF);
+        int goal = cellIndex(grid.width - 1, grid.height - 1, grid.height);
+        lowerBound[goal] = 0;
+        BucketQueue queue = new BucketQueue(grid.maxHeatLoss, 0);
+        queue.add(0, goal);
+        while (!queue.isEmpty()) {
+            long entry = queue.poll();
+            int distance = entryCost(entry);
+            int cell = entryState(entry);
+            if (distance != lowerBound[cell]) {
+                continue;
+            }
+            int x = cell / grid.height;
+            int y = cell % grid.height;
+            int candidate = distance + grid.heatLoss[cell];
+            if (x > 0) {
+                relax(lowerBound, queue, cell - grid.height, candidate);
+            }
+            if (x < grid.width - 1) {
+                relax(lowerBound, queue, cell + grid.height, candidate);
+            }
+            if (y > 0) {
+                relax(lowerBound, queue, cell - 1, candidate);
+            }
+            if (y < grid.height - 1) {
+                relax(lowerBound, queue, cell + 1, candidate);
+            }
+        }
+        return lowerBound;
+    }
+
+    private static void relax(int[] lowerBound, BucketQueue queue, int cell, int candidate) {
+        if (candidate < lowerBound[cell]) {
+            lowerBound[cell] = candidate;
+            queue.add(candidate, cell);
+        }
+    }
+
+    /**
+     * A* over axis-collapsed states (cell x horizontal/vertical), expanding every legal
+     * run length in one prefix-summed sweep. Queue keys are path + lowerBound; with a
+     * consistent heuristic the polled keys never decrease and consecutive keys differ by
+     * at most run weight + reverse run weight, i.e. 2 * maxHeatLoss * max, so a Dial
+     * bucket ring of that span replaces a binary heap.
+     */
+    private int solve(Grid grid, int[] lowerBound, int min, int max) {
         int stateCount = grid.width * grid.height * AXIS_COUNT;
         int[] best = new int[stateCount];
         Arrays.fill(best, INF);
 
-        BucketQueue queue = new BucketQueue(grid.maxHeatLoss * max);
+        int startCell = cellIndex(0, 0, grid.height);
+        int startKey = lowerBound[startCell];
+        BucketQueue queue = new BucketQueue(2 * grid.maxHeatLoss * max, startKey);
         int horizontalStart = stateIndex(0, 0, HORIZONTAL, grid.height);
         int verticalStart = stateIndex(0, 0, VERTICAL, grid.height);
         best[horizontalStart] = 0;
         best[verticalStart] = 0;
-        queue.add(0, horizontalStart);
-        queue.add(0, verticalStart);
+        queue.add(startKey, horizontalStart);
+        queue.add(startKey, verticalStart);
 
         while (!queue.isEmpty()) {
             long entry = queue.poll();
-            int path = entryCost(entry);
+            int key = entryCost(entry);
             int state = entryState(entry);
+            int axis = state % AXIS_COUNT;
+            int cell = state / AXIS_COUNT;
+            int path = key - lowerBound[cell];
             if (path != best[state]) {
                 continue;
             }
 
-            int axis = state % AXIS_COUNT;
-            int cell = state / AXIS_COUNT;
             int x = cell / grid.height;
             int y = cell % grid.height;
 
@@ -86,15 +145,16 @@ public class Day17 implements DayTemplate {
                         break;
                     }
 
-                    nextPath += grid.heatLoss[cellIndex(nextX, nextY, grid.height)];
+                    int nextCell = cellIndex(nextX, nextY, grid.height);
+                    nextPath += grid.heatLoss[nextCell];
                     if (length < min) {
                         continue;
                     }
 
-                    int nextState = stateIndex(nextX, nextY, axis ^ 1, grid.height);
+                    int nextState = nextCell * AXIS_COUNT + (axis ^ 1);
                     if (nextPath < best[nextState]) {
                         best[nextState] = nextPath;
-                        queue.add(nextPath, nextState);
+                        queue.add(nextPath + lowerBound[nextCell], nextState);
                     }
                 }
             }
@@ -114,7 +174,7 @@ public class Day17 implements DayTemplate {
         return x < 0 || y < 0 || x >= grid.width || y >= grid.height;
     }
 
-    // Queue entries sort by heat loss first; the low 32 bits hold the flat state index.
+    // Queue entries sort by key first; the low 32 bits hold the flat state index.
     private static long queueEntry(int cost, int state) {
         return ((long) cost << Integer.SIZE) | (state & 0xffffffffL);
     }
@@ -136,9 +196,10 @@ public class Day17 implements DayTemplate {
         private int currentCost;
         private int size;
 
-        BucketQueue(int maxEdgeCost) {
-            buckets = new int[maxEdgeCost + 1][];
+        BucketQueue(int maxKeyStep, int initialKey) {
+            buckets = new int[maxKeyStep + 1][];
             bucketSizes = new int[buckets.length];
+            currentCost = initialKey;
         }
 
         boolean isEmpty() {

@@ -4,23 +4,23 @@
 
 All timings use the original personal input corpus with OpenJDK 23.0.1 on Apple silicon. The harness compiles the fixed pre-speed source and current source into separate empty classpaths, excludes one true-cold launch per side, then runs 10 separate JVM pairs in counterbalanced A/B order. Solver is the sum of the 25 `fullSolve` calls; main includes solver plus in-process harness work; startup is process launch through the child start marker; harness is main minus solver; wall is the complete child process.
 
-Reproduce after compiling both trees with `java -Daoc.data.dir=<data-dir> -cp <current-cp> src.FreshJvmBenchmark --compare <previous-cp> <current-cp>`. Every published state passes all 50 independent solves, all 25 combined solves, and independent/`fullSolve` equivalence.
+Reproduce after compiling both trees with `java -Daoc.data.dir=<data-dir> -cp <current-cp> src.FreshJvmBenchmark --compare <previous-cp> <current-cp>`. Every published state passes all 50 independent solves, all 25 combined solves, and independent/`fullSolve` equivalence. The tables below come from a 100-pair run of the same child protocol with seeded random within-pair order and the cold pair excluded; the checked-in n=10 counterbalanced mode remains the quick reproduction default.
 
-Current 25-day means (n=10):
+Current 25-day means (n=100):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 261.123817 | 218.182933 | 184.904613 | 29.795621 | 33.278321 |
+| 193.308 | 158.453 | 125.282 | 22.636 | 33.171 |
 
-Latest publication gate versus the preceding replay tip (n=10):
+Latest publication gate versus the preceding replay tip (n=100):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 274.089938 | 261.123817 | -12.966121 | [-26.564145, 0.631904] |
-| main | 232.958562 | 218.182933 | -14.775629 | [-24.968839, -4.582419] |
-| solver | 199.858292 | 184.904613 | -14.953679 | [-24.985288, -4.922070] |
-| startup | 30.117204 | 29.795621 | -0.321583 | [-1.561694, 0.918528] |
-| harness | 33.100271 | 33.278321 | 0.178050 | [-0.574115, 0.930214] |
+| wall | 252.245 | 193.308 | -58.937 | [-60.556, -57.319] |
+| main | 214.050 | 158.453 | -55.598 | [-56.753, -54.442] |
+| solver | 181.078 | 125.282 | -55.796 | [-56.906, -54.686] |
+| startup | 22.673 | 22.636 | -0.037 | [-0.294, 0.220] |
+| harness | 32.973 | 33.171 | 0.198 | [0.039, 0.358] |
 
 ## Day 01
 
@@ -60,7 +60,12 @@ Direct token-span membership and range-difference copy propagation replace regex
 
 ## Day 05
 
-Unchanged from the pre-PR implementation. Current solver mean: 2.751085 ms.
+A fused per-stage conversion returns the mapped value and its safe interval jump in one pass over primitive stage arrays, with a single-pass digit parser and an exact BigInteger fallback for inputs beyond long range.
+
+| Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
+|---|---:|---:|---:|
+| Pre-PR | 2.772495 | — | — |
+| Current | 1.705222 | -1.067273 | [-1.103746, -1.030799] |
 
 ## Day 06
 
@@ -73,12 +78,12 @@ The spaced and concatenated races are parsed together, then an overflow-safe int
 
 ## Day 07
 
-Direct card ranks and two-largest frequency groups replace regex tokenization, rank-string scans, and frequency sorting.
+Each hand becomes one flat integer key (category times 13^5 plus a base-13 tie-break) in a single parse for both parts, ranked by a stable two-pass radix sort over an index permutation, with long bids and an exact BigInteger overflow fallback.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 6.086850 | — | — |
-| Current | 3.462338 | -2.624513 | [-2.912596, -2.336429] |
+| Previous | 3.273533 | — | — |
+| Current | 2.374669 | -0.898864 | [-0.945032, -0.852695] |
 
 ## Day 08
 
@@ -136,12 +141,12 @@ Flat character storage counts mirrored mismatches once per split and stops after
 
 ## Day 14
 
-One mutable grid supplies the north load and billion-cycle result, with compact cycle detection and allocation-free directional shifts.
+A flat row-major board with self-move-skipping tilts feeds exact-state cycle detection keyed on the full cloned board (collision-proof, cached hash), parsed by one delimiter-free slurp.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 21.278437 | — | — |
-| Current | 18.039067 | -3.239371 | [-5.396386, -1.082355] |
+| Previous | 14.178832 | — | — |
+| Current | 11.935072 | -2.243760 | [-2.321982, -2.165538] |
 
 ## Day 15
 
@@ -154,21 +159,21 @@ The initialization sequence is parsed once by character index into direct box ar
 
 ## Day 16
 
-Stamped primitive beam states and a reusable traversal stack replace per-start object graphs and repeated visited allocations.
+The mirror graph is condensed once — deterministic beam traces between canonical splitter nodes, strongly connected components collapsed, energized bitsets memoized per component in dependency order — so each of the hundreds of part-2 starts costs one short trace plus popcounts instead of a full simulation.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 88.265783 | — | — |
-| Current | 23.601092 | -64.664692 | [-71.166871, -58.162512] |
+| Previous | 16.112807 | — | — |
+| Current | 3.458243 | -12.654564 | [-12.720342, -12.588787] |
 
 ## Day 17
 
-An axis-collapsed segment graph searches only the next horizontal or vertical run, while a bounded integer bucket queue orders the primitive states.
+The axis-collapsed bucket-queue search becomes A* with an exact relaxed-walk heuristic: one backward unconstrained Dijkstra from the goal, shared by both parts, steers the crucible search through a provable subset of the plain Dijkstra frontier on a widened bucket ring.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 103.350354 | — | — |
-| Current | 16.705496 | -86.644858 | [-91.030952, -82.258764] |
+| Previous | 17.518810 | — | — |
+| Current | 11.389749 | -6.129061 | [-7.208054, -5.050068] |
 
 ## Day 18
 
@@ -217,12 +222,12 @@ Bricks settle once against an exact top surface, directly producing the support 
 
 ## Day 23
 
-Character-array grid access feeds the compressed junction graph and longest-path search without repeated String slicing and conversion.
+Input-adaptive junction contraction feeds an iterative bitmask depth-first search; part 2 adds branch and bound with a flood-fill reachability prune and an admissible two-heaviest-edges bound, replacing the previous fixed-lattice profile dynamic program with a strictly more general search that explores thousands of nodes instead of millions.
 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
-| Pre-PR | 36.417317 | — | — |
-| Current | 35.747725 | -0.669592 | [-2.712620, 1.373436] |
+| Previous | 39.464276 | — | — |
+| Current | 7.957705 | -31.506571 | [-31.844003, -31.169140] |
 
 ## Day 24
 
