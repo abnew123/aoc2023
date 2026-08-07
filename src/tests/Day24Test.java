@@ -13,6 +13,11 @@ import src.solutions.Day24;
 class Day24Test extends BaseTest {
 
     private static final String DAY = "day24";
+    private static final String OFFICIAL_SAMPLE = "19, 13, 30 @ -2, 1, -2\n"
+            + "18, 19, 22 @ -1, -1, -2\n"
+            + "20, 25, 34 @ -2, -2, -4\n"
+            + "12, 31, 28 @ -1, -2, -1\n"
+            + "20, 19, 15 @ 1, -5, -3\n";
 
     @Test
     void testDay24TestPart1() throws FileNotFoundException {
@@ -54,6 +59,59 @@ class Day24Test extends BaseTest {
         } else {
             assertArrayEquals(expectedSolutions, result, "Full solve solution is incorrect");
         }
+    }
+
+    @Test
+    void testDay24OfficialSamplePart1() {
+        assertEquals(2, new Day24().intersectionsInArea(new Scanner(OFFICIAL_SAMPLE), 7, 27));
+    }
+
+    @Test
+    void testDay24OfficialSamplePart2() {
+        assertEquals("47", new Day24().solve(false, new Scanner(OFFICIAL_SAMPLE)));
+    }
+
+    @Test
+    void testDay24CorrectedPersonalPart2AfterReuse() throws FileNotFoundException {
+        Day24 day24 = new Day24();
+        assertEquals("47", day24.solve(false, new Scanner(OFFICIAL_SAMPLE)));
+        assertEquals(getExpectedSolutions(24)[1], day24.solve(false, getInputScanner(DAY)));
+    }
+
+    @Test
+    void testDay24IntegerRockAtFractionalTimes() {
+        String input = "11, 19, 31 @ 0, 1, 1\n"
+                + "7, 23, 27 @ 4, -3, 5\n"
+                + "20, 30, 35 @ -2, -5, 1\n"
+                + "-4, 6, 44 @ 6, 3, -1\n";
+        assertEquals("60", new Day24().solve(false, new Scanner(input)));
+    }
+
+    @Test
+    void testDay24RankDeficientIntegralRocks() {
+        String rankFive = "0, 0, 0 @ 0, 1, 0\n"
+                + "1, 0, 0 @ -1, 0, 0\n"
+                + "-1, 0, 0 @ 1, 0, 0\n"
+                + "0, 0, 0 @ 0, 0, 1\n";
+        assertEquals("0", new Day24().solve(false, new Scanner(rankFive)));
+
+        String rankFour = "-1, 2, 1 @ 1, -2, -1\n"
+                + "0, -6, -3 @ 0, 2, 1\n"
+                + "-2, 0, 0 @ 1, 0, 0\n";
+        assertEquals("0", new Day24().solve(false, new Scanner(rankFour)));
+    }
+
+    @Test
+    void testDay24ExactCollinearPaths() {
+        Day24 day24 = new Day24();
+        String center = "300000000000000";
+        String stationaryIntersection = center + ", " + center + ", 0 @ 0, 0, 0\n"
+                + "299999999999990, " + center + ", 1 @ 1, 0, 0\n";
+        assertEquals("1", day24.solve(true, new Scanner(stationaryIntersection)));
+
+        String separatingRays = "299999999999990, " + center + ", 0 @ -1, 0, 0\n"
+                + "300000000000010, " + center + ", 1 @ 1, 0, 0\n";
+        assertEquals("0", day24.solve(true, new Scanner(separatingRays)));
     }
 
 }

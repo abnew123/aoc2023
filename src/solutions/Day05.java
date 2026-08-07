@@ -2,152 +2,463 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day05 implements DayTemplate {
-
-    long[] seeds;
-    List<RangeMap> rangeMaps;
+    private long[] seeds;
+    private Stage[] stages;
+    private BigInteger[] bigSeeds;
+    private BigStage[] bigStages;
+    private boolean big;
 
     @Override
     public String[] fullSolve(Scanner in) {
         initialize(in);
-        return new String[]{solvePart1()+"", solvePart2()+""};
+        return big
+                ? new String[]{solveBigPart1().toString(), solveBigPart2().toString()}
+                : new String[]{Long.toString(solvePart1()), Long.toString(solvePart2())};
     }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
+    @Override
     public String solve(boolean part1, Scanner in) {
         initialize(in);
-        return (part1?solvePart1():solvePart2()) + "";
+        if (big) {
+            return (part1 ? solveBigPart1() : solveBigPart2()).toString();
+        }
+        return Long.toString(part1 ? solvePart1() : solvePart2());
     }
 
-    private void initialize(Scanner in){
-        List<Range> tmp = new ArrayList<>();
-        rangeMaps = new ArrayList<>();
-        String[] stringSeeds = in.nextLine().split(" ");
-        seeds = new long[stringSeeds.length - 1];
-        for (int i = 1; i < stringSeeds.length; i++) {
-            seeds[i - 1] = Long.parseLong(stringSeeds[i]);
+    private void initialize(Scanner in) {
+        String[] lines = readLines(in);
+        try {
+            initializeLong(lines);
+            big = false;
+        } catch (NeedsBigInteger ignored) {
+            initializeBig(lines);
+            big = true;
         }
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            if (line.equals("")) {
+    }
+
+    private static String[] readLines(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        String[] lines = new String[16];
+        int count = 0;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (count == lines.length) {
+                lines = Arrays.copyOf(lines, count * 2);
+            }
+            lines[count++] = input.substring(lineStart, trimmedEnd);
+            lineStart = lineEnd + 1;
+        }
+        return Arrays.copyOf(lines, count);
+    }
+
+    private void initializeLong(String[] lines) {
+        if (lines.length == 0) {
+            throw new IllegalArgumentException("Missing seed list");
+        }
+        String seedLine = lines[0];
+        int colon = seedLine.indexOf(':');
+        if (colon < 0) {
+            throw new IllegalArgumentException("Malformed seed list");
+        }
+        seeds = parseNumbers(seedLine, colon + 1);
+        if ((seeds.length & 1) == 0) {
+            for (int pair = 0; pair < seeds.length; pair += 2) {
+                requireRepresentableRange(seeds[pair], seeds[pair + 1]);
+            }
+        }
+
+        Stage[] parsedStages = new Stage[8];
+        int stageCount = 0;
+        LongList destination = null;
+        LongList source = null;
+        LongList length = null;
+        for (int lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+            String line = lines[lineIndex];
+            if (line.isBlank()) {
                 continue;
             }
-            if (line.contains("map")) {
-                if (!tmp.isEmpty()) {
-                    rangeMaps.add(new RangeMap(tmp));
+            if (line.endsWith("map:")) {
+                if (destination != null) {
+                    if (stageCount == parsedStages.length) {
+                        parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+                    }
+                    parsedStages[stageCount++] = new Stage(destination.toArray(), source.toArray(), length.toArray());
                 }
-                tmp = new ArrayList<>();
-            } else {
-                tmp.add(new Range(line));
+                destination = new LongList();
+                source = new LongList();
+                length = new LongList();
+                continue;
             }
+            if (destination == null) {
+                throw new IllegalArgumentException("Mapping row before mapping header");
+            }
+            long[] values = parseNumbers(line, 0);
+            if (values.length != 3) {
+                throw new IllegalArgumentException("Mapping row must contain three numbers");
+            }
+            destination.add(values[0]);
+            source.add(values[1]);
+            length.add(values[2]);
         }
-        rangeMaps.add(new RangeMap(tmp));
+        if (destination != null) {
+            if (stageCount == parsedStages.length) {
+                parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+            }
+            parsedStages[stageCount++] = new Stage(destination.toArray(), source.toArray(), length.toArray());
+        }
+        stages = Arrays.copyOf(parsedStages, stageCount);
     }
 
-    private long solvePart1(){
-        long answer = 1L<<40;
-        for (Long seed : seeds) {
-            long val = seed;
-            for (RangeMap rangeMap : rangeMaps) {
-                val = rangeMap.convert(val);
+    private void initializeBig(String[] lines) {
+        String seedLine = lines[0];
+        bigSeeds = parseBigNumbers(seedLine, seedLine.indexOf(':') + 1);
+
+        BigStage[] parsedStages = new BigStage[8];
+        int stageCount = 0;
+        BigList destination = null;
+        BigList source = null;
+        BigList length = null;
+        for (int lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+            String line = lines[lineIndex];
+            if (line.isBlank()) {
+                continue;
             }
-            if (val < answer) {
-                answer = val;
+            if (line.endsWith("map:")) {
+                if (destination != null) {
+                    if (stageCount == parsedStages.length) {
+                        parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+                    }
+                    parsedStages[stageCount++] = new BigStage(destination.toArray(), source.toArray(), length.toArray());
+                }
+                destination = new BigList();
+                source = new BigList();
+                length = new BigList();
+                continue;
+            }
+            if (destination == null) {
+                throw new IllegalArgumentException("Mapping row before mapping header");
+            }
+            BigInteger[] values = parseBigNumbers(line, 0);
+            if (values.length != 3) {
+                throw new IllegalArgumentException("Mapping row must contain three numbers");
+            }
+            destination.add(values[0]);
+            source.add(values[1]);
+            length.add(values[2]);
+        }
+        if (destination != null) {
+            if (stageCount == parsedStages.length) {
+                parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+            }
+            parsedStages[stageCount++] = new BigStage(destination.toArray(), source.toArray(), length.toArray());
+        }
+        bigStages = Arrays.copyOf(parsedStages, stageCount);
+    }
+
+    private long solvePart1() {
+        if (seeds.length == 0) {
+            throw new IllegalArgumentException("No seeds");
+        }
+        long answer = Long.MAX_VALUE;
+        for (long seed : seeds) {
+            long value = seed;
+            for (Stage stage : stages) {
+                value = stage.convert(value);
+            }
+            answer = Math.min(answer, value);
+        }
+        return answer;
+    }
+
+    private long solvePart2() {
+        if ((seeds.length & 1) != 0) {
+            throw new IllegalArgumentException("Seed ranges require start/length pairs");
+        }
+        long answer = Long.MAX_VALUE;
+        boolean found = false;
+        long[] conversion = new long[2];
+        for (int pair = 0; pair < seeds.length; pair += 2) {
+            long start = seeds[pair];
+            long length = seeds[pair + 1];
+            if (length == 0) {
+                continue;
+            }
+            long consumed = 0;
+            while (consumed < length) {
+                long value = start + consumed;
+                long safeAdvance = length - consumed - 1;
+                for (Stage stage : stages) {
+                    stage.convertAndBound(value, conversion);
+                    value = conversion[0];
+                    safeAdvance = Math.min(safeAdvance, conversion[1]);
+                }
+                answer = Math.min(answer, value);
+                found = true;
+                consumed += safeAdvance + 1;
+            }
+        }
+        if (!found) {
+            throw new IllegalArgumentException("No seeds in the declared ranges");
+        }
+        return answer;
+    }
+
+    private BigInteger solveBigPart1() {
+        if (bigSeeds.length == 0) {
+            throw new IllegalArgumentException("No seeds");
+        }
+        BigInteger answer = null;
+        for (BigInteger seed : bigSeeds) {
+            BigInteger value = seed;
+            for (BigStage stage : bigStages) {
+                value = stage.convert(value);
+            }
+            if (answer == null || value.compareTo(answer) < 0) {
+                answer = value;
             }
         }
         return answer;
     }
 
-    private long solvePart2(){
-        long answer = 1L<<40;
-        for (int i = 0; i < seeds.length; i += 2) {
-            long index = seeds[i];
-            while(index < seeds[i] + seeds[i+1]){
-                long[] ret = returnValAndBound(index, rangeMaps);
-                if (ret[0] < answer) {
-                    answer = ret[0];
-                }
-                index += ret[1] + 1;
+    private BigInteger solveBigPart2() {
+        if ((bigSeeds.length & 1) != 0) {
+            throw new IllegalArgumentException("Seed ranges require start/length pairs");
+        }
+        BigInteger answer = null;
+        BigInteger[] conversion = new BigInteger[2];
+        for (int pair = 0; pair < bigSeeds.length; pair += 2) {
+            BigInteger start = bigSeeds[pair];
+            BigInteger length = bigSeeds[pair + 1];
+            if (length.signum() == 0) {
+                continue;
             }
+            BigInteger consumed = BigInteger.ZERO;
+            while (consumed.compareTo(length) < 0) {
+                BigInteger value = start.add(consumed);
+                BigInteger safeAdvance = length.subtract(consumed).subtract(BigInteger.ONE);
+                for (BigStage stage : bigStages) {
+                    stage.convertAndBound(value, conversion);
+                    value = conversion[0];
+                    if (conversion[1] != null && conversion[1].compareTo(safeAdvance) < 0) {
+                        safeAdvance = conversion[1];
+                    }
+                }
+                if (answer == null || value.compareTo(answer) < 0) {
+                    answer = value;
+                }
+                consumed = consumed.add(safeAdvance).add(BigInteger.ONE);
+            }
+        }
+        if (answer == null) {
+            throw new IllegalArgumentException("No seeds in the declared ranges");
         }
         return answer;
     }
 
-    private long[] returnValAndBound(long val, List<RangeMap> rangeMaps) {
-        long bound = 10000000000L;
-        for (RangeMap rangeMap : rangeMaps) {
-            bound = Math.min(bound, rangeMap.convert2(val)[1]);
-            val = rangeMap.convert2(val)[0];
+    private static long[] parseNumbers(String line, int from) {
+        LongList numbers = new LongList();
+        int index = from;
+        while (index < line.length()) {
+            while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
+                index++;
+            }
+            if (index == line.length()) {
+                break;
+            }
+            if (line.charAt(index) < '0' || line.charAt(index) > '9') {
+                throw new IllegalArgumentException("Expected a nonnegative integer");
+            }
+            long value = 0;
+            do {
+                int digit = line.charAt(index) - '0';
+                if (value > (Long.MAX_VALUE - digit) / 10) {
+                    throw NeedsBigInteger.INSTANCE;
+                }
+                value = value * 10 + digit;
+                index++;
+            } while (index < line.length() && line.charAt(index) >= '0' && line.charAt(index) <= '9');
+            if (index < line.length() && !Character.isWhitespace(line.charAt(index))) {
+                throw new IllegalArgumentException("Malformed integer list");
+            }
+            numbers.add(value);
         }
-        return new long[]{val, bound};
-    }
-}
-
-class Range {
-    long destination;
-    long source;
-    long specificRange;
-
-    public Range(long des, long src, long r) {
-        destination = des;
-        source = src;
-        specificRange = r;
+        return numbers.toArray();
     }
 
-    public Range(String line) {
-        String[] pieces = line.split(" ");
-        destination = Long.parseLong(pieces[0]);
-        source = Long.parseLong(pieces[1]);
-        specificRange = Long.parseLong(pieces[2]);
+    private static BigInteger[] parseBigNumbers(String line, int from) {
+        BigList numbers = new BigList();
+        int index = from;
+        while (index < line.length()) {
+            while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
+                index++;
+            }
+            if (index == line.length()) {
+                break;
+            }
+            int start = index;
+            while (index < line.length() && line.charAt(index) >= '0' && line.charAt(index) <= '9') {
+                index++;
+            }
+            if (start == index || index < line.length() && !Character.isWhitespace(line.charAt(index))) {
+                throw new IllegalArgumentException("Malformed integer list");
+            }
+            numbers.add(new BigInteger(line.substring(start, index)));
+        }
+        return numbers.toArray();
     }
-}
 
-class RangeMap {
-    List<Long> starts;
-    List<Long> ends;
-    List<Long> betweens;
-
-    public RangeMap(List<Range> ranges) {
-        starts = new ArrayList<>();
-        ends = new ArrayList<>();
-        betweens = new ArrayList<>();
-        for (Range range : ranges) {
-            starts.add(range.source);
-            ends.add(range.destination);
-            betweens.add(range.specificRange);
+    private static void requireRepresentableRange(long start, long length) {
+        if (length != 0 && start > Long.MAX_VALUE - (length - 1)) {
+            throw NeedsBigInteger.INSTANCE;
         }
     }
 
-    public long convert(long val) {
-        for (int i = 0; i < starts.size(); i++) {
-            if (starts.get(i) <= val && starts.get(i) + betweens.get(i) > val) {
-                return ends.get(i) + (val - starts.get(i));
+    private static final class Stage {
+        private final long[] destination;
+        private final long[] source;
+        private final long[] length;
+
+        Stage(long[] destination, long[] source, long[] length) {
+            this.destination = destination;
+            this.source = source;
+            this.length = length;
+            for (int i = 0; i < length.length; i++) {
+                requireRepresentableRange(source[i], length[i]);
+                requireRepresentableRange(destination[i], length[i]);
             }
         }
-        return val;
+
+        long convert(long value) {
+            for (int i = 0; i < source.length; i++) {
+                if (value >= source[i]) {
+                    long offset = value - source[i];
+                    if (offset < length[i]) {
+                        return destination[i] + offset;
+                    }
+                }
+            }
+            return value;
+        }
+
+        void convertAndBound(long value, long[] result) {
+            boolean hasNext = false;
+            long next = 0;
+            for (int i = 0; i < source.length; i++) {
+                if (value >= source[i]) {
+                    long offset = value - source[i];
+                    if (offset < length[i]) {
+                        result[0] = destination[i] + offset;
+                        long rangeBound = length[i] - offset - 1;
+                        result[1] = hasNext ? Math.min(rangeBound, next - value - 1) : rangeBound;
+                        return;
+                    }
+                } else if (length[i] != 0 && (!hasNext || source[i] < next)) {
+                    next = source[i];
+                    hasNext = true;
+                }
+            }
+            result[0] = value;
+            result[1] = hasNext ? next - value - 1 : Long.MAX_VALUE;
+        }
     }
 
-    public long[] convert2(long val) {
-        long nextStart = 10000000000L;
-        for (int i = 0; i < starts.size(); i++) {
-            if (starts.get(i) > val) {
-                nextStart = Math.min(nextStart, starts.get(i) - val - 1);
-            }
-            if (starts.get(i) <= val && starts.get(i) + betweens.get(i) > val) {
-                return new long[]{ends.get(i) + (val - starts.get(i)), betweens.get(i) - (val - starts.get(i)) - 1};
-            }
+    private static final class BigStage {
+        private final BigInteger[] destination;
+        private final BigInteger[] source;
+        private final BigInteger[] length;
+
+        BigStage(BigInteger[] destination, BigInteger[] source, BigInteger[] length) {
+            this.destination = destination;
+            this.source = source;
+            this.length = length;
         }
-        return new long[]{val, nextStart == 10000000000L ? 0 : nextStart};
+
+        BigInteger convert(BigInteger value) {
+            for (int i = 0; i < source.length; i++) {
+                if (value.compareTo(source[i]) >= 0) {
+                    BigInteger offset = value.subtract(source[i]);
+                    if (offset.compareTo(length[i]) < 0) {
+                        return destination[i].add(offset);
+                    }
+                }
+            }
+            return value;
+        }
+
+        void convertAndBound(BigInteger value, BigInteger[] result) {
+            BigInteger next = null;
+            for (int i = 0; i < source.length; i++) {
+                if (value.compareTo(source[i]) >= 0) {
+                    BigInteger offset = value.subtract(source[i]);
+                    if (offset.compareTo(length[i]) < 0) {
+                        result[0] = destination[i].add(offset);
+                        BigInteger rangeBound = length[i].subtract(offset).subtract(BigInteger.ONE);
+                        BigInteger earlierBound = next == null ? null : next.subtract(value).subtract(BigInteger.ONE);
+                        result[1] = earlierBound == null || rangeBound.compareTo(earlierBound) <= 0
+                                ? rangeBound : earlierBound;
+                        return;
+                    }
+                } else if (length[i].signum() != 0 && (next == null || source[i].compareTo(next) < 0)) {
+                    next = source[i];
+                }
+            }
+            result[0] = value;
+            result[1] = next == null ? null : next.subtract(value).subtract(BigInteger.ONE);
+        }
+    }
+
+    private static final class LongList {
+        private long[] values = new long[16];
+        private int size;
+
+        void add(long value) {
+            if (size == values.length) {
+                values = Arrays.copyOf(values, size * 2);
+            }
+            values[size++] = value;
+        }
+
+        long[] toArray() {
+            return Arrays.copyOf(values, size);
+        }
+    }
+
+    private static final class BigList {
+        private BigInteger[] values = new BigInteger[16];
+        private int size;
+
+        void add(BigInteger value) {
+            if (size == values.length) {
+                values = Arrays.copyOf(values, size * 2);
+            }
+            values[size++] = value;
+        }
+
+        BigInteger[] toArray() {
+            return Arrays.copyOf(values, size);
+        }
+    }
+
+    private static final class NeedsBigInteger extends RuntimeException {
+        static final NeedsBigInteger INSTANCE = new NeedsBigInteger();
+
+        private NeedsBigInteger() {
+            super(null, null, false, false);
+        }
     }
 }

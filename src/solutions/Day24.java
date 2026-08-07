@@ -1,202 +1,735 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-import src.objects.Coordinate;
 
-import java.util.*;
-
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Day24 implements DayTemplate {
 
-    int[] maxes = new int[3];
-    int[] mins = new int[3];
-
-    boolean[] invalidX;
-    boolean[] invalidY;
-    boolean[] invalidZ;
-
-    List<Integer> possibleX = new ArrayList<>();
-    List<Integer> possibleY = new ArrayList<>();
-    List<Integer> possibleZ = new ArrayList<>();
+    private static final long TEST_MIN = 200_000_000_000_000L;
+    private static final long TEST_MAX = 400_000_000_000_000L;
+    private static final int FAST_FALLBACK = -1;
 
     @Override
     public String[] fullSolve(Scanner in) {
         List<Hailstone> stones = parse(in);
-        return new String[]{part1(stones) + "", part2(stones) + ""};
+        return new String[]{Long.toString(part1(stones)), part2(stones)};
     }
 
+    @Override
     public String solve(boolean part1, Scanner in) {
-        long answer;
         List<Hailstone> stones = parse(in);
-        if (part1) {
-            answer = part1(stones);
+        return part1 ? Long.toString(part1(stones)) : part2(stones);
+    }
+
+    public long intersectionsInArea(Scanner in, long minimum, long maximum) {
+        if (minimum > maximum) {
+            throw new IllegalArgumentException("Minimum must not exceed maximum");
+        }
+        return part1(parse(in), minimum, maximum);
+    }
+
+    private long part1(List<Hailstone> stones) {
+        return part1(stones, TEST_MIN, TEST_MAX);
+    }
+
+    private long part1(List<Hailstone> stones, long minimum, long maximum) {
+        BigInteger exactMinimum = BigInteger.valueOf(minimum);
+        BigInteger exactMaximum = BigInteger.valueOf(maximum);
+        LongHailstone[] fastStones = new LongHailstone[stones.size()];
+        for (int index = 0; index < stones.size(); index++) {
+            fastStones[index] = toLong(stones.get(index));
+        }
+        long intersections = 0;
+        for (int firstIndex = 0; firstIndex < stones.size(); firstIndex++) {
+            Hailstone first = stones.get(firstIndex);
+            for (int secondIndex = firstIndex + 1; secondIndex < stones.size(); secondIndex++) {
+                Hailstone second = stones.get(secondIndex);
+                int fastResult = fastStones[firstIndex] == null || fastStones[secondIndex] == null
+                        ? FAST_FALLBACK
+                        : intersectsInArea(fastStones[firstIndex], fastStones[secondIndex],
+                        minimum, maximum);
+                if (fastResult == 1 || fastResult == FAST_FALLBACK
+                        && intersectsInArea(first, second, exactMinimum, exactMaximum)) {
+                    intersections++;
+                }
+            }
+        }
+        return intersections;
+    }
+
+    private LongHailstone toLong(Hailstone stone) {
+        try {
+            return new LongHailstone(stone.x.longValueExact(), stone.y.longValueExact(),
+                    stone.vx.longValueExact(), stone.vy.longValueExact());
+        } catch (ArithmeticException exception) {
+            return null;
+        }
+    }
+
+    private int intersectsInArea(LongHailstone first, LongHailstone second,
+                                 long minimum, long maximum) {
+        try {
+            long denominator = Math.subtractExact(Math.multiplyExact(first.vx, second.vy),
+                    Math.multiplyExact(first.vy, second.vx));
+            if (denominator == 0) {
+                return FAST_FALLBACK;
+            }
+            long dx = Math.subtractExact(second.x, first.x);
+            long dy = Math.subtractExact(second.y, first.y);
+            long firstTime = Math.subtractExact(Math.multiplyExact(dx, second.vy),
+                    Math.multiplyExact(dy, second.vx));
+            long secondTime = Math.subtractExact(Math.multiplyExact(dx, first.vy),
+                    Math.multiplyExact(dy, first.vx));
+            if (denominator < 0) {
+                denominator = Math.negateExact(denominator);
+                firstTime = Math.negateExact(firstTime);
+                secondTime = Math.negateExact(secondTime);
+            }
+            if (firstTime < 0 || secondTime < 0) {
+                return 0;
+            }
+            return inside(first.x, first.vx, firstTime, denominator, minimum, maximum)
+                    && inside(first.y, first.vy, firstTime, denominator, minimum, maximum) ? 1 : 0;
+        } catch (ArithmeticException exception) {
+            return FAST_FALLBACK;
+        }
+    }
+
+    private boolean inside(long origin, long velocity, long time, long denominator,
+                           long minimum, long maximum) {
+        long quotient = time / denominator;
+        long remainder = time % denominator;
+        long whole = Math.addExact(origin, Math.multiplyExact(velocity, quotient));
+        long residual = Math.multiplyExact(velocity, remainder);
+        whole = Math.addExact(whole, Math.floorDiv(residual, denominator));
+        long fractionalNumerator = Math.floorMod(residual, denominator);
+        return whole >= minimum
+                && (whole < maximum || whole == maximum && fractionalNumerator == 0);
+    }
+
+    private boolean intersectsInArea(Hailstone first, Hailstone second,
+                                     BigInteger minimum, BigInteger maximum) {
+        BigInteger denominator = first.vx.multiply(second.vy).subtract(first.vy.multiply(second.vx));
+        if (denominator.signum() == 0) {
+            return collinearFutureIntersectionInArea(first, second, minimum, maximum);
+        }
+        BigInteger dx = second.x.subtract(first.x);
+        BigInteger dy = second.y.subtract(first.y);
+        BigInteger firstTime = dx.multiply(second.vy).subtract(dy.multiply(second.vx));
+        BigInteger secondTime = dx.multiply(first.vy).subtract(dy.multiply(first.vx));
+        if (denominator.signum() < 0) {
+            denominator = denominator.negate();
+            firstTime = firstTime.negate();
+            secondTime = secondTime.negate();
+        }
+        if (firstTime.signum() < 0 || secondTime.signum() < 0) {
+            return false;
+        }
+        BigInteger intersectionX = first.x.multiply(denominator).add(first.vx.multiply(firstTime));
+        BigInteger intersectionY = first.y.multiply(denominator).add(first.vy.multiply(firstTime));
+        return inside(intersectionX, denominator, minimum, maximum)
+                && inside(intersectionY, denominator, minimum, maximum);
+    }
+
+    private boolean collinearFutureIntersectionInArea(Hailstone first, Hailstone second,
+                                                       BigInteger minimum, BigInteger maximum) {
+        boolean firstStationary = first.vx.signum() == 0 && first.vy.signum() == 0;
+        boolean secondStationary = second.vx.signum() == 0 && second.vy.signum() == 0;
+        if (firstStationary && secondStationary) {
+            return first.x.equals(second.x) && first.y.equals(second.y)
+                    && insidePoint(first.x, first.y, minimum, maximum);
+        }
+        if (firstStationary) {
+            return insidePoint(first.x, first.y, minimum, maximum)
+                    && pointOnFutureRay(first.x, first.y, second);
+        }
+        if (secondStationary) {
+            return insidePoint(second.x, second.y, minimum, maximum)
+                    && pointOnFutureRay(second.x, second.y, first);
+        }
+
+        BigInteger dx = second.x.subtract(first.x);
+        BigInteger dy = second.y.subtract(first.y);
+        if (dx.multiply(first.vy).subtract(dy.multiply(first.vx)).signum() != 0) {
+            return false;
+        }
+
+        boolean useX = first.vx.signum() != 0;
+        BigInteger firstStart = useX ? first.x : first.y;
+        BigInteger secondStart = useX ? second.x : second.y;
+        BigInteger firstVelocity = useX ? first.vx : first.vy;
+        BigInteger secondVelocity = useX ? second.vx : second.vy;
+        BigInteger otherStart = useX ? first.y : first.x;
+        BigInteger otherVelocity = useX ? first.vy : first.vx;
+
+        Fraction lower = Fraction.of(minimum);
+        Fraction upper = Fraction.of(maximum);
+        if (otherVelocity.signum() == 0) {
+            if (otherStart.compareTo(minimum) < 0 || otherStart.compareTo(maximum) > 0) {
+                return false;
+            }
         } else {
-            answer = part2(stones);
+            Fraction atMinimum = Fraction.of(firstStart).add(new Fraction(
+                    minimum.subtract(otherStart).multiply(firstVelocity), otherVelocity));
+            Fraction atMaximum = Fraction.of(firstStart).add(new Fraction(
+                    maximum.subtract(otherStart).multiply(firstVelocity), otherVelocity));
+            Fraction lineLower = atMinimum.compareTo(atMaximum) <= 0 ? atMinimum : atMaximum;
+            Fraction lineUpper = atMinimum.compareTo(atMaximum) <= 0 ? atMaximum : atMinimum;
+            if (lineLower.compareTo(lower) > 0) {
+                lower = lineLower;
+            }
+            if (lineUpper.compareTo(upper) < 0) {
+                upper = lineUpper;
+            }
         }
-        return answer + "";
+
+        Fraction firstBoundary = Fraction.of(firstStart);
+        if (firstVelocity.signum() > 0 && firstBoundary.compareTo(lower) > 0) {
+            lower = firstBoundary;
+        } else if (firstVelocity.signum() < 0 && firstBoundary.compareTo(upper) < 0) {
+            upper = firstBoundary;
+        }
+        Fraction secondBoundary = Fraction.of(secondStart);
+        if (secondVelocity.signum() > 0 && secondBoundary.compareTo(lower) > 0) {
+            lower = secondBoundary;
+        } else if (secondVelocity.signum() < 0 && secondBoundary.compareTo(upper) < 0) {
+            upper = secondBoundary;
+        }
+        return lower.compareTo(upper) <= 0;
     }
 
-    private long part2(List<Hailstone> stones){
-        long answer = 0;
-        invalidX = new boolean[maxes[0] - mins[0] + 1];
-        invalidY = new boolean[maxes[1] - mins[1] + 1];
-        invalidZ = new boolean[maxes[2] - mins[2] + 1];
-        for (int i = 0; i < stones.size(); i++) {
-            for (int j = 0; j < stones.size(); j++) {
-                Hailstone first = stones.get(i);
-                Hailstone second = stones.get(j);
-                adjustInvalids(first,second);
-            }
+    private boolean pointOnFutureRay(BigInteger x, BigInteger y, Hailstone moving) {
+        BigInteger dx = x.subtract(moving.x);
+        BigInteger dy = y.subtract(moving.y);
+        if (dx.multiply(moving.vy).subtract(dy.multiply(moving.vx)).signum() != 0) {
+            return false;
         }
-        determinePossibleTriples();
+        BigInteger displacement = moving.vx.signum() != 0 ? dx : dy;
+        BigInteger velocity = moving.vx.signum() != 0 ? moving.vx : moving.vy;
+        return new Fraction(displacement, velocity).signum() >= 0;
+    }
 
-        // a smarter search would be to start at 0,0,0 and come up with increasingly larger vectors by magnitude
-        for(Integer x: possibleX){
-            for(Integer y: possibleY){
-                for(Integer z: possibleZ){
-                    long[] positions = helper(new Coordinate(x,y,z), stones);
-                    if (positions[0] != -1) {
-                        return (positions[0] + positions[1] + positions[2]);
+    private boolean insidePoint(BigInteger x, BigInteger y,
+                                BigInteger minimum, BigInteger maximum) {
+        return x.compareTo(minimum) >= 0 && x.compareTo(maximum) <= 0
+                && y.compareTo(minimum) >= 0 && y.compareTo(maximum) <= 0;
+    }
+
+    private boolean inside(BigInteger numerator, BigInteger denominator,
+                           BigInteger minimum, BigInteger maximum) {
+        return numerator.compareTo(minimum.multiply(denominator)) >= 0
+                && numerator.compareTo(maximum.multiply(denominator)) <= 0;
+    }
+
+    private String part2(List<Hailstone> stones) {
+        if (stones.size() < 3) {
+            throw new IllegalArgumentException("At least three hailstones are required");
+        }
+
+        Fraction[][] basis = new Fraction[6][];
+        int rank = 0;
+        Hailstone base = stones.get(0);
+        equations:
+        for (int index = 1; index < stones.size(); index++) {
+            for (BigInteger[] equation : equations(base, stones.get(index))) {
+                Fraction[] row = new Fraction[7];
+                for (int column = 0; column < row.length; column++) {
+                    row[column] = Fraction.of(equation[column]);
+                }
+
+                for (int pivot = 0; pivot < 6; pivot++) {
+                    if (basis[pivot] == null || row[pivot].isZero()) {
+                        continue;
+                    }
+                    Fraction factor = row[pivot];
+                    for (int column = pivot; column < row.length; column++) {
+                        row[column] = row[column].subtract(factor.multiply(basis[pivot][column]));
                     }
                 }
+
+                int pivot = 0;
+                while (pivot < 6 && row[pivot].isZero()) {
+                    pivot++;
+                }
+                if (pivot == 6) {
+                    if (!row[6].isZero()) {
+                        throw new IllegalArgumentException("Hailstone equations are inconsistent");
+                    }
+                    continue;
+                }
+
+                Fraction divisor = row[pivot];
+                for (int column = pivot; column < row.length; column++) {
+                    row[column] = row[column].divide(divisor);
+                }
+                for (int existingPivot = 0; existingPivot < 6; existingPivot++) {
+                    Fraction[] existing = basis[existingPivot];
+                    if (existing == null || existing[pivot].isZero()) {
+                        continue;
+                    }
+                    Fraction factor = existing[pivot];
+                    for (int column = pivot; column < existing.length; column++) {
+                        existing[column] = existing[column].subtract(factor.multiply(row[column]));
+                    }
+                }
+                basis[pivot] = row;
+                rank++;
+                if (rank == 6) {
+                    break equations;
+                }
             }
+        }
+        Fraction[] rock;
+        if (rank == 6) {
+            rock = new Fraction[6];
+            for (int component = 0; component < rock.length; component++) {
+                rock[component] = basis[component][6];
+            }
+        } else if (rank == 5) {
+            rock = solveRankFive(basis, stones);
+        } else {
+            rock = searchIntegralRock(basis, stones);
+        }
+        if (!isIntegralRock(rock)) {
+            throw new IllegalArgumentException("Rock position and velocity must be integral");
+        }
+        if (!hitsEveryStone(rock, stones)) {
+            throw new IllegalArgumentException("Linear solution does not hit every hailstone in the future");
+        }
+        return rock[0].add(rock[1]).add(rock[2]).toString();
+    }
+
+    private Fraction[] solveRankFive(Fraction[][] basis, List<Hailstone> stones) {
+        int free = 0;
+        while (free < 6 && basis[free] != null) {
+            free++;
+        }
+        Fraction[] offset = new Fraction[6];
+        Fraction[] direction = new Fraction[6];
+        for (int component = 0; component < 6; component++) {
+            if (component == free) {
+                offset[component] = Fraction.ZERO;
+                direction[component] = Fraction.ONE;
+            } else {
+                offset[component] = basis[component][6];
+                direction[component] = basis[component][free].negate();
+            }
+        }
+
+        Hailstone base = stones.get(0);
+        Fraction[][] polynomials = {
+                crossPolynomial(offset, direction, base, 1, 5, 2, 4),
+                crossPolynomial(offset, direction, base, 2, 3, 0, 5),
+                crossPolynomial(offset, direction, base, 0, 4, 1, 3)
+        };
+        Fraction[] defining = null;
+        for (Fraction[] polynomial : polynomials) {
+            if (!polynomial[0].isZero() || !polynomial[1].isZero() || !polynomial[2].isZero()) {
+                defining = polynomial;
+                break;
+            }
+        }
+        if (defining == null) {
+            return searchIntegralRock(basis, stones);
+        }
+
+        List<Fraction> roots = rationalRoots(defining);
+        Fraction[] answer = null;
+        for (Fraction root : roots) {
+            Fraction[] candidate = new Fraction[6];
+            for (int component = 0; component < candidate.length; component++) {
+                candidate[component] = offset[component].add(direction[component].multiply(root));
+            }
+            if (isIntegralRock(candidate) && hitsEveryStone(candidate, stones)) {
+                if (answer != null) {
+                    throw new IllegalArgumentException("Hailstones admit multiple rock trajectories");
+                }
+                answer = candidate;
+            }
+        }
+        if (answer == null) {
+            throw new IllegalArgumentException("Hailstone equations have no integral rock trajectory");
         }
         return answer;
     }
 
-    private void determinePossibleTriples(){
-        for (int i = 0; i < invalidX.length; i++) {
-            if (invalidX[i]) {
-                continue;
+    private Fraction[] searchIntegralRock(Fraction[][] basis, List<Hailstone> stones) {
+        int freeCount = 0;
+        for (Fraction[] row : basis) {
+            if (row == null) {
+                freeCount++;
             }
-            possibleX.add(i + mins[0]);
         }
-        for (int i = 0; i < invalidY.length; i++) {
-            if (invalidY[i]) {
-                continue;
+        int[] freeComponents = new int[freeCount];
+        for (int component = 0, index = 0; component < basis.length; component++) {
+            if (basis[component] == null) {
+                freeComponents[index++] = component;
             }
-            possibleY.add(i + mins[1]);
         }
-        for (int i = 0; i < invalidZ.length; i++) {
-            if (invalidZ[i]) {
-                continue;
-            }
-            possibleZ.add(i + mins[2]);
-        }
-    }
 
-    private void adjustInvalids(Hailstone first, Hailstone second){
-        if (first.xvel > second.xvel && first.x > second.x) {
-            for (int k = second.xvel; k <= first.xvel; k++) {
-                invalidX[k - mins[0]] = true;
-            }
-        }
-        if (first.yvel > second.yvel && first.y > second.y) {
-            for (int k = second.yvel; k <= first.yvel; k++) {
-                invalidY[k - mins[1]] = true;
-            }
-        }
-        if (first.zvel > second.zvel && first.z > second.z) {
-            for (int k = second.zvel; k <= first.zvel; k++) {
-                invalidZ[k - mins[2]] = true;
+        BigInteger[] parameters = new BigInteger[freeCount];
+        for (BigInteger radius = BigInteger.ZERO; ; radius = radius.add(BigInteger.ONE)) {
+            Fraction[] rock = searchIntegralRock(
+                    basis, stones, freeComponents, parameters, 0, radius, false);
+            if (rock != null) {
+                return rock;
             }
         }
     }
 
-    private long part1(List<Hailstone> stones){
-        long answer = 0;
-        double min = 200000000000000.0;
-        double max = 400000000000000.0;
-        for (int i = 0; i < stones.size(); i++) {
-            for (int j = i + 1; j < stones.size(); j++) {
-                Hailstone first = stones.get(i);
-                Hailstone second = stones.get(j);
-                int denom = (first.xvel * second.yvel) - (first.yvel * second.xvel);
-                long numer1 = ((second.x - first.x) * second.yvel) - ((second.y - first.y) * second.xvel);
-                long numer2 = ((first.x - second.x) * first.yvel) - ((first.y - second.y) * first.xvel);
-                if (denom != 0 && (numer1 / denom) > 0 && (numer2 / denom) < 0) {
-                    double intersectionX = (numer1 / (double)denom) * first.xvel + first.x;
-                    double intersectionY = (numer1 / (double)denom) * first.yvel + first.y;
-                    if (intersectionX >= min && intersectionX <= max && intersectionY >= min && intersectionY <= max) {
-                        answer++;
+    private Fraction[] searchIntegralRock(Fraction[][] basis, List<Hailstone> stones,
+                                           int[] freeComponents, BigInteger[] parameters,
+                                           int parameterIndex, BigInteger radius,
+                                           boolean onBoundary) {
+        if (parameterIndex == parameters.length) {
+            if (radius.signum() != 0 && !onBoundary) {
+                return null;
+            }
+            Fraction[] rock = new Fraction[6];
+            for (int index = 0; index < freeComponents.length; index++) {
+                rock[freeComponents[index]] = Fraction.of(parameters[index]);
+            }
+            for (int component = 0; component < basis.length; component++) {
+                if (basis[component] == null) {
+                    continue;
+                }
+                Fraction value = basis[component][6];
+                for (int index = 0; index < freeComponents.length; index++) {
+                    value = value.subtract(basis[component][freeComponents[index]]
+                            .multiply(Fraction.of(parameters[index])));
+                }
+                rock[component] = value;
+            }
+            return isIntegralRock(rock) && hitsEveryStone(rock, stones) ? rock : null;
+        }
+
+        BigInteger negativeRadius = radius.negate();
+        for (BigInteger value = negativeRadius;
+             value.compareTo(radius) <= 0;
+             value = value.add(BigInteger.ONE)) {
+            parameters[parameterIndex] = value;
+            Fraction[] rock = searchIntegralRock(
+                    basis, stones, freeComponents, parameters, parameterIndex + 1, radius,
+                    onBoundary || value.equals(negativeRadius) || value.equals(radius));
+            if (rock != null) {
+                return rock;
+            }
+        }
+        return null;
+    }
+
+    private boolean isIntegralRock(Fraction[] rock) {
+        for (Fraction component : rock) {
+            if (!component.isInteger()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Fraction[] crossPolynomial(Fraction[] offset, Fraction[] direction, Hailstone stone,
+                                       int firstPosition, int firstVelocity,
+                                       int secondPosition, int secondVelocity) {
+        Fraction firstPositionConstant = offset[firstPosition]
+                .subtract(Fraction.of(stone.position()[firstPosition]));
+        Fraction firstVelocityConstant = offset[firstVelocity]
+                .subtract(Fraction.of(stone.velocity()[firstVelocity - 3]));
+        Fraction secondPositionConstant = offset[secondPosition]
+                .subtract(Fraction.of(stone.position()[secondPosition]));
+        Fraction secondVelocityConstant = offset[secondVelocity]
+                .subtract(Fraction.of(stone.velocity()[secondVelocity - 3]));
+        Fraction constant = firstPositionConstant.multiply(firstVelocityConstant)
+                .subtract(secondPositionConstant.multiply(secondVelocityConstant));
+        Fraction linear = firstPositionConstant.multiply(direction[firstVelocity])
+                .add(direction[firstPosition].multiply(firstVelocityConstant))
+                .subtract(secondPositionConstant.multiply(direction[secondVelocity]))
+                .subtract(direction[secondPosition].multiply(secondVelocityConstant));
+        Fraction quadratic = direction[firstPosition].multiply(direction[firstVelocity])
+                .subtract(direction[secondPosition].multiply(direction[secondVelocity]));
+        return new Fraction[]{constant, linear, quadratic};
+    }
+
+    private List<Fraction> rationalRoots(Fraction[] polynomial) {
+        Fraction constant = polynomial[0];
+        Fraction linear = polynomial[1];
+        Fraction quadratic = polynomial[2];
+        if (quadratic.isZero()) {
+            if (linear.isZero()) {
+                return List.of();
+            }
+            return List.of(constant.negate().divide(linear));
+        }
+        Fraction discriminant = linear.multiply(linear)
+                .subtract(quadratic.multiply(constant).multiply(Fraction.of(BigInteger.valueOf(4))));
+        Fraction squareRoot = discriminant.squareRoot();
+        if (squareRoot == null) {
+            return List.of();
+        }
+        Fraction denominator = quadratic.multiply(Fraction.of(BigInteger.TWO));
+        Fraction first = linear.negate().add(squareRoot).divide(denominator);
+        Fraction second = linear.negate().subtract(squareRoot).divide(denominator);
+        return first.equals(second) ? List.of(first) : List.of(first, second);
+    }
+
+    private List<BigInteger[]> equations(Hailstone base, Hailstone other) {
+        BigInteger[] positionDifference = subtract(base.position(), other.position());
+        BigInteger[] velocityDifference = subtract(base.velocity(), other.velocity());
+        BigInteger[] right = subtract(cross(base.position(), base.velocity()),
+                cross(other.position(), other.velocity()));
+        BigInteger zero = BigInteger.ZERO;
+        return List.of(
+                new BigInteger[]{zero, velocityDifference[2], velocityDifference[1].negate(), zero,
+                        positionDifference[2].negate(), positionDifference[1], right[0]},
+                new BigInteger[]{velocityDifference[2].negate(), zero, velocityDifference[0],
+                        positionDifference[2], zero, positionDifference[0].negate(), right[1]},
+                new BigInteger[]{velocityDifference[1], velocityDifference[0].negate(), zero,
+                        positionDifference[1].negate(), positionDifference[0], zero, right[2]}
+        );
+    }
+
+    private boolean hitsEveryStone(Fraction[] rock, List<Hailstone> stones) {
+        for (Hailstone stone : stones) {
+            Fraction time = null;
+            BigInteger[] stonePosition = stone.position();
+            BigInteger[] stoneVelocity = stone.velocity();
+            for (int axis = 0; axis < 3; axis++) {
+                Fraction displacement = rock[axis].subtract(Fraction.of(stonePosition[axis]));
+                Fraction relativeVelocity = Fraction.of(stoneVelocity[axis]).subtract(rock[axis + 3]);
+                if (relativeVelocity.isZero()) {
+                    if (!displacement.isZero()) {
+                        return false;
+                    }
+                } else {
+                    Fraction axisTime = displacement.divide(relativeVelocity);
+                    if (time == null) {
+                        time = axisTime;
+                    } else if (!time.equals(axisTime)) {
+                        return false;
                     }
                 }
             }
+            if (time != null && time.signum() < 0) {
+                return false;
+            }
         }
-        return answer;
+        return true;
     }
 
-    private List<Hailstone> parse(Scanner in){
+    private BigInteger[] cross(BigInteger[] first, BigInteger[] second) {
+        return new BigInteger[]{
+                first[1].multiply(second[2]).subtract(first[2].multiply(second[1])),
+                first[2].multiply(second[0]).subtract(first[0].multiply(second[2])),
+                first[0].multiply(second[1]).subtract(first[1].multiply(second[0]))
+        };
+    }
+
+    private BigInteger[] subtract(BigInteger[] first, BigInteger[] second) {
+        return new BigInteger[]{
+                first[0].subtract(second[0]),
+                first[1].subtract(second[1]),
+                first[2].subtract(second[2])
+        };
+    }
+
+    private List<Hailstone> parse(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         List<Hailstone> stones = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            Hailstone tmp = new Hailstone(line);
-            stones.add(tmp);
-            maxes[0] = Math.max(maxes[0], tmp.xvel);
-            maxes[1] = Math.max(maxes[1], tmp.yvel);
-            maxes[2] = Math.max(maxes[2], tmp.zvel);
-            mins[0] = Math.min(mins[0], tmp.xvel);
-            mins[1] = Math.min(mins[1], tmp.yvel);
-            mins[2] = Math.min(mins[2], tmp.zvel);
+        int offset = 0;
+        int length = input.length();
+        while (offset < length) {
+            int lineStart = offset;
+            while (offset < length && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int lineEnd = offset;
+            if (offset < length) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < length && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            boolean blank = true;
+            for (int i = lineStart; i < lineEnd; i++) {
+                if (!Character.isWhitespace(input.charAt(i))) {
+                    blank = false;
+                    break;
+                }
+            }
+            if (blank) {
+                continue;
+            }
+            int at = -1;
+            for (int i = lineStart; i < lineEnd; i++) {
+                if (input.charAt(i) == '@') {
+                    if (at >= 0) {
+                        throw new IllegalArgumentException("Malformed hailstone");
+                    }
+                    at = i;
+                }
+            }
+            if (at < 0) {
+                throw new IllegalArgumentException("Malformed hailstone");
+            }
+            BigInteger[] position = parseTriple(input, lineStart, at);
+            BigInteger[] velocity = parseTriple(input, at + 1, lineEnd);
+            stones.add(new Hailstone(position[0], position[1], position[2],
+                    velocity[0], velocity[1], velocity[2]));
         }
         return stones;
     }
 
-    private long[] helper(Coordinate v, List<Hailstone> stones) {
-        long x = Long.MAX_VALUE;
-        long y = Long.MAX_VALUE;
-        long z = Long.MAX_VALUE;
-        for (int i = 1; i < stones.size(); i++) {
-            Hailstone first = stones.getFirst();
-            Hailstone second = stones.get(i);
-            int newFirstXVel = first.xvel - v.x;
-            int newSecondXVel = second.xvel - v.x;
-            int newFirstYVel = first.yvel - v.y;
-            int newSecondYVel = second.yvel - v.y;
-            int denom = (newFirstXVel * newSecondYVel) - (newFirstYVel * newSecondXVel);
-            if (denom == 0) {
-                continue;
+    private BigInteger[] parseTriple(String input, int start, int end) {
+        BigInteger[] values = new BigInteger[3];
+        int fieldStart = start;
+        for (int index = 0; index < values.length; index++) {
+            int fieldEnd = fieldStart;
+            while (fieldEnd < end && input.charAt(fieldEnd) != ',') {
+                fieldEnd++;
             }
-            long numer1 = ((second.x - first.x) * newSecondYVel) - ((second.y - first.y) * newSecondXVel);
-            long numer2 = ((first.x - second.x) * newFirstYVel) - ((first.y - second.y) * newFirstXVel);
-            if ((numer1 / denom) < 0 || (numer2 / denom) > 0) {
-                return new long[]{-1, -1, -1};
+            if ((fieldEnd < end) != (index < 2)) {
+                throw new IllegalArgumentException("Malformed hailstone");
             }
-            long intersectionX = (numer1 / denom) * newFirstXVel + first.x;
-            long intersectionY = (numer1 / denom) * newFirstYVel + first.y;
-            long intersectionZ = (numer1 / denom) * (first.zvel - v.z) + first.z;
-            if (x == Long.MAX_VALUE) {
-                x = intersectionX;
+            int trimmedStart = fieldStart;
+            int trimmedEnd = fieldEnd;
+            while (trimmedStart < trimmedEnd && input.charAt(trimmedStart) <= ' ') {
+                trimmedStart++;
             }
-            if (y == Long.MAX_VALUE) {
-                y = intersectionY;
+            while (trimmedEnd > trimmedStart && input.charAt(trimmedEnd - 1) <= ' ') {
+                trimmedEnd--;
             }
-            if (z == Long.MAX_VALUE) {
-                z = intersectionZ;
+            try {
+                values[index] = new BigInteger(input.substring(trimmedStart, trimmedEnd));
+            } catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("Malformed hailstone", exception);
             }
-            if (x != intersectionX || y != intersectionY || z != intersectionZ) {
-                return new long[]{-1, -1, -1};
-            }
+            fieldStart = fieldEnd + 1;
         }
-        return new long[]{x, y, z};
+        return values;
     }
-}
 
-class Hailstone {
-    long x;
-    long y;
-    long z;
-    int xvel;
-    int yvel;
-    int zvel;
+    private record Hailstone(BigInteger x, BigInteger y, BigInteger z,
+                             BigInteger vx, BigInteger vy, BigInteger vz) {
+        private BigInteger[] position() {
+            return new BigInteger[]{x, y, z};
+        }
 
-    public Hailstone(String line) {
-        String[] ends = line.split("@");
-        x = Long.parseLong(ends[0].split(",")[0].trim());
-        y = Long.parseLong(ends[0].split(",")[1].trim());
-        z = Long.parseLong(ends[0].split(",")[2].trim());
-        xvel = Integer.parseInt(ends[1].split(",")[0].trim());
-        yvel = Integer.parseInt(ends[1].split(",")[1].trim());
-        zvel = Integer.parseInt(ends[1].split(",")[2].trim());
+        private BigInteger[] velocity() {
+            return new BigInteger[]{vx, vy, vz};
+        }
+    }
+
+    private record LongHailstone(long x, long y, long vx, long vy) {
+    }
+
+    private static final class Fraction {
+        private static final Fraction ZERO = new Fraction(BigInteger.ZERO, BigInteger.ONE);
+        private static final Fraction ONE = new Fraction(BigInteger.ONE, BigInteger.ONE);
+
+        private final BigInteger numerator;
+        private final BigInteger denominator;
+
+        private Fraction(BigInteger numerator, BigInteger denominator) {
+            if (denominator.signum() == 0) {
+                throw new ArithmeticException("zero denominator");
+            }
+            if (numerator.signum() == 0) {
+                this.numerator = BigInteger.ZERO;
+                this.denominator = BigInteger.ONE;
+                return;
+            }
+            if (denominator.signum() < 0) {
+                numerator = numerator.negate();
+                denominator = denominator.negate();
+            }
+            BigInteger common = numerator.gcd(denominator);
+            this.numerator = numerator.divide(common);
+            this.denominator = denominator.divide(common);
+        }
+
+        private static Fraction of(BigInteger value) {
+            return value.signum() == 0 ? ZERO : new Fraction(value, BigInteger.ONE);
+        }
+
+        private Fraction add(Fraction other) {
+            if (other.isZero()) {
+                return this;
+            }
+            return new Fraction(numerator.multiply(other.denominator)
+                    .add(other.numerator.multiply(denominator)), denominator.multiply(other.denominator));
+        }
+
+        private Fraction subtract(Fraction other) {
+            if (other.isZero()) {
+                return this;
+            }
+            return new Fraction(numerator.multiply(other.denominator)
+                    .subtract(other.numerator.multiply(denominator)), denominator.multiply(other.denominator));
+        }
+
+        private Fraction multiply(Fraction other) {
+            if (isZero() || other.isZero()) {
+                return ZERO;
+            }
+            return new Fraction(numerator.multiply(other.numerator), denominator.multiply(other.denominator));
+        }
+
+        private Fraction divide(Fraction other) {
+            return new Fraction(numerator.multiply(other.denominator), denominator.multiply(other.numerator));
+        }
+
+        private Fraction negate() {
+            return isZero() ? ZERO : new Fraction(numerator.negate(), denominator);
+        }
+
+        private Fraction squareRoot() {
+            if (numerator.signum() < 0) {
+                return null;
+            }
+            BigInteger[] numeratorRoot = numerator.sqrtAndRemainder();
+            BigInteger[] denominatorRoot = denominator.sqrtAndRemainder();
+            if (numeratorRoot[1].signum() != 0 || denominatorRoot[1].signum() != 0) {
+                return null;
+            }
+            return new Fraction(numeratorRoot[0], denominatorRoot[0]);
+        }
+
+        private boolean isZero() {
+            return numerator.signum() == 0;
+        }
+
+        private boolean isInteger() {
+            return denominator.equals(BigInteger.ONE);
+        }
+
+        private int signum() {
+            return numerator.signum();
+        }
+
+        private int compareTo(Fraction other) {
+            return numerator.multiply(other.denominator).compareTo(other.numerator.multiply(denominator));
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Fraction fraction
+                    && numerator.equals(fraction.numerator)
+                    && denominator.equals(fraction.denominator);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * numerator.hashCode() + denominator.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return denominator.equals(BigInteger.ONE) ? numerator.toString() : numerator + "/" + denominator;
+        }
     }
 }

@@ -1,376 +1,409 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-import src.objects.Coordinate;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Scanner;
 
-//Heavily inspired by https://gist.github.com/Voltara/ae028b17ba5cd69fa9b8b912e41e853b
-
+/**
+ * Longest simple path through the trail maze.
+ *
+ * The maze is contracted to its junction graph: every open cell whose open-neighbour count is
+ * not exactly 2 (dead ends, forks, plus the entrance and exit) becomes a node, and corridors
+ * between nodes become weighted edges found by walking each corridor once. Node count adapts
+ * to the input; adjacency lives in flat primitive arrays (max degree 4, one corridor per
+ * direction). Both parts then run the same iterative longest-path DFS over int node ids with
+ * a long visited bitmask (with a recursive boolean[] fallback if a graph ever exceeds 64
+ * nodes).
+ *
+ * Part 1 walks corridors respecting slope arrows (a slope cell can only be exited in its
+ * arrow direction, so a slope against the walk kills that corridor), yielding a directed
+ * graph whose search space is tiny; no pruning is needed.
+ *
+ * Part 2 (slopes ignored, undirected) is where the work is, and the search is branch and
+ * bound:
+ *  - the forced entrance and exit corridors are collapsed into a constant, so the search
+ *    runs between the first and last real junctions and stops the moment it reaches the
+ *    target (any path through the exit-adjacent junction that does not finish there can
+ *    never come back);
+ *  - adjacency lists are sorted by descending edge weight so heavy paths are found early
+ *    and the incumbent best rises fast;
+ *  - before descending into a child, a bitmask flood fill over unvisited nodes checks the
+ *    target is still reachable; this soundly kills every branch that has walled itself off,
+ *    including all "walked backward along the perimeter" pockets;
+ *  - an admissible upper bound prunes the rest: twice any completion's remaining length is
+ *    at most the sum, over junctions still reachable, of their two heaviest edges into the
+ *    reachable set (only the heaviest for the current node and the target, whose path
+ *    degree is 1), so a branch is cut when len + cap/2 cannot beat the incumbent.
+ */
 public class Day23 implements DayTemplate {
 
-    Coordinate[][] nodeGrid = new Coordinate[6][6];
+    /** Directions: 0 = up, 1 = down, 2 = left, 3 = right (indices must match slopeDir). */
+    private static final int[] DR = {-1, 1, 0, 0};
+    private static final int[] DC = {0, 0, -1, 1};
 
-    Set<State> nextStates = new HashSet<>();
+    @Override
+    public String[] fullSolve(Scanner in) {
+        char[][] grid = parse(in);
+        return new String[]{run(true, grid), run(false, grid)};
+    }
 
-    Map<Coordinate, Set<Coordinate>> neighbors = new HashMap<>();
-
+    @Override
     public String solve(boolean part1, Scanner in) {
-        int answer = 0;
-        List<String[]> tmp = new ArrayList<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            tmp.add(line.split(""));
-        }
-        int[][] grid = new int[tmp.get(0).length][tmp.size()];
-        Map<String, Integer> gridBuilder = Map.of(".", 1, "#", 2, ">", 3, "v", 4, "<", 5, "^", 6);
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                grid[i][j] = gridBuilder.get(tmp.get(j)[i]);
-                if (grid[i][j] > 2 && !part1) {
-                    grid[i][j] = 1;
+        return run(part1, parse(in));
+    }
+
+    private static char[][] parse(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        char[][] rows = new char[16][];
+        int count = 0;
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
                 }
             }
+            int width = end - start;
+            if (width == 0) {
+                continue;
+            }
+            if (count == rows.length) {
+                rows = Arrays.copyOf(rows, rows.length * 2);
+            }
+            char[] row = new char[width];
+            for (int column = 0; column < width; column++) {
+                row[column] = input.charAt(start + column);
+            }
+            rows[count++] = row;
         }
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
-        Set<Coordinate> intersections = new HashSet<>();
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid[0].length; j++) {
-                int numNeighbors = 0;
-                if (grid[i][j] != 2) {
-                    for (int k = 0; k < 4; k++) {
-                        Coordinate next = new Coordinate(i + xs[k], j + ys[k]);
-                        if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && grid[next.x][next.y] != 2) {
-                            numNeighbors++;
-                        }
+        return count == rows.length ? rows : Arrays.copyOf(rows, count);
+    }
+
+    private static int slopeDir(char c) {
+        return switch (c) {
+            case '^' -> 0;
+            case 'v' -> 1;
+            case '<' -> 2;
+            case '>' -> 3;
+            default -> -1;
+        };
+    }
+
+    private static String run(boolean part1, char[][] grid) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+
+        // --- Junction detection: open cells whose open-neighbour count is 1 or > 2. ---
+        int[][] id = new int[rows][cols];
+        for (int[] row : id) {
+            Arrays.fill(row, -1);
+        }
+        int count = 0;
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (grid[r][c] == '#') {
+                    continue;
+                }
+                int open = 0;
+                for (int k = 0; k < 4; k++) {
+                    int ar = r + DR[k];
+                    int ac = c + DC[k];
+                    if (ar >= 0 && ac >= 0 && ar < rows && ac < cols && grid[ar][ac] != '#') {
+                        open++;
                     }
                 }
-                if (numNeighbors == 1 || numNeighbors > 2) {
-                    intersections.add(new Coordinate(i, j));
+                if (open == 1 || open > 2) {
+                    id[r][c] = count++;
                 }
             }
         }
-        for (Coordinate intersection : intersections) {
-            bfs(intersection, neighbors, grid, intersections);
-        }
-        Coordinate start = null;
-        Coordinate end = null;
-        for (int i = 0; i < grid.length; i++) {
-            if (grid[i][0] == 1) {
-                start = new Coordinate(i, 0);
+        int startCol = -1;
+        int endCol = -1;
+        for (int c = 0; c < cols; c++) {
+            if (startCol < 0 && grid[0][c] != '#') {
+                startCol = c;
             }
-            if (grid[i][grid.length - 1] == 1) {
-                end = new Coordinate(i, grid.length - 1);
+            if (endCol < 0 && grid[rows - 1][c] != '#') {
+                endCol = c;
             }
         }
+        // The entrance and exit are nodes even if a degenerate input gives them degree 2.
+        if (id[0][startCol] < 0) {
+            id[0][startCol] = count++;
+        }
+        if (id[rows - 1][endCol] < 0) {
+            id[rows - 1][endCol] = count++;
+        }
+        int v = count;
+        int[] nodeR = new int[v];
+        int[] nodeC = new int[v];
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                int u = id[r][c];
+                if (u >= 0) {
+                    nodeR[u] = r;
+                    nodeC[u] = c;
+                }
+            }
+        }
+
+        // --- Contraction: walk every corridor once per end; flat arrays, degree <= 4. ---
+        int[] deg = new int[v];
+        int[] nbr = new int[v << 2];
+        int[] wt = new int[v << 2];
+        for (int u = 0; u < v; u++) {
+            for (int d = 0; d < 4; d++) {
+                long packed = walk(grid, id, nodeR[u], nodeC[u], d, part1);
+                if (packed >= 0) {
+                    int other = (int) (packed >>> 32);
+                    if (other != u) {
+                        int slot = (u << 2) + deg[u]++;
+                        nbr[slot] = other;
+                        wt[slot] = (int) packed;
+                    }
+                }
+            }
+        }
+        int start = id[0][startCol];
+        int end = id[rows - 1][endCol];
+
+        if (v > 64) {
+            // Correctness fallback for exotic inputs; real inputs have ~36 junctions.
+            int best = searchBig(start, end, new boolean[v], 0, deg, nbr, wt);
+            return String.valueOf(Math.max(best, 0));
+        }
+
+        // Heaviest edges first: the incumbent rises fast, which powers the bound prune.
+        for (int u = 0; u < v; u++) {
+            int base = u << 2;
+            for (int a = 1; a < deg[u]; a++) {
+                int nw = wt[base + a];
+                int nn = nbr[base + a];
+                int b = a - 1;
+                while (b >= 0 && wt[base + b] < nw) {
+                    wt[base + b + 1] = wt[base + b];
+                    nbr[base + b + 1] = nbr[base + b];
+                    b--;
+                }
+                wt[base + b + 1] = nw;
+                nbr[base + b + 1] = nn;
+            }
+        }
+        long[] adjMask = new long[v];
+        for (int u = 0; u < v; u++) {
+            int base = u << 2;
+            for (int j = 0; j < deg[u]; j++) {
+                adjMask[u] |= 1L << nbr[base + j];
+            }
+        }
+
+        int s = start;
+        int t = end;
+        int bonus = 0;
+        long visited = 0;
+        if (!part1) {
+            // Collapse the forced corridors hanging off the entrance and the exit.
+            if (deg[start] == 1) {
+                visited |= 1L << start;
+                bonus += wt[start << 2];
+                s = nbr[start << 2];
+            }
+            if (s == end) {
+                return String.valueOf(bonus);
+            }
+            if (deg[end] == 1) {
+                visited |= 1L << end;
+                bonus += wt[end << 2];
+                t = nbr[end << 2];
+            }
+            if (s == t) {
+                return String.valueOf(bonus);
+            }
+        }
+        visited |= 1L << s;
+        int best = search(s, t, visited, v, deg, nbr, wt, adjMask, !part1);
+        return String.valueOf(best < 0 ? 0 : bonus + best);
+    }
+
+    /**
+     * Walks the corridor leaving node cell (r, c) in direction d until the next node cell.
+     * Returns (nodeId << 32) | steps, or -1 if the walk dies against a wall or, in part 1,
+     * against a slope arrow pointing back along the walk.
+     */
+    private static long walk(char[][] grid, int[][] id, int r, int c, int d, boolean part1) {
+        int rows = grid.length;
+        int cols = grid[0].length;
         if (part1) {
-            Path path = new Path();
-            path.coordsOnPath.add(start);
-            path.latest = start;
-            Deque<Path> stack = new LinkedList<>();
-            stack.push(path);
-            while (!stack.isEmpty()) {
-                Path p = stack.pop();
-                Coordinate current = p.latest;
-                for (Coordinate next : neighbors.get(current)) {
-                    if (next.equals(end)) {
-                        if (p.pathLength + next.weight > answer) {
-                            answer = p.pathLength + next.weight;
-                        }
-                        break;
-                    }
-                    if (!p.coordsOnPath.contains(next)) {
-                        Path newPath = new Path(p);
-                        newPath.latest = next;
-                        newPath.coordsOnPath.add(next);
-                        newPath.pathLength += next.weight;
-                        stack.push(newPath);
-                    }
-                }
-            }
-        } else {
-            answer += neighbors.get(start).iterator().next().weight;
-            answer += neighbors.get(end).iterator().next().weight;
-            constructGrid(neighbors, start);
-            Set<State> states = new HashSet<>();
-            states.add(new State("+      ", 0));
-            for (int i = 0; i < 6; i++) {
-                for (State state : states) {
-                    addNextRow(state, i, 0, " ", new State("", state.val));
-                }
-                states = nextStates;
-                nextStates = new HashSet<>();
-            }
-            for (State state : states) {
-                if (state.dpState.equals("     +")) {
-                    answer += state.val;
-                }
+            int s = slopeDir(grid[r][c]);
+            if (s >= 0 && s != d) {
+                return -1;
             }
         }
-        return answer + "";
-    }
-
-    private void addNextRow(State state, int row, int column, String left, State possibility) {
-        if (column == nodeGrid[row].length) {
-            if (validSigns(possibility)) {
-                conditionalPut(possibility);
-            }
-            return;
+        int nr = r + DR[d];
+        int nc = c + DC[d];
+        if (nr < 0 || nc < 0 || nr >= rows || nc >= cols || grid[nr][nc] == '#') {
+            return -1;
         }
-        List<String> nextConnections = new ArrayList<>();
-        String above = state.dpState.substring(column, column + 1);
-        String newState = null;
-        if (above.equals(" ")) {
-            if (left.equals(" ")) {
-                // node has no connections from above or left. It can either not have any connections at all, or start a new sub loop
-                nextConnections.add("  ");
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's not enough room to start a new loop
-                    nextConnections.add("+-");
-                }
-            } else {
-                // node has connection from the left but not from above. It can either pass its connection down or to the right
-                nextConnections.add(left + above);
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(above + left);
-                }
-            }
-        }
-        if (above.equals("+")) {
-            if (left.equals(" ")) {
-                // node has connection from above but not from the eft. It can either pass its connection down or to the right
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(" +");
-                }
-                nextConnections.add("+ ");
-            }
-            if (left.equals("+")) {
-                // node is joining two loops together with different polarity. It cannot take more connections
-                // to correct the polarity issue, find the original - that matches with the current + that's being turned into a -. Set that - to a + to keep balance.
-                int index = possibility.dpState.length();
-                int amount = 1;
-                while (amount != 0) {
-                    index++;
-                    if (state.dpState.charAt(index) == '+') {
-                        amount++;
-                    }
-                    if (state.dpState.charAt(index) == '-') {
-                        amount--;
-                    }
-                }
-                newState = state.dpState.substring(0, index) + "+" + state.dpState.substring(index + 1);
-                nextConnections.add("  !");
-            }
-            if (left.equals("-")) {
-                // node is joining two loops together with correct polarity. It cannot take more connections
-                nextConnections.add("  ");
-            }
-        }
-        if (above.equals("-")) {
-            // node has connection from above but not from the eft. It can either pass its connection down or to the right
-            if (left.equals(" ")) {
-                if (column < nodeGrid[row].length - 1) {
-                    // if we are in the last column, there's no further node to pass the connection to
-                    nextConnections.add(" -");
-                }
-                nextConnections.add("- ");
-            }
-            if (left.equals("+")) {
-                // The path has split into disparate loops. The case should be rejected
-            }
-            if (left.equals("-")) {
-                // node is joining two loops together with different polarity. It cannot take more connections
-                // to correct the polarity issue, find the original + that matches with the current - that's being turned into a +. Set that + to a - to keep balance.
-                int index = possibility.dpState.length();
-                int amount = 1;
-                while (amount != 0) {
-                    index--;
-                    if (possibility.dpState.charAt(index) == '+') {
-                        amount--;
-                    }
-                    if (possibility.dpState.charAt(index) == '-') {
-                        amount++;
-                    }
-                }
-                possibility.dpState = possibility.dpState.substring(0, index) + "-" + possibility.dpState.substring(index + 1);
-                nextConnections.add("  ");
-            }
-        }
-        for (String nextConnection : nextConnections) {
-            State next = new State(possibility, nextConnection.substring(0, 1));
-            if (nextConnection.charAt(1) != ' ') {
-                Coordinate node = nodeGrid[row][column];
-                Coordinate rightNode = nodeGrid[row][column + 1];
-                if (node != null) {
-                    if (rightNode == null) {
-                        rightNode = nodeGrid[row + 1][column + 1];
-                    }
-                    for (Coordinate neighbor : neighbors.get(node)) {
-                        if (neighbor.equals(rightNode)) {
-                            next.val += neighbor.weight;
-                        }
-                    }
-                }
-
-            }
-            if (nextConnection.charAt(0) != ' ' && row < nodeGrid.length - 1) {
-                Coordinate node = nodeGrid[row][column];
-                Coordinate underNode = nodeGrid[row + 1][column];
-                if (node != null) {
-                    if (underNode == null) {
-                        underNode = nodeGrid[row + 1][column + 1];
-                    }
-                    for (Coordinate neighbor : neighbors.get(node)) {
-                        if (neighbor.equals(underNode)) {
-                            next.val += neighbor.weight;
-                        }
-                    }
-                }
-            }
-            if (nextConnection.length() > 2) {
-                State fixedState = new State(state, "");
-                fixedState.dpState = newState;
-                addNextRow(fixedState, row, column + 1, nextConnection.substring(1, 2), next);
-            } else {
-                addNextRow(state, row, column + 1, nextConnection.substring(1, 2), next);
-            }
-        }
-    }
-
-    private void conditionalPut(State possibility) {
-        if (!nextStates.contains(possibility)) {
-            nextStates.add(possibility);
-        } else {
-            for (State state : nextStates) {
-                if (state.dpState.equals(possibility.dpState) && possibility.val > state.val) {
-                    state.val = possibility.val;
-                }
-            }
-        }
-    }
-
-    private boolean validSigns(State possibility) {
-        int sign = 0;
-        for (String s : possibility.dpState.split("")) {
-            if (s.equals("+")) {
-                sign++;
-            }
-            if (s.equals("-")) {
-                sign--;
-            }
-        }
-        return sign == 1;
-    }
-
-    private void constructGrid(Map<Coordinate, Set<Coordinate>> neighbors, Coordinate start) {
-        Set<Coordinate> used = new HashSet<>();
-        nodeGrid[0][0] = neighbors.get(start).iterator().next();
-        used.add(nodeGrid[0][0]);
-        for (int i = 1; i < nodeGrid[0].length - 1; i++) {
-            for (Coordinate neighbor : neighbors.get(nodeGrid[0][i - 1])) {
-                if (neighbors.get(neighbor).size() == 3 && !used.contains(neighbor)) {
-                    used.add(neighbor);
-                    nodeGrid[0][i] = neighbor;
-                    break;
-                }
-            }
-        }
-        for (int i = 1; i < nodeGrid.length; i++) {
-            for (int j = 0; j < nodeGrid[0].length; j++) {
-                if (i == 5 && j == 0) {
-                    continue;
-                }
-                for (Coordinate neighbor : neighbors.get(nodeGrid[i - 1][(i == 1) ? Math.min(j, 4) : j])) {
-                    if (nodeGrid[i][j] == null && !used.contains(neighbor)) {
-                        if (i == 1 && j == 4) {
-                            if (neighbors.get(neighbor).size() > 3) {
-                                used.add(neighbor);
-                                nodeGrid[i][j] = neighbor;
-                            }
-                        } else {
-                            if (neighbors.get(neighbor).size() > 1) {
-                                used.add(neighbor);
-                                nodeGrid[i][j] = neighbor;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void bfs(Coordinate start, Map<Coordinate, Set<Coordinate>> neighbors, int[][] grid, Set<Coordinate> intersections) {
-        int[] xs = new int[]{1, 0, -1, 0};
-        int[] ys = new int[]{0, 1, 0, -1};
-        Queue<Coordinate> queue = new LinkedList<>();
-        Set<Coordinate> visited = new HashSet<>();
-        queue.add(start);
-        neighbors.putIfAbsent(start, new HashSet<>());
-        while (!queue.isEmpty()) {
-            Coordinate curr = queue.poll();
+        int pr = r;
+        int pc = c;
+        int len = 1;
+        while (id[nr][nc] < 0) {
+            int forced = part1 ? slopeDir(grid[nr][nc]) : -1;
+            int tr = -1;
+            int tc = -1;
             for (int k = 0; k < 4; k++) {
-                if (grid[curr.x][curr.y] > 2 && k != grid[curr.x][curr.y] - 3) {
+                if (forced >= 0 && k != forced) {
                     continue;
                 }
-                Coordinate next = new Coordinate(curr.x + xs[k], curr.y + ys[k]);
-                if (next.x >= 0 && next.y >= 0 && next.x < grid.length && next.y < grid[0].length && !visited.contains(next)) {
-                    next.weight = curr.weight + 1;
-                    if (intersections.contains(next) && !next.equals(start)) {
-                        neighbors.get(start).add(next);
-                    } else {
-                        if (grid[next.x][next.y] != 2) {
-                            queue.add(next);
-                            visited.add(next);
-                        }
+                int ar = nr + DR[k];
+                int ac = nc + DC[k];
+                if ((ar == pr && ac == pc) || ar < 0 || ac < 0 || ar >= rows || ac >= cols
+                        || grid[ar][ac] == '#') {
+                    continue;
+                }
+                tr = ar;
+                tc = ac;
+            }
+            if (tr < 0) {
+                return -1;
+            }
+            pr = nr;
+            pc = nc;
+            nr = tr;
+            nc = tc;
+            len++;
+        }
+        return ((long) id[nr][nc] << 32) | len;
+    }
+
+    /**
+     * Iterative longest simple path from s to t; the path ends on first arrival at t.
+     * Returns -1 if t is unreachable. With prune set, applies the flood-fill reachability
+     * check and the admissible remaining-length bound before descending into any child.
+     */
+    private static int search(int s, int t, long visited, int v, int[] deg, int[] nbr, int[] wt,
+                              long[] adjMask, boolean prune) {
+        int[] stackNode = new int[v + 1];
+        int[] stackIter = new int[v + 1];
+        int[] stackLen = new int[v + 1];
+        stackNode[0] = s;
+        int sp = 0;
+        int best = -1;
+        while (sp >= 0) {
+            int u = stackNode[sp];
+            int i = stackIter[sp]++;
+            if (i >= deg[u]) {
+                visited &= ~(1L << u);
+                sp--;
+                continue;
+            }
+            int slot = (u << 2) + i;
+            int nxt = nbr[slot];
+            if ((visited >>> nxt & 1L) != 0) {
+                continue;
+            }
+            int len = stackLen[sp] + wt[slot];
+            if (nxt == t) {
+                if (len > best) {
+                    best = len;
+                }
+                continue;
+            }
+            if (prune && pruned(nxt, t, len, best, visited, deg, nbr, wt, adjMask)) {
+                continue;
+            }
+            sp++;
+            stackNode[sp] = nxt;
+            stackIter[sp] = 0;
+            stackLen[sp] = len;
+            visited |= 1L << nxt;
+        }
+        return best;
+    }
+
+    /**
+     * True if the branch entering nxt with running length len provably cannot beat best.
+     *
+     * Flood fill: any completion nxt -> t is a path through unvisited nodes, so t must stay
+     * reachable from nxt in the unvisited-induced subgraph.
+     *
+     * Bound: a completion visits distinct nodes inside the flooded set, contributing two
+     * path edges per interior node and one at nxt and t; every such edge joins two nodes of
+     * the flooded set, so it is counted from both ends. Summing each flooded node's two
+     * heaviest edges into the flooded set (heaviest only for nxt and t) therefore counts at
+     * least twice the best completion, giving remaining length <= cap / 2.
+     */
+    private static boolean pruned(int nxt, int t, int len, int best, long visited,
+                                  int[] deg, int[] nbr, int[] wt, long[] adjMask) {
+        long free = ~visited;
+        long reach = 1L << nxt;
+        long frontier = reach;
+        while (frontier != 0) {
+            long grow = 0;
+            do {
+                int x = Long.numberOfTrailingZeros(frontier);
+                frontier &= frontier - 1;
+                grow |= adjMask[x];
+            } while (frontier != 0);
+            frontier = grow & free & ~reach;
+            reach |= frontier;
+        }
+        if ((reach >>> t & 1L) == 0) {
+            return true;
+        }
+        int cap = 0;
+        long m = reach;
+        do {
+            int x = Long.numberOfTrailingZeros(m);
+            m &= m - 1;
+            int base = x << 2;
+            int dx = deg[x];
+            int hi = 0;
+            int lo = 0;
+            for (int j = 0; j < dx; j++) {
+                if ((reach >>> nbr[base + j] & 1L) != 0) {
+                    int w = wt[base + j];
+                    if (w > hi) {
+                        lo = hi;
+                        hi = w;
+                    } else if (w > lo) {
+                        lo = w;
                     }
                 }
             }
+            cap += (x == nxt || x == t) ? hi : hi + lo;
+        } while (m != 0);
+        return len + (cap >> 1) <= best;
+    }
+
+    /** Recursive fallback for junction graphs beyond 64 nodes; same path semantics. */
+    private static int searchBig(int u, int t, boolean[] vis, int len,
+                                 int[] deg, int[] nbr, int[] wt) {
+        if (u == t) {
+            return len;
         }
-    }
-}
-
-class Path {
-    Set<Coordinate> coordsOnPath = new HashSet<>();
-    Coordinate latest;
-    int pathLength = 0;
-
-    public Path(Path root) {
-        coordsOnPath.addAll(root.coordsOnPath);
-        pathLength = root.pathLength;
-    }
-
-    public Path() {
-
-    }
-}
-
-class State {
-    String dpState;
-    int val;
-
-    public State(String dpState, int val) {
-        this.dpState = dpState;
-        this.val = val;
-    }
-
-    public State(State original, String append) {
-        dpState = original.dpState + append;
-        val = original.val;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof State other) {
-            return dpState.equals(other.dpState);
+        vis[u] = true;
+        int best = -1;
+        int base = u << 2;
+        for (int j = 0; j < deg[u]; j++) {
+            int nxt = nbr[base + j];
+            if (!vis[nxt]) {
+                int r = searchBig(nxt, t, vis, len + wt[base + j], deg, nbr, wt);
+                if (r > best) {
+                    best = r;
+                }
+            }
         }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return dpState.hashCode();
+        vis[u] = false;
+        return best;
     }
 }

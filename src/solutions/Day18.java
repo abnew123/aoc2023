@@ -2,153 +2,188 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.math.BigInteger;
+import java.util.Scanner;
 
 public class Day18 implements DayTemplate {
 
-    int max;
-
-    int max2;
-
-    int[] xs = new int[]{1, 0, -1, 0};
-    int[] ys = new int[]{0, -1, 0, 1};
-
     @Override
     public String[] fullSolve(Scanner in) {
-        List<DoubleInstruction> instructions = parse2(in);
-        long[] answer = solve2(instructions);
-        return new String[]{answer[0] + "", answer[1] + ""};
+        return solve(in, true, true);
     }
 
-    /**
-     * Main solving method.
-     *
-     * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
-     * @param in    The solver will read data from this Scanner.
-     * @return Returns answer in string format.
-     */
     public String solve(boolean part1, Scanner in) {
-        List<Instruction> instructions = parse(in, part1);
-        long answer = solve(instructions);
-        return answer + "";
+        String[] answers = solve(in, part1, !part1);
+        return part1 ? answers[0] : answers[1];
     }
 
-    private long solve(List<Instruction> instructions){
-        long answer = 0;
-        List<Long> xVals = new ArrayList<>();
-        List<Long> yVals = new ArrayList<>();
-        long x = 0;
-        long y = 0;
-        for (Instruction instruction : instructions) {
-            x += (long) instruction.distance * xs[instruction.direction];
-            y += (long) instruction.distance * ys[instruction.direction];
-            xVals.add(x);
-            yVals.add(y);
+    private String[] solve(Scanner in, boolean literal, boolean encoded) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        Lagoon first = literal ? new Lagoon() : null;
+        Lagoon second = encoded ? new Lagoon() : null;
+        int offset = 0;
+        int length = input.length();
+        while (offset < length) {
+            int lineStart = offset;
+            while (offset < length && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int lineEnd = offset;
+            if (offset < length) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < length && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int directionStart = skipWhitespace(input, lineStart, lineEnd);
+            if (directionStart >= lineEnd) {
+                continue;
+            }
+            int afterDirection = directionStart + 1;
+            if (afterDirection >= lineEnd || !Character.isWhitespace(input.charAt(afterDirection))) {
+                throw malformed();
+            }
+            int distanceStart = skipWhitespace(input, afterDirection, lineEnd);
+            int distanceEnd = distanceStart;
+            while (distanceEnd < lineEnd && !Character.isWhitespace(input.charAt(distanceEnd))) {
+                distanceEnd++;
+            }
+            if (distanceStart == distanceEnd) {
+                throw malformed();
+            }
+            if (literal) {
+                first.move(literalDirection(input.charAt(directionStart)),
+                        decimal(input, distanceStart, distanceEnd));
+            }
+            if (encoded) {
+                int hash = -1;
+                for (int i = distanceEnd; i < lineEnd; i++) {
+                    if (input.charAt(i) == '#') {
+                        hash = i;
+                        break;
+                    }
+                }
+                int close = -1;
+                if (hash >= 0) {
+                    for (int i = hash + 1; i < lineEnd; i++) {
+                        if (input.charAt(i) == ')') {
+                            close = i;
+                            break;
+                        }
+                    }
+                }
+                if (hash < 0 || close - hash != 7) {
+                    throw malformed();
+                }
+                int direction = encodedDirection(input.charAt(close - 1));
+                second.move(direction, hexDistance(input, hash + 1, close - 1));
+            }
         }
-        for (int i = 0; i < xVals.size(); i++) {
-            answer -= xVals.get(i) * yVals.get((i + 1) % xVals.size());
-            answer += xVals.get((i + 1) % xVals.size()) * yVals.get(i);
-        }
-        answer /= 2;
-        answer += max / 2 + 1;
-        return answer;
+        return new String[]{literal ? first.finish().toString() : null,
+                encoded ? second.finish().toString() : null};
     }
 
-    private long[] solve2(List<DoubleInstruction> instructions){
-        long answer1 = 0;
-        long answer2 = 0;
-        List<Long> xVals1 = new ArrayList<>();
-        List<Long> yVals1 = new ArrayList<>();
-        List<Long> xVals2 = new ArrayList<>();
-        List<Long> yVals2 = new ArrayList<>();
-        long x1 = 0;
-        long y1 = 0;
-        long x2 = 0;
-        long y2 = 0;
-        for (DoubleInstruction instruction : instructions) {
-            x1 += (long) instruction.distance1 * xs[instruction.direction1];
-            y1 += (long) instruction.distance1 * ys[instruction.direction1];
-            x2 += (long) instruction.distance2 * xs[instruction.direction2];
-            y2 += (long) instruction.distance2 * ys[instruction.direction2];
-            xVals1.add(x1);
-            yVals1.add(y1);
-            xVals2.add(x2);
-            yVals2.add(y2);
+    private int skipWhitespace(String input, int index, int limit) {
+        while (index < limit && Character.isWhitespace(input.charAt(index))) {
+            index++;
         }
-        for (int i = 0; i < xVals1.size(); i++) {
-            answer1 -= xVals1.get(i) * yVals1.get((i + 1) % xVals1.size());
-            answer1 += xVals1.get((i + 1) % xVals1.size()) * yVals1.get(i);
-        }
-        for (int i = 0; i < xVals2.size(); i++) {
-            answer2 -= xVals2.get(i) * yVals2.get((i + 1) % xVals2.size());
-            answer2 += xVals2.get((i + 1) % xVals2.size()) * yVals2.get(i);
-        }
-        answer1 /= 2;
-        answer1 += max / 2 + 1;
-        answer2 /= 2;
-        answer2 += max2 / 2 + 1;
-        return new long[]{answer1, answer2};
+        return index;
     }
 
-    private List<Instruction> parse(Scanner in, boolean part1){
-        List<Instruction> instructions = new ArrayList<>();
-        max = 0;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            instructions.add(new Instruction(line, part1));
-            max += instructions.getLast().distance;
+    private BigInteger decimal(String input, int start, int end) {
+        if (end - start <= 18) {
+            long value = 0;
+            boolean digitsOnly = start < end;
+            for (int i = start; i < end; i++) {
+                char digit = input.charAt(i);
+                if (digit < '0' || digit > '9') {
+                    digitsOnly = false;
+                    break;
+                }
+                value = value * 10 + (digit - '0');
+            }
+            if (digitsOnly) {
+                return BigInteger.valueOf(value);
+            }
         }
-        return instructions;
-    }
-
-    private List<DoubleInstruction> parse2(Scanner in){
-        List<DoubleInstruction> instructions = new ArrayList<>();
-        max = 0;
-        max2 = 0;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            instructions.add(new DoubleInstruction(line));
-            max += instructions.getLast().distance1;
-            max2 += instructions.getLast().distance2;
-        }
-        return instructions;
-    }
-}
-
-class Instruction {
-    int distance;
-    int direction;
-
-    public Instruction(String line, boolean part1) {
-        if (part1) {
-            Map<String, Integer> map = Map.of("R", 0, "D", 1, "L", 2, "U", 3);
-            distance = Integer.parseInt(line.split(" ")[1]);
-            direction = map.get(line.split(" ")[0]);
-        } else {
-            String hex = line.split("[#)]")[1];
-            direction = Integer.parseInt(hex.substring(hex.length() - 1));
-            distance = Integer.parseInt(hex.substring(0, hex.length() - 1), 16);
+        try {
+            return new BigInteger(input.substring(start, end));
+        } catch (NumberFormatException invalid) {
+            throw malformed();
         }
     }
-}
 
-class DoubleInstruction {
-    int distance1;
-
-    int direction1;
-
-    int distance2;
-
-    int direction2;
-
-    public DoubleInstruction(String line){
-        Map<String, Integer> map = Map.of("R", 0, "D", 1, "L", 2, "U", 3);
-        distance1 = Integer.parseInt(line.split(" ")[1]);
-        direction1 = map.get(line.split(" ")[0]);
-        String hex = line.split("[#)]")[1];
-        direction2 = Integer.parseInt(hex.substring(hex.length() - 1));
-        distance2 = Integer.parseInt(hex.substring(0, hex.length() - 1), 16);
+    private BigInteger hexDistance(String input, int start, int end) {
+        long value = 0;
+        for (int i = start; i < end; i++) {
+            int digit = Character.digit(input.charAt(i), 16);
+            if (digit < 0) {
+                return new BigInteger(input.substring(start, end), 16);
+            }
+            value = (value << 4) | digit;
+        }
+        return BigInteger.valueOf(value);
     }
 
+    private int literalDirection(char direction) {
+        return switch (direction) {
+            case 'R' -> 0;
+            case 'D' -> 1;
+            case 'L' -> 2;
+            case 'U' -> 3;
+            default -> throw new IllegalArgumentException("Unknown dig direction: " + direction);
+        };
+    }
+
+    private int encodedDirection(char direction) {
+        if (direction < '0' || direction > '3') {
+            throw new IllegalArgumentException("Unknown encoded dig direction: " + direction);
+        }
+        return direction - '0';
+    }
+
+    private IllegalArgumentException malformed() {
+        return new IllegalArgumentException("Malformed dig instruction");
+    }
+
+    private static class Lagoon {
+        private BigInteger x = BigInteger.ZERO;
+        private BigInteger y = BigInteger.ZERO;
+        private BigInteger twiceArea = BigInteger.ZERO;
+        private BigInteger boundary = BigInteger.ZERO;
+
+        private void move(int direction, BigInteger distance) {
+            if (distance.signum() < 0) {
+                throw new IllegalArgumentException("Dig distance must be nonnegative");
+            }
+            BigInteger nextX = x;
+            BigInteger nextY = y;
+            if (direction == 0) {
+                nextX = x.add(distance);
+            } else if (direction == 1) {
+                nextY = y.subtract(distance);
+            } else if (direction == 2) {
+                nextX = x.subtract(distance);
+            } else {
+                nextY = y.add(distance);
+            }
+            twiceArea = twiceArea.add(x.multiply(nextY).subtract(nextX.multiply(y)));
+            boundary = boundary.add(distance);
+            x = nextX;
+            y = nextY;
+        }
+
+        private BigInteger finish() {
+            if (x.signum() != 0 || y.signum() != 0) {
+                throw new IllegalArgumentException("Dig path must return to its start");
+            }
+            BigInteger[] halves = twiceArea.abs().add(boundary).divideAndRemainder(BigInteger.TWO);
+            if (halves[1].signum() != 0) {
+                throw new IllegalArgumentException("Lagoon area is not integral");
+            }
+            return halves[0].add(BigInteger.ONE);
+        }
+    }
 }

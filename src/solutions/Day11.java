@@ -1,111 +1,111 @@
 package src.solutions;
 
 import src.meta.DayTemplate;
-import src.objects.Coordinate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day11 implements DayTemplate {
-    
-    List<Coordinate> galaxies;
-    List<Integer> emptyV;
-    List<Integer> emptyH;
 
     @Override
     public String[] fullSolve(Scanner in) {
-        parse(in);
-        long unstretched = getUnstretched();
-        long stretched = getStretched();
-        long answer1 = unstretched + stretched;
-        long answer2 = unstretched + 999999L * stretched;
-        return new String[]{answer1 + "", answer2 + ""};
+        Distances distances = analyze(in);
+        return new String[]{
+                (distances.base + distances.emptyCrossings) + "",
+                (distances.base + 999999L * distances.emptyCrossings) + ""
+        };
     }
 
     /**
      * Main solving method.
      *
      * @param part1 The solver will solve part 1 if param is set to true.
-     *              The solver will solve part 2 if param is set to false.
      * @param in    The solver will read data from this Scanner.
      * @return Returns answer in string format.
      */
     public String solve(boolean part1, Scanner in) {
-        parse(in);
-        long answer = getUnstretched();
-        answer += getStretched() * (part1?1:999999L);
-        return answer + "";
+        Distances distances = analyze(in);
+        long expansion = part1 ? 1 : 999999L;
+        return (distances.base + expansion * distances.emptyCrossings) + "";
     }
 
-    private long getUnstretched(){
-        long answer = 0;
-        for (int i = 0; i < galaxies.size(); i++) {
-            for (int j = i + 1; j < galaxies.size(); j++) {
-                Coordinate g1 = galaxies.get(i);
-                Coordinate g2 = galaxies.get(j);
-                answer += Math.abs(g1.x - g2.x) + Math.abs(g1.y - g2.y);
+    private Distances analyze(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        int[] rowCounts = new int[64];
+        int[] columnCounts = null;
+        int rows = 0;
+        int galaxies = 0;
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
             }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int width = end - start;
+            if (width == 0) {
+                continue;
+            }
+            if (columnCounts == null) {
+                columnCounts = new int[width];
+            } else if (width != columnCounts.length) {
+                throw new IllegalArgumentException("Galaxy map must be rectangular");
+            }
+            if (rows == rowCounts.length) {
+                rowCounts = Arrays.copyOf(rowCounts, rowCounts.length * 2);
+            }
+            for (int column = 0; column < width; column++) {
+                if (input.charAt(start + column) == '#') {
+                    rowCounts[rows]++;
+                    columnCounts[column]++;
+                    galaxies++;
+                }
+            }
+            rows++;
         }
-        return answer;
+        if (rows == 0) {
+            return new Distances(0, 0);
+        }
+        long base = axisDistance(rowCounts, rows) + axisDistance(columnCounts, columnCounts.length);
+        long emptyCrossings = emptyCrossings(rowCounts, rows, galaxies)
+                + emptyCrossings(columnCounts, columnCounts.length, galaxies);
+        return new Distances(base, emptyCrossings);
     }
 
-    private long getStretched(){
-        long answer = 0;
-        for (Integer ind : emptyV) {
-            int left = 0;
-            for (Coordinate g : galaxies) {
-                if (g.x < ind) {
-                    left++;
-                }
-            }
-            answer += (long) left * (galaxies.size() - left);
+    private long axisDistance(int[] counts, int limit) {
+        long distance = 0;
+        long seen = 0;
+        long positionSum = 0;
+        for (int position = 0; position < limit; position++) {
+            int count = counts[position];
+            distance += (long) count * (seen * position - positionSum);
+            seen += count;
+            positionSum += (long) count * position;
         }
-        for (Integer ind : emptyH) {
-            int up = 0;
-            for (Coordinate g : galaxies) {
-                if (g.y < ind) {
-                    up++;
-                }
-            }
-            answer += (long) up * (galaxies.size() - up);
-        }
-        return answer;
+        return distance;
     }
 
-    private void parse(Scanner in) {
-        List<List<String>> space = new ArrayList<>();
-        int index = 0;
-        galaxies = new ArrayList<>();
-        emptyV = new ArrayList<>();
-        emptyH = new ArrayList<>();
-        while (in.hasNext()) {
-            List<String> tmp = new ArrayList<>();
-            String[] line = in.nextLine().split("");
-            for (int i = 0; i < line.length; i++) {
-                if (line[i].equals("#")) {
-                    galaxies.add(new Coordinate(i, index));
-                }
-                tmp.add(line[i]);
+    private long emptyCrossings(int[] counts, int limit, int galaxies) {
+        long crossings = 0;
+        long seen = 0;
+        for (int position = 0; position < limit; position++) {
+            int count = counts[position];
+            if (count == 0) {
+                crossings += seen * (galaxies - seen);
             }
-            if (!tmp.contains("#")) {
-                emptyH.add(index);
-            }
-            index++;
-            space.add(tmp);
+            seen += count;
         }
-        for (int i = 0; i < space.get(0).size(); i++) {
-            boolean noGalaxy = true;
-            for (int j = 0; j < space.size(); j++) {
-                if (space.get(j).get(i).equals("#")) {
-                    noGalaxy = false;
-                    break;
-                }
-            }
-            if (noGalaxy) {
-                emptyV.add(i);
-            }
-        }
+        return crossings;
     }
 
+    private record Distances(long base, long emptyCrossings) {
+    }
 }
