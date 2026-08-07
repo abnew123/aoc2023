@@ -63,16 +63,62 @@ public class Day06 implements DayTemplate {
     }
 
     private RaceInput parse(Scanner in, boolean combine) {
-        Values times = parseLine(in.nextLine(), combine);
-        Values distances = parseLine(in.nextLine(), combine);
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        int length = input.length();
+        int timesStart = -1;
+        int timesEnd = -1;
+        int distancesStart = -1;
+        int distancesEnd = -1;
+        int lineStart = 0;
+        while (lineStart < length && distancesStart < 0) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (!blank(input, lineStart, trimmedEnd)) {
+                if (timesStart < 0) {
+                    timesStart = lineStart;
+                    timesEnd = trimmedEnd;
+                } else {
+                    distancesStart = lineStart;
+                    distancesEnd = trimmedEnd;
+                }
+            }
+            lineStart = lineEnd + 1;
+        }
+        if (distancesStart < 0) {
+            throw new IllegalArgumentException("Missing race data");
+        }
+        Values times = parseLine(input, timesStart, timesEnd, combine);
+        Values distances = parseLine(input, distancesStart, distancesEnd, combine);
         if (times.values.length != distances.values.length) {
             throw new IllegalArgumentException("Race count mismatch");
         }
         return new RaceInput(times.values, distances.values, times.combined, distances.combined);
     }
 
-    private Values parseLine(String line, boolean combine) {
-        int colon = line.indexOf(':');
+    private boolean blank(String input, int from, int end) {
+        for (int index = from; index < end; index++) {
+            if (!Character.isWhitespace(input.charAt(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Values parseLine(String line, int from, int end, boolean combine) {
+        int colon = -1;
+        for (int scan = from; scan < end; scan++) {
+            if (line.charAt(scan) == ':') {
+                colon = scan;
+                break;
+            }
+        }
         if (colon < 0) {
             throw new IllegalArgumentException("Missing race label separator");
         }
@@ -81,7 +127,7 @@ public class Day06 implements DayTemplate {
         long current = 0;
         long combined = 0;
         boolean hasDigit = false;
-        for (int index = colon + 1; index < line.length(); index++) {
+        for (int index = colon + 1; index < end; index++) {
             char c = line.charAt(index);
             if (c >= '0' && c <= '9') {
                 int digit = c - '0';
@@ -102,7 +148,7 @@ public class Day06 implements DayTemplate {
                     hasDigit = false;
                 }
             } else {
-                throw new IllegalArgumentException("Unexpected race character: " + c);
+                throw new IllegalArgumentException("Unexpected race character");
             }
         }
         if (hasDigit) {

@@ -2,8 +2,7 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day10 implements DayTemplate {
@@ -32,19 +31,16 @@ public class Day10 implements DayTemplate {
     }
 
     private Answers analyze(Scanner in) {
-        List<String> rows = new ArrayList<>();
-        while (in.hasNextLine()) {
-            rows.add(in.nextLine());
-        }
-        if (rows.isEmpty() || rows.get(0).isEmpty()) {
+        String[] rows = readLines(in);
+        if (rows.length == 0 || rows[0].isEmpty()) {
             throw new IllegalArgumentException("Pipe grid must not be empty");
         }
-        int height = rows.size();
-        int width = rows.get(0).length();
+        int height = rows.length;
+        int width = rows[0].length();
         int startX = -1;
         int startY = -1;
         for (int y = 0; y < height; y++) {
-            String row = rows.get(y);
+            String row = rows[y];
             if (row.length() != width) {
                 throw new IllegalArgumentException("Pipe grid must be rectangular");
             }
@@ -66,7 +62,7 @@ public class Day10 implements DayTemplate {
             int x = startX + DX[direction];
             int y = startY + DY[direction];
             if (inside(x, y, width, height)
-                    && (pipeMask(rows.get(y).charAt(x)) & BIT[(direction + 2) & 3]) != 0) {
+                    && (pipeMask(rows[y].charAt(x)) & BIT[(direction + 2) & 3]) != 0) {
                 startMask |= BIT[direction];
             }
         }
@@ -84,7 +80,7 @@ public class Day10 implements DayTemplate {
         long cellLimit = (long) width * height;
 
         while (currentX != startX || currentY != startY) {
-            int mask = pipeMask(rows.get(currentY).charAt(currentX));
+            int mask = pipeMask(rows[currentY].charAt(currentX));
             if (Integer.bitCount(mask) != 2) {
                 throw new IllegalArgumentException("Loop entered a non-pipe tile");
             }
@@ -101,7 +97,7 @@ public class Day10 implements DayTemplate {
                 throw new IllegalArgumentException("Pipe loop exits the grid");
             }
             int nextMask = nextX == startX && nextY == startY
-                    ? startMask : pipeMask(rows.get(nextY).charAt(nextX));
+                    ? startMask : pipeMask(rows[nextY].charAt(nextX));
             if ((nextMask & BIT[(outgoingDirection + 2) & 3]) == 0) {
                 throw new IllegalArgumentException("Pipe connection is not reciprocal");
             }
@@ -122,6 +118,31 @@ public class Day10 implements DayTemplate {
             throw new IllegalArgumentException("Pipe path is not a simple lattice loop");
         }
         return new Answers(boundary / 2, interiorNumerator / 2);
+    }
+
+    private static String[] readLines(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        String[] lines = new String[16];
+        int count = 0;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (count == lines.length) {
+                lines = Arrays.copyOf(lines, count * 2);
+            }
+            lines[count++] = input.substring(lineStart, trimmedEnd);
+            lineStart = lineEnd + 1;
+        }
+        return Arrays.copyOf(lines, count);
     }
 
     private int pipeMask(char pipe) {

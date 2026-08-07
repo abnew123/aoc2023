@@ -28,41 +28,52 @@ public class Day09 implements DayTemplate {
     }
 
     private Answers analyze(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         ExactTotal nextTotal = new ExactTotal();
         ExactTotal previousTotal = new ExactTotal();
         long[] scratch = new long[32];
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
             try {
-                LongLine values = parseLongs(line, scratch);
+                LongLine values = parseLongs(input, lineStart, trimmedEnd, scratch);
                 scratch = values.values();
-                if (values.size() == 0) {
-                    continue;
+                if (values.size() > 0) {
+                    LongAnswers answers = extrapolate(values.values(), values.size());
+                    nextTotal.add(answers.next());
+                    previousTotal.add(answers.previous());
                 }
-                LongAnswers answers = extrapolate(values.values(), values.size());
-                nextTotal.add(answers.next());
-                previousTotal.add(answers.previous());
             } catch (ArithmeticException | NumberFormatException e) {
-                BigAnswers answers = extrapolate(parseBigIntegers(line));
+                BigAnswers answers = extrapolate(parseBigIntegers(input, lineStart, trimmedEnd));
                 nextTotal.add(answers.next());
                 previousTotal.add(answers.previous());
             }
+            lineStart = lineEnd + 1;
         }
         return new Answers(nextTotal.toString(), previousTotal.toString());
     }
 
-    private LongLine parseLongs(String line, long[] values) {
+    private LongLine parseLongs(String line, int from, int end, long[] values) {
         int size = 0;
-        int i = 0;
-        while (i < line.length()) {
-            while (i < line.length() && Character.isWhitespace(line.charAt(i))) {
+        int i = from;
+        while (i < end) {
+            while (i < end && Character.isWhitespace(line.charAt(i))) {
                 i++;
             }
-            if (i == line.length()) {
+            if (i == end) {
                 break;
             }
             int start = i;
-            while (i < line.length() && !Character.isWhitespace(line.charAt(i))) {
+            while (i < end && !Character.isWhitespace(line.charAt(i))) {
                 i++;
             }
             if (size == values.length) {
@@ -73,19 +84,19 @@ public class Day09 implements DayTemplate {
         return new LongLine(values, size);
     }
 
-    private BigInteger[] parseBigIntegers(String line) {
+    private BigInteger[] parseBigIntegers(String line, int from, int end) {
         BigInteger[] values = new BigInteger[32];
         int size = 0;
-        int i = 0;
-        while (i < line.length()) {
-            while (i < line.length() && Character.isWhitespace(line.charAt(i))) {
+        int i = from;
+        while (i < end) {
+            while (i < end && Character.isWhitespace(line.charAt(i))) {
                 i++;
             }
-            if (i == line.length()) {
+            if (i == end) {
                 break;
             }
             int start = i;
-            while (i < line.length() && !Character.isWhitespace(line.charAt(i))) {
+            while (i < end && !Character.isWhitespace(line.charAt(i))) {
                 i++;
             }
             if (size == values.length) {

@@ -21,23 +21,34 @@ public class Day04 implements DayTemplate {
     }
 
     private Answers analyze(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         MatchParser parser = new MatchParser();
         int[] matches = new int[256];
         int cardCount = 0;
         BigInteger points = BigInteger.ZERO;
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isBlank()) {
-                continue;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
             }
-            if (cardCount == matches.length) {
-                matches = Arrays.copyOf(matches, matches.length * 2);
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
             }
-            int count = parser.count(line);
-            matches[cardCount++] = count;
-            if (count > 0) {
-                points = points.add(BigInteger.ONE.shiftLeft(count - 1));
+            if (!blank(input, lineStart, trimmedEnd)) {
+                if (cardCount == matches.length) {
+                    matches = Arrays.copyOf(matches, matches.length * 2);
+                }
+                int count = parser.count(input, lineStart, trimmedEnd);
+                matches[cardCount++] = count;
+                if (count > 0) {
+                    points = points.add(BigInteger.ONE.shiftLeft(count - 1));
+                }
             }
+            lineStart = lineEnd + 1;
         }
 
         BigInteger[] changes = new BigInteger[cardCount + 1];
@@ -58,6 +69,15 @@ public class Day04 implements DayTemplate {
         return new Answers(points, totalCards);
     }
 
+    private static boolean blank(String input, int from, int end) {
+        for (int index = from; index < end; index++) {
+            if (!Character.isWhitespace(input.charAt(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void addChange(BigInteger[] changes, int index, BigInteger amount) {
         changes[index] = changes[index] == null ? amount : changes[index].add(amount);
     }
@@ -66,11 +86,27 @@ public class Day04 implements DayTemplate {
         private int[] winningSpans = new int[48];
         private int winningCount;
 
-        private int count(String line) {
-            int colon = line.indexOf(':');
-            int separator = colon < 0 ? -1 : line.indexOf('|', colon + 1);
-            if (colon < 0 || separator < 0 || line.indexOf('|', separator + 1) >= 0) {
-                throw malformed(line);
+        private int count(String line, int from, int lineEnd) {
+            int colon = -1;
+            for (int scan = from; scan < lineEnd; scan++) {
+                if (line.charAt(scan) == ':') {
+                    colon = scan;
+                    break;
+                }
+            }
+            int separator = -1;
+            if (colon >= 0) {
+                for (int scan = colon + 1; scan < lineEnd; scan++) {
+                    if (line.charAt(scan) == '|') {
+                        if (separator >= 0) {
+                            throw malformed();
+                        }
+                        separator = scan;
+                    }
+                }
+            }
+            if (colon < 0 || separator < 0) {
+                throw malformed();
             }
 
             winningCount = 0;
@@ -88,11 +124,11 @@ public class Day04 implements DayTemplate {
             int matches = 0;
             index = separator + 1;
             while (true) {
-                index = skipWhitespace(line, index, line.length());
-                if (index == line.length()) {
+                index = skipWhitespace(line, index, lineEnd);
+                if (index == lineEnd) {
                     return matches;
                 }
-                int end = numberEnd(line, index, line.length());
+                int end = numberEnd(line, index, lineEnd);
                 int normalizedStart = normalizedStart(line, index, end);
                 int length = end - normalizedStart;
                 int sign = normalizedSign(line, index, normalizedStart, end);
@@ -162,13 +198,13 @@ public class Day04 implements DayTemplate {
             }
             if (index == digitStart
                     || index < limit && !Character.isWhitespace(line.charAt(index))) {
-                throw malformed(line);
+                throw malformed();
             }
             return index;
         }
 
-        private IllegalArgumentException malformed(String line) {
-            return new IllegalArgumentException("Malformed scratchcard: " + line);
+        private IllegalArgumentException malformed() {
+            return new IllegalArgumentException("Malformed scratchcard");
         }
     }
 

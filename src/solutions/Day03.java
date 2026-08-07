@@ -3,8 +3,7 @@ package src.solutions;
 import src.meta.DayTemplate;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day03 implements DayTemplate {
@@ -29,19 +28,16 @@ public class Day03 implements DayTemplate {
     }
 
     private Answers analyze(Scanner in) {
-        List<String> rows = new ArrayList<>();
-        while (in.hasNextLine()) {
-            rows.add(in.nextLine());
-        }
+        String[] rows = readLines(in);
 
-        Gear[][] gears = new Gear[rows.size()][];
-        for (int row = 0; row < rows.size(); row++) {
-            gears[row] = new Gear[rows.get(row).length()];
+        Gear[][] gears = new Gear[rows.length][];
+        for (int row = 0; row < rows.length; row++) {
+            gears[row] = new Gear[rows[row].length()];
         }
 
         ExactTotal partNumbers = new ExactTotal();
-        for (int row = 0; row < rows.size(); row++) {
-            String line = rows.get(row);
+        for (int row = 0; row < rows.length; row++) {
+            String line = rows[row];
             int column = 0;
             while (column < line.length()) {
                 if (!isDigit(line.charAt(column))) {
@@ -62,7 +58,7 @@ public class Day03 implements DayTemplate {
                 }
                 adjacentSymbol |= inspectCell(rows, gears, row, start - 1, value);
                 adjacentSymbol |= inspectCell(rows, gears, row, end + 1, value);
-                if (row + 1 < rows.size()) {
+                if (row + 1 < rows.length) {
                     adjacentSymbol |= inspectRange(rows, gears, row + 1,
                             start - 1, end + 1, value);
                 }
@@ -84,9 +80,34 @@ public class Day03 implements DayTemplate {
         return new Answers(partNumbers.toString(), gearRatios.toString());
     }
 
-    private boolean inspectRange(List<String> rows, Gear[][] gears, int row,
+    private static String[] readLines(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        String[] lines = new String[16];
+        int count = 0;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (count == lines.length) {
+                lines = Arrays.copyOf(lines, count * 2);
+            }
+            lines[count++] = input.substring(lineStart, trimmedEnd);
+            lineStart = lineEnd + 1;
+        }
+        return Arrays.copyOf(lines, count);
+    }
+
+    private boolean inspectRange(String[] rows, Gear[][] gears, int row,
                                  int from, int through, NumberValue value) {
-        String line = rows.get(row);
+        String line = rows[row];
         int start = Math.max(0, from);
         int end = Math.min(line.length() - 1, through);
         boolean symbol = false;
@@ -96,9 +117,9 @@ public class Day03 implements DayTemplate {
         return symbol;
     }
 
-    private boolean inspectCell(List<String> rows, Gear[][] gears, int row,
+    private boolean inspectCell(String[] rows, Gear[][] gears, int row,
                                 int column, NumberValue value) {
-        String line = rows.get(row);
+        String line = rows[row];
         if (column < 0 || column >= line.length()) {
             return false;
         }

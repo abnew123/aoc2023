@@ -18,61 +18,113 @@ public class Day18 implements DayTemplate {
     }
 
     private String[] solve(Scanner in, boolean literal, boolean encoded) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         Lagoon first = literal ? new Lagoon() : null;
         Lagoon second = encoded ? new Lagoon() : null;
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isBlank()) {
-                continue;
+        int offset = 0;
+        int length = input.length();
+        while (offset < length) {
+            int lineStart = offset;
+            while (offset < length && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
             }
-            int directionStart = skipWhitespace(line, 0);
-            if (directionStart >= line.length()) {
+            int lineEnd = offset;
+            if (offset < length) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < length && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int directionStart = skipWhitespace(input, lineStart, lineEnd);
+            if (directionStart >= lineEnd) {
                 continue;
             }
             int afterDirection = directionStart + 1;
-            if (afterDirection >= line.length() || !Character.isWhitespace(line.charAt(afterDirection))) {
-                throw malformed(line);
+            if (afterDirection >= lineEnd || !Character.isWhitespace(input.charAt(afterDirection))) {
+                throw malformed();
             }
-            int distanceStart = skipWhitespace(line, afterDirection);
+            int distanceStart = skipWhitespace(input, afterDirection, lineEnd);
             int distanceEnd = distanceStart;
-            while (distanceEnd < line.length() && !Character.isWhitespace(line.charAt(distanceEnd))) {
+            while (distanceEnd < lineEnd && !Character.isWhitespace(input.charAt(distanceEnd))) {
                 distanceEnd++;
             }
             if (distanceStart == distanceEnd) {
-                throw malformed(line);
+                throw malformed();
             }
             if (literal) {
-                first.move(literalDirection(line.charAt(directionStart)),
-                        decimal(line, distanceStart, distanceEnd));
+                first.move(literalDirection(input.charAt(directionStart)),
+                        decimal(input, distanceStart, distanceEnd));
             }
             if (encoded) {
-                int hash = line.indexOf('#', distanceEnd);
-                int close = hash < 0 ? -1 : line.indexOf(')', hash + 1);
-                if (hash < 0 || close - hash != 7) {
-                    throw malformed(line);
+                int hash = -1;
+                for (int i = distanceEnd; i < lineEnd; i++) {
+                    if (input.charAt(i) == '#') {
+                        hash = i;
+                        break;
+                    }
                 }
-                int direction = encodedDirection(line.charAt(close - 1));
-                BigInteger distance = new BigInteger(line.substring(hash + 1, close - 1), 16);
-                second.move(direction, distance);
+                int close = -1;
+                if (hash >= 0) {
+                    for (int i = hash + 1; i < lineEnd; i++) {
+                        if (input.charAt(i) == ')') {
+                            close = i;
+                            break;
+                        }
+                    }
+                }
+                if (hash < 0 || close - hash != 7) {
+                    throw malformed();
+                }
+                int direction = encodedDirection(input.charAt(close - 1));
+                second.move(direction, hexDistance(input, hash + 1, close - 1));
             }
         }
         return new String[]{literal ? first.finish().toString() : null,
                 encoded ? second.finish().toString() : null};
     }
 
-    private int skipWhitespace(String line, int index) {
-        while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
+    private int skipWhitespace(String input, int index, int limit) {
+        while (index < limit && Character.isWhitespace(input.charAt(index))) {
             index++;
         }
         return index;
     }
 
-    private BigInteger decimal(String line, int start, int end) {
-        try {
-            return new BigInteger(line.substring(start, end));
-        } catch (NumberFormatException invalid) {
-            throw malformed(line);
+    private BigInteger decimal(String input, int start, int end) {
+        if (end - start <= 18) {
+            long value = 0;
+            boolean digitsOnly = start < end;
+            for (int i = start; i < end; i++) {
+                char digit = input.charAt(i);
+                if (digit < '0' || digit > '9') {
+                    digitsOnly = false;
+                    break;
+                }
+                value = value * 10 + (digit - '0');
+            }
+            if (digitsOnly) {
+                return BigInteger.valueOf(value);
+            }
         }
+        try {
+            return new BigInteger(input.substring(start, end));
+        } catch (NumberFormatException invalid) {
+            throw malformed();
+        }
+    }
+
+    private BigInteger hexDistance(String input, int start, int end) {
+        long value = 0;
+        for (int i = start; i < end; i++) {
+            int digit = Character.digit(input.charAt(i), 16);
+            if (digit < 0) {
+                return new BigInteger(input.substring(start, end), 16);
+            }
+            value = (value << 4) | digit;
+        }
+        return BigInteger.valueOf(value);
     }
 
     private int literalDirection(char direction) {
@@ -92,8 +144,8 @@ public class Day18 implements DayTemplate {
         return direction - '0';
     }
 
-    private IllegalArgumentException malformed(String line) {
-        return new IllegalArgumentException("Malformed dig instruction: " + line);
+    private IllegalArgumentException malformed() {
+        return new IllegalArgumentException("Malformed dig instruction");
     }
 
     private static class Lagoon {

@@ -2,7 +2,8 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Scanner;
 
 public class Day08 implements DayTemplate {
 
@@ -30,52 +31,92 @@ public class Day08 implements DayTemplate {
     }
 
     private Network parse(Scanner in) {
-        char[] instructions = in.nextLine().toCharArray();
-        in.nextLine();
-        List<String> lines = new ArrayList<>();
-        Map<String, Integer> ids = new HashMap<>();
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            lines.add(line);
-            id(line.substring(0, 3), ids);
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        int length = input.length();
+
+        int lineStart = 0;
+        int lineEnd = 0;
+        while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+            lineEnd++;
         }
-        int[] left = new int[ids.size()];
-        int[] right = new int[ids.size()];
-        int[] starts = new int[ids.size()];
+        int trimmedEnd = lineEnd;
+        if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+            trimmedEnd--;
+        }
+        char[] instructions = new char[trimmedEnd - lineStart];
+        for (int i = 0; i < instructions.length; i++) {
+            instructions[i] = input.charAt(lineStart + i);
+        }
+        lineStart = lineEnd + 1;
+
+        int[] lineStarts = new int[16];
+        int lineCount = 0;
+        NodeIds ids = new NodeIds();
+        while (lineStart < length) {
+            lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (!blank(input, lineStart, trimmedEnd)) {
+                if (trimmedEnd - lineStart < 15) {
+                    throw new IllegalArgumentException("Malformed node line");
+                }
+                if (lineCount == lineStarts.length) {
+                    lineStarts = Arrays.copyOf(lineStarts, lineCount * 2);
+                }
+                lineStarts[lineCount++] = lineStart;
+                ids.id(key(input, lineStart));
+            }
+            lineStart = lineEnd + 1;
+        }
+
+        int[] left = new int[ids.size];
+        int[] right = new int[ids.size];
+        int[] starts = new int[ids.size];
         int startCount = 0;
         int aaa = -1;
         int zzz = -1;
-        boolean[] zEnds = new boolean[ids.size()];
-        for (String line : lines) {
-            int source = ids.get(line.substring(0, 3));
-            String leftName = line.substring(7, 10);
-            String rightName = line.substring(12, 15);
-            left[source] = id(leftName, ids);
-            right[source] = id(rightName, ids);
-            if (line.charAt(2) == 'A') {
+        boolean[] zEnds = new boolean[ids.size];
+        for (int lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+            int nameStart = lineStarts[lineIndex];
+            int source = ids.id(key(input, nameStart));
+            left[source] = ids.id(key(input, nameStart + 7));
+            right[source] = ids.id(key(input, nameStart + 12));
+            char third = input.charAt(nameStart + 2);
+            if (third == 'A') {
                 starts[startCount++] = source;
             }
-            if (line.charAt(2) == 'Z') {
+            if (third == 'Z') {
                 zEnds[source] = true;
             }
-            if (line.startsWith("AAA")) {
+            if (input.charAt(nameStart) == 'A' && input.charAt(nameStart + 1) == 'A' && third == 'A') {
                 aaa = source;
             }
-            if (line.startsWith("ZZZ")) {
+            if (input.charAt(nameStart) == 'Z' && input.charAt(nameStart + 1) == 'Z' && third == 'Z') {
                 zzz = source;
             }
         }
         return new Network(instructions, left, right, Arrays.copyOf(starts, startCount), aaa, zzz, zEnds);
     }
 
-    private int id(String name, Map<String, Integer> ids) {
-        Integer existing = ids.get(name);
-        if (existing != null) {
-            return existing;
+    private static long key(String input, int index) {
+        return ((long) input.charAt(index) << 32)
+                | ((long) input.charAt(index + 1) << 16)
+                | input.charAt(index + 2);
+    }
+
+    private static boolean blank(String input, int from, int end) {
+        for (int index = from; index < end; index++) {
+            if (!Character.isWhitespace(input.charAt(index))) {
+                return false;
+            }
         }
-        int next = ids.size();
-        ids.put(name, next);
-        return next;
+        return true;
     }
 
     private long stepsToEnds(Network network, int[] starts, boolean part1) {
@@ -122,16 +163,59 @@ public class Day08 implements DayTemplate {
 
     private record Network(char[] instructions, int[] left, int[] right, int[] starts, int aaa, int zzz, boolean[] zEnds) {
     }
-}
 
-class Step {
-    String left;
-    String right;
-    String name;
+    private static final class NodeIds {
+        private long[] keys = new long[64];
+        private int[] values = new int[64];
+        private int size;
 
-    public Step(String line) {
-        left = line.split("[\\(,]")[1].trim();
-        right = line.split("[,\\)]")[1].trim();
-        name = line.split("=")[0].trim();
+        NodeIds() {
+            Arrays.fill(values, -1);
+        }
+
+        int id(long key) {
+            int mask = keys.length - 1;
+            int slot = mix(key) & mask;
+            while (true) {
+                int existing = values[slot];
+                if (existing < 0) {
+                    keys[slot] = key;
+                    values[slot] = size;
+                    int assigned = size++;
+                    if (size * 2 >= keys.length) {
+                        grow();
+                    }
+                    return assigned;
+                }
+                if (keys[slot] == key) {
+                    return existing;
+                }
+                slot = (slot + 1) & mask;
+            }
+        }
+
+        private void grow() {
+            long[] oldKeys = keys;
+            int[] oldValues = values;
+            keys = new long[oldKeys.length * 2];
+            values = new int[oldValues.length * 2];
+            Arrays.fill(values, -1);
+            int mask = keys.length - 1;
+            for (int i = 0; i < oldKeys.length; i++) {
+                if (oldValues[i] < 0) {
+                    continue;
+                }
+                int slot = mix(oldKeys[i]) & mask;
+                while (values[slot] >= 0) {
+                    slot = (slot + 1) & mask;
+                }
+                keys[slot] = oldKeys[i];
+                values[slot] = oldValues[i];
+            }
+        }
+
+        private static int mix(long key) {
+            return (int) ((key * 0x9E3779B97F4A7C15L) >>> 32);
+        }
     }
 }

@@ -2,9 +2,7 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -96,35 +94,65 @@ public class Day16 implements DayTemplate {
     }
 
     private void generateGraph(Scanner in) {
-        List<String> lines = new ArrayList<>();
-        while (in.hasNextLine()) {
-            lines.add(in.nextLine());
-        }
-
-        rows = lines.size();
-        cols = lines.get(0).length();
-        cells = rows * cols;
-        gridWords = (cells + 63) >> 6;
-
-        tile = new byte[cells];
-        splitId = new int[cells];
-        Arrays.fill(splitId, -1);
-        int nodeCount = 0;
-        for (int y = 0; y < rows; y++) {
-            String line = lines.get(y);
-            int base = y * cols;
-            for (int x = 0; x < cols; x++) {
-                byte t = switch (line.charAt(x)) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        byte[] parsed = new byte[Math.min(Math.max(input.length(), 16), 4096)];
+        int parsedRows = 0;
+        int parsedCols = -1;
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int width = end - start;
+            if (width == 0) {
+                continue;
+            }
+            if (parsedCols < 0) {
+                parsedCols = width;
+            } else if (parsedCols != width) {
+                throw new IllegalArgumentException("Grid rows must have equal widths");
+            }
+            long required = (long) (parsedRows + 1) * parsedCols;
+            if (required > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Grid is too large");
+            }
+            if (required > parsed.length) {
+                parsed = Arrays.copyOf(parsed, Math.max((int) required, parsed.length * 2));
+            }
+            for (int x = 0; x < parsedCols; x++) {
+                parsed[parsedRows * parsedCols + x] = switch (input.charAt(start + x)) {
                     case '/' -> 1;
                     case '\\' -> 2;
                     case '|' -> 3;
                     case '-' -> 4;
                     default -> 0;
                 };
-                tile[base + x] = t;
-                if (t >= 3) {
-                    splitId[base + x] = nodeCount++;
-                }
+            }
+            parsedRows++;
+        }
+
+        rows = parsedRows;
+        cols = parsedCols < 0 ? 0 : parsedCols;
+        cells = rows * cols;
+        gridWords = (cells + 63) >> 6;
+
+        tile = Arrays.copyOf(parsed, cells);
+        splitId = new int[cells];
+        Arrays.fill(splitId, -1);
+        int nodeCount = 0;
+        for (int cell = 0; cell < cells; cell++) {
+            if (tile[cell] >= 3) {
+                splitId[cell] = nodeCount++;
             }
         }
 

@@ -5,7 +5,6 @@ import src.meta.DayTemplate;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 
 public class Day07 implements DayTemplate {
     private static final int CARD_COUNT = 13;
@@ -27,36 +26,63 @@ public class Day07 implements DayTemplate {
     }
 
     private static Hands readHands(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         Hands hands = new Hands();
         int[] frequencies = new int[CARD_COUNT];
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isBlank()) {
-                continue;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
             }
-            StringTokenizer tokens = new StringTokenizer(line);
-            String cards = tokens.nextToken();
-            if (cards.length() != 5) {
-                throw new IllegalArgumentException("Expected five cards: " + cards);
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
             }
-            hands.ensureCapacity();
-            Arrays.fill(frequencies, 0);
-            int tie1 = 0;
-            int tie2 = 0;
-            for (int i = 0; i < 5; i++) {
-                int card = cardIndex(cards.charAt(i));
-                frequencies[card]++;
-                tie1 = tie1 * CARD_COUNT + card;
-                int jokerRank = card == JOKER_INDEX ? 0 : card < JOKER_INDEX ? card + 1 : card;
-                tie2 = tie2 * CARD_COUNT + jokerRank;
+            int index = lineStart;
+            while (index < trimmedEnd && Character.isWhitespace(input.charAt(index))) {
+                index++;
             }
-            int category1 = category(frequencies, -1, 0);
-            int jokers = frequencies[JOKER_INDEX];
-            int category2 = category(frequencies, JOKER_INDEX, jokers);
-            hands.part1Keys[hands.size] = category1 * 371293 + tie1; // 13^5
-            hands.part2Keys[hands.size] = category2 * 371293 + tie2;
-            hands.setBid(tokens.nextToken());
-            hands.size++;
+            if (index < trimmedEnd) {
+                int cardsStart = index;
+                while (index < trimmedEnd && !Character.isWhitespace(input.charAt(index))) {
+                    index++;
+                }
+                if (index - cardsStart != 5) {
+                    throw new IllegalArgumentException("Expected five cards");
+                }
+                hands.ensureCapacity();
+                Arrays.fill(frequencies, 0);
+                int tie1 = 0;
+                int tie2 = 0;
+                for (int i = 0; i < 5; i++) {
+                    int card = cardIndex(input.charAt(cardsStart + i));
+                    frequencies[card]++;
+                    tie1 = tie1 * CARD_COUNT + card;
+                    int jokerRank = card == JOKER_INDEX ? 0 : card < JOKER_INDEX ? card + 1 : card;
+                    tie2 = tie2 * CARD_COUNT + jokerRank;
+                }
+                int category1 = category(frequencies, -1, 0);
+                int jokers = frequencies[JOKER_INDEX];
+                int category2 = category(frequencies, JOKER_INDEX, jokers);
+                hands.part1Keys[hands.size] = category1 * 371293 + tie1; // 13^5
+                hands.part2Keys[hands.size] = category2 * 371293 + tie2;
+                while (index < trimmedEnd && Character.isWhitespace(input.charAt(index))) {
+                    index++;
+                }
+                int bidStart = index;
+                while (index < trimmedEnd && !Character.isWhitespace(input.charAt(index))) {
+                    index++;
+                }
+                if (bidStart == index) {
+                    throw new IllegalArgumentException("Missing bid");
+                }
+                hands.setBid(input.substring(bidStart, index));
+                hands.size++;
+            }
+            lineStart = lineEnd + 1;
         }
         return hands;
     }

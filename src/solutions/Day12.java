@@ -37,28 +37,46 @@ public class Day12 implements DayTemplate {
 
     /** Streams the input once, accumulating whichever parts are requested. */
     private long[] process(Scanner in, boolean doPart1, boolean doPart2) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         long answer1 = 0;
         long answer2 = 0;
-        while (in.hasNext()) {
-            String line = in.nextLine();
-            int len = line.length();
+        int offset = 0;
+        int length = input.length();
+        while (offset < length) {
+            int lineStart = offset;
+            while (offset < length && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int lineEnd = offset;
+            if (offset < length) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < length && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int len = lineEnd - lineStart;
+            if (len == 0) {
+                continue;
+            }
 
             int n = 0;
-            while (n < len && line.charAt(n) != ' ') {
+            while (n < len && input.charAt(lineStart + n) != ' ') {
                 n++;
             }
             ensureCapacity(5 * n + 5, 5 * ((len - n) / 2 + 1));
 
             byte[] pat = pattern;
             for (int i = 0; i < n; i++) {
-                pat[i] = (byte) line.charAt(i);
+                pat[i] = (byte) input.charAt(lineStart + i);
             }
 
             int[] gs = groups;
             int g = 0;
             int value = 0;
             for (int i = n + 1; i < len; i++) {
-                char c = line.charAt(i);
+                char c = input.charAt(lineStart + i);
                 if (c >= '0' && c <= '9') {
                     value = value * 10 + (c - '0');
                 } else if (c == ',') {

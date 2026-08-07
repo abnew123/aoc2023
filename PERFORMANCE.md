@@ -12,17 +12,17 @@ Current 25-day means (n=100):
 
 | Wall (ms) | Main (ms) | Solver (ms) | Startup (ms) | Harness (ms) |
 |---:|---:|---:|---:|---:|
-| 156.658 | 121.121 | 91.477 | 21.079 | 29.644 |
+| 153.644 | 120.524 | 88.802 | 21.895 | 31.722 |
 
 Latest publication gate versus the preceding replay tip (n=100):
 
 | Metric | Previous mean (ms) | Current mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|---:|
-| wall | 177.643 | 156.658 | -20.984 | [-22.804, -19.164] |
-| main | 141.332 | 121.121 | -20.212 | [-20.599, -19.825] |
-| solver | 111.768 | 91.477 | -20.291 | [-20.634, -19.948] |
-| startup | 20.825 | 21.079 | +0.254 | [+0.043, +0.465] |
-| harness | 29.564 | 29.644 | +0.079 | [-0.073, +0.231] |
+| wall | 157.954 | 153.644 | -4.310 | [-5.931, -2.689] |
+| main | 124.963 | 120.524 | -4.439 | [-4.841, -4.037] |
+| solver | 93.323 | 88.802 | -4.521 | [-4.852, -4.190] |
+| startup | 21.681 | 21.895 | +0.213 | [-0.034, +0.460] |
+| harness | 31.640 | 31.722 | +0.082 | [-0.096, +0.260] |
 
 ## Day 01
 
@@ -31,9 +31,10 @@ One slurped buffer feeds a single forward scan that computes both parts at once 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 9.89125 | — | — |
-| Current | 3.166629 | -6.724621 | — |
+| Current | 3.216096 | -6.675154 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.351180 [-3.406301, -3.296059].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.028 [-0.006, 0.062].*
+
 
 ## Day 02
 
@@ -42,7 +43,9 @@ Each game is scanned once into three exact maxima, producing feasibility and pow
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 3.637939 | — | — |
-| Current | 3.089977 | -0.547963 | [-0.680235, -0.415690] |
+| Current | 3.399517 | -0.238422 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -1.469 [-1.513, -1.424].*
 
 ## Day 03
 
@@ -51,7 +54,9 @@ One grid pass parses each maximal number once and inspects only its perimeter, s
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 5.234905 | — | — |
-| Current | 3.039173 | -2.195731 | [-2.276206, -2.115256] |
+| Current | 3.70727 | -1.527635 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.130 [0.088, 0.173].*
 
 ## Day 04
 
@@ -60,7 +65,9 @@ Direct token-span membership and range-difference copy propagation replace regex
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 5.992192 | — | — |
-| Current | 3.727296 | -2.264896 | [-2.389042, -2.140749] |
+| Current | 4.288906 | -1.703286 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.101 [0.062, 0.141].*
 
 ## Day 05
 
@@ -69,7 +76,9 @@ A fused per-stage conversion returns the mapped value and its safe interval jump
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 2.772495 | — | — |
-| Current | 1.705222 | -1.067273 | [-1.103746, -1.030799] |
+| Current | 1.334786 | -1.437709 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.571 [-0.594, -0.548].*
 
 ## Day 06
 
@@ -78,7 +87,9 @@ The spaced and concatenated races are parsed together, then an overflow-safe int
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 2.467963 | — | — |
-| Current | 0.341666 | -2.126296 | [-2.267299, -1.985293] |
+| Current | 0.390708 | -2.077255 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.083 [0.070, 0.097].*
 
 ## Day 07
 
@@ -87,9 +98,10 @@ Each hand becomes one flat integer key (category times 13^5 plus a base-13 tie-b
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 6.08685 | — | — |
-| Current | 2.374669 | -3.712181 | — |
+| Current | 1.891713 | -4.195137 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.898864 [-0.945032, -0.852695].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.846 [-0.887, -0.804].*
+
 
 ## Day 08
 
@@ -98,7 +110,9 @@ The network is parsed once into primitive node IDs; shared traversal finds each 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 14.395917 | — | — |
-| Current | 3.080542 | -11.315375 | [-11.679960, -10.950790] |
+| Current | 3.014545 | -11.381372 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.368 [-0.505, -0.232].*
 
 ## Day 09
 
@@ -107,7 +121,9 @@ One reusable primitive difference triangle derives the next and previous values 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 3.148467 | — | — |
-| Current | 2.607402 | -0.541065 | [-0.691443, -0.390686] |
+| Current | 2.633767 | -0.5147 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.008 [-0.039, 0.023].*
 
 ## Day 10
 
@@ -116,7 +132,9 @@ A reciprocal pipe-mask loop walk replaces doubled-grid flood fill; loop length a
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 11.518142 | — | — |
-| Current | 2.758233 | -8.759908 | [-9.055380, -8.464436] |
+| Current | 2.744722 | -8.77342 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.103 [0.072, 0.133].*
 
 ## Day 11
 
@@ -125,7 +143,9 @@ Primitive row and column counts plus prefix aggregates replace galaxy objects, p
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 7.525475 | — | — |
-| Current | 0.917483 | -6.607992 | [-6.829581, -6.386403] |
+| Current | 1.23789 | -6.287585 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.381 [0.357, 0.406].*
 
 ## Day 12
 
@@ -134,9 +154,10 @@ The unchanged rolling dynamic program now runs in a streaming per-line pipeline:
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 9.825717 | — | — |
-| Current | 4.415836 | -5.409881 | — |
+| Current | 4.304984 | -5.520733 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.255433 [-4.351045, -4.159820].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.120 [-0.169, -0.072].*
+
 
 ## Day 13
 
@@ -145,7 +166,9 @@ Flat character storage counts mirrored mismatches once per split and stops after
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 2.222617 | — | — |
-| Current | 1.493121 | -0.729496 | [-0.873994, -0.584998] |
+| Current | 1.327902 | -0.894715 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.431 [-0.457, -0.405].*
 
 ## Day 14
 
@@ -154,9 +177,10 @@ Tilting moves per-segment stone counts through four precomputed pile-position ta
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 21.278437 | — | — |
-| Current | 6.499235 | -14.779202 | — |
+| Current | 6.386567 | -14.89187 | — |
 
-*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.973 [-5.048, -4.899].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.315 [-0.394, -0.237].*
+
 
 ## Day 15
 
@@ -165,7 +189,9 @@ The initialization sequence is parsed once by character index into direct box ar
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 5.997988 | — | — |
-| Current | 3.253175 | -2.744813 | [-3.335447, -2.154178] |
+| Current | 1.942574 | -4.055414 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.994 [-1.028, -0.960].*
 
 ## Day 16
 
@@ -174,9 +200,10 @@ The mirror graph is condensed once — deterministic beam traces between canonic
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 88.265783 | — | — |
-| Current | 3.458243 | -84.807540 | — |
+| Current | 3.751805 | -84.513978 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -12.654564 [-12.720342, -12.588787].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.221 [0.184, 0.258].*
+
 
 ## Day 17
 
@@ -185,9 +212,10 @@ An uninformed cost-layered dial search (axis-collapsed states, power-of-two buck
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 103.350354 | — | — |
-| Current | 7.053280 | -96.297074 | — |
+| Current | 6.916535 | -96.433819 | — |
 
-*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.914 [-4.014, -3.814].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.531 [-0.615, -0.447].*
+
 
 ## Day 18
 
@@ -196,7 +224,9 @@ Both instruction interpretations stream through exact shoelace and boundary accu
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 2.304442 | — | — |
-| Current | 1.701760 | -0.602681 | [-0.685590, -0.519773] |
+| Current | 1.837914 | -0.466528 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.118 [-0.150, -0.085].*
 
 ## Day 19
 
@@ -205,7 +235,9 @@ Workflows and parts are parsed once into primitive IDs and packed bounds, then o
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 6.119175 | — | — |
-| Current | 5.309508 | -0.809666 | [-0.973995, -0.645338] |
+| Current | 5.769631 | -0.349544 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.465 [0.400, 0.529].*
 
 ## Day 20
 
@@ -214,9 +246,10 @@ The module graph compiles to one encoded long per edge (level bit, destination i
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 35.083462 | — | — |
-| Current | 8.101187 | -26.982275 | [-28.475862, -25.488687] |
+| Current | 4.083 | -31.000462 | — |
 
-*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.870 [-3.907, -3.834].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.006 [-0.035, 0.024].*
+
 
 ## Day 21
 
@@ -225,9 +258,10 @@ A flat int-queue BFS computes exact tile distances once; part 1 reads parities, 
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 7.754142 | — | — |
-| Current | 4.968513 | -2.785629 | [-3.091764, -2.479494] |
+| Current | 1.618508 | -6.135634 | — |
 
-*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -4.702 [-4.761, -4.642].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.009 [-0.006, 0.024].*
+
 
 ## Day 22
 
@@ -236,9 +270,10 @@ Bricks settle through the height map while immediate dominators fold inline (top
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 28.294933 | — | — |
-| Current | 7.307504 | -20.987429 | [-22.131220, -19.843638] |
+| Current | 2.692372 | -25.602561 | — |
 
-*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -3.312 [-3.523, -3.101].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.401 [-0.546, -0.256].*
+
 
 ## Day 23
 
@@ -247,9 +282,10 @@ Input-adaptive junction contraction feeds an iterative bitmask depth-first searc
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 36.417317 | — | — |
-| Current | 7.957705 | -28.459612 | — |
+| Current | 8.5873 | -27.830017 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -31.506571 [-31.844003, -31.169140].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was 0.558 [0.474, 0.643].*
+
 
 ## Day 24
 
@@ -258,7 +294,9 @@ Checked-long intersections with exact fallback and rank-aware rational rock reco
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 13.352154 | — | — |
-| Current | 13.236475 | -0.115679 | [-0.732269, 0.500910] |
+| Current | 10.014801 | -3.337353 | — |
+
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.244 [-0.330, -0.157].*
 
 ## Day 25
 
@@ -267,6 +305,7 @@ The exact three-wire cut now aims its capped max-flow at the BFS-farthest node f
 | Version | Solver mean (ms) | Delta (ms) | Paired 95% CI (ms) |
 |---|---:|---:|---:|
 | Pre-PR | 7.967013 | — | — |
-| Current | 1.980520 | -5.986493 | — |
+| Current | 1.70812 | -6.258893 | — |
 
-*Pre-PR is the documented pre-speed measurement at the 2026-07-18 freeze (n=10 protocol); Current is the n=100 confirming run. The measured step versus the preceding tip (n=100) was -5.762594 [-5.861740, -5.663449].*
+*Pre-PR is the documented pre-speed measurement; Current is the 2026-08-07 n=100 confirming run. The measured step versus the preceding tip (n=100) was -0.180 [-0.200, -0.161].*
+

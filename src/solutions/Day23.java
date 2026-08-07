@@ -2,9 +2,7 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -56,14 +54,38 @@ public class Day23 implements DayTemplate {
     }
 
     private static char[][] parse(Scanner in) {
-        List<char[]> rows = new ArrayList<>();
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (!line.isEmpty()) {
-                rows.add(line.toCharArray());
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        char[][] rows = new char[16][];
+        int count = 0;
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
             }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int width = end - start;
+            if (width == 0) {
+                continue;
+            }
+            if (count == rows.length) {
+                rows = Arrays.copyOf(rows, rows.length * 2);
+            }
+            char[] row = new char[width];
+            for (int column = 0; column < width; column++) {
+                row[column] = input.charAt(start + column);
+            }
+            rows[count++] = row;
         }
-        return rows.toArray(new char[0][]);
+        return count == rows.length ? rows : Arrays.copyOf(rows, count);
     }
 
     private static int slopeDir(char c) {

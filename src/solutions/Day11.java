@@ -2,8 +2,7 @@ package src.solutions;
 
 import src.meta.DayTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Day11 implements DayTemplate {
@@ -31,41 +30,61 @@ public class Day11 implements DayTemplate {
     }
 
     private Distances analyze(Scanner in) {
-        List<String> lines = new ArrayList<>();
-        while (in.hasNextLine()) {
-            lines.add(in.nextLine());
-        }
-        if (lines.isEmpty()) {
-            return new Distances(0, 0);
-        }
-
-        int[] rowCounts = new int[lines.size()];
-        int[] columnCounts = new int[lines.get(0).length()];
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        int[] rowCounts = new int[64];
+        int[] columnCounts = null;
+        int rows = 0;
         int galaxies = 0;
-        for (int row = 0; row < lines.size(); row++) {
-            String line = lines.get(row);
-            if (line.length() != columnCounts.length) {
+        int offset = 0;
+        while (offset < input.length()) {
+            int start = offset;
+            while (offset < input.length() && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int end = offset;
+            if (offset < input.length()) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < input.length() && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            int width = end - start;
+            if (width == 0) {
+                continue;
+            }
+            if (columnCounts == null) {
+                columnCounts = new int[width];
+            } else if (width != columnCounts.length) {
                 throw new IllegalArgumentException("Galaxy map must be rectangular");
             }
-            for (int column = 0; column < line.length(); column++) {
-                if (line.charAt(column) == '#') {
-                    rowCounts[row]++;
+            if (rows == rowCounts.length) {
+                rowCounts = Arrays.copyOf(rowCounts, rowCounts.length * 2);
+            }
+            for (int column = 0; column < width; column++) {
+                if (input.charAt(start + column) == '#') {
+                    rowCounts[rows]++;
                     columnCounts[column]++;
                     galaxies++;
                 }
             }
+            rows++;
         }
-
-        long base = axisDistance(rowCounts) + axisDistance(columnCounts);
-        long emptyCrossings = emptyCrossings(rowCounts, galaxies) + emptyCrossings(columnCounts, galaxies);
+        if (rows == 0) {
+            return new Distances(0, 0);
+        }
+        long base = axisDistance(rowCounts, rows) + axisDistance(columnCounts, columnCounts.length);
+        long emptyCrossings = emptyCrossings(rowCounts, rows, galaxies)
+                + emptyCrossings(columnCounts, columnCounts.length, galaxies);
         return new Distances(base, emptyCrossings);
     }
 
-    private long axisDistance(int[] counts) {
+    private long axisDistance(int[] counts, int limit) {
         long distance = 0;
         long seen = 0;
         long positionSum = 0;
-        for (int position = 0; position < counts.length; position++) {
+        for (int position = 0; position < limit; position++) {
             int count = counts[position];
             distance += (long) count * (seen * position - positionSum);
             seen += count;
@@ -74,10 +93,11 @@ public class Day11 implements DayTemplate {
         return distance;
     }
 
-    private long emptyCrossings(int[] counts, int galaxies) {
+    private long emptyCrossings(int[] counts, int limit, int galaxies) {
         long crossings = 0;
         long seen = 0;
-        for (int count : counts) {
+        for (int position = 0; position < limit; position++) {
+            int count = counts[position];
             if (count == 0) {
                 crossings += seen * (galaxies - seen);
             }

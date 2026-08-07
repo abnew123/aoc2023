@@ -3,9 +3,7 @@ package src.solutions;
 import src.meta.DayTemplate;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 public class Day05 implements DayTemplate {
@@ -33,10 +31,7 @@ public class Day05 implements DayTemplate {
     }
 
     private void initialize(Scanner in) {
-        List<String> lines = new ArrayList<>();
-        while (in.hasNextLine()) {
-            lines.add(in.nextLine());
-        }
+        String[] lines = readLines(in);
         try {
             initializeLong(lines);
             big = false;
@@ -46,11 +41,36 @@ public class Day05 implements DayTemplate {
         }
     }
 
-    private void initializeLong(List<String> lines) {
-        if (lines.isEmpty()) {
+    private static String[] readLines(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
+        String[] lines = new String[16];
+        int count = 0;
+        int length = input.length();
+        int lineStart = 0;
+        while (lineStart < length) {
+            int lineEnd = lineStart;
+            while (lineEnd < length && input.charAt(lineEnd) != '\n') {
+                lineEnd++;
+            }
+            int trimmedEnd = lineEnd;
+            if (trimmedEnd > lineStart && input.charAt(trimmedEnd - 1) == '\r') {
+                trimmedEnd--;
+            }
+            if (count == lines.length) {
+                lines = Arrays.copyOf(lines, count * 2);
+            }
+            lines[count++] = input.substring(lineStart, trimmedEnd);
+            lineStart = lineEnd + 1;
+        }
+        return Arrays.copyOf(lines, count);
+    }
+
+    private void initializeLong(String[] lines) {
+        if (lines.length == 0) {
             throw new IllegalArgumentException("Missing seed list");
         }
-        String seedLine = lines.get(0);
+        String seedLine = lines[0];
         int colon = seedLine.indexOf(':');
         if (colon < 0) {
             throw new IllegalArgumentException("Malformed seed list");
@@ -62,18 +82,22 @@ public class Day05 implements DayTemplate {
             }
         }
 
-        List<Stage> parsedStages = new ArrayList<>();
+        Stage[] parsedStages = new Stage[8];
+        int stageCount = 0;
         LongList destination = null;
         LongList source = null;
         LongList length = null;
-        for (int lineIndex = 1; lineIndex < lines.size(); lineIndex++) {
-            String line = lines.get(lineIndex);
+        for (int lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+            String line = lines[lineIndex];
             if (line.isBlank()) {
                 continue;
             }
             if (line.endsWith("map:")) {
                 if (destination != null) {
-                    parsedStages.add(new Stage(destination.toArray(), source.toArray(), length.toArray()));
+                    if (stageCount == parsedStages.length) {
+                        parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+                    }
+                    parsedStages[stageCount++] = new Stage(destination.toArray(), source.toArray(), length.toArray());
                 }
                 destination = new LongList();
                 source = new LongList();
@@ -92,31 +116,38 @@ public class Day05 implements DayTemplate {
             length.add(values[2]);
         }
         if (destination != null) {
-            parsedStages.add(new Stage(destination.toArray(), source.toArray(), length.toArray()));
+            if (stageCount == parsedStages.length) {
+                parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+            }
+            parsedStages[stageCount++] = new Stage(destination.toArray(), source.toArray(), length.toArray());
         }
-        stages = parsedStages.toArray(Stage[]::new);
+        stages = Arrays.copyOf(parsedStages, stageCount);
     }
 
-    private void initializeBig(List<String> lines) {
-        String seedLine = lines.get(0);
+    private void initializeBig(String[] lines) {
+        String seedLine = lines[0];
         bigSeeds = parseBigNumbers(seedLine, seedLine.indexOf(':') + 1);
 
-        List<BigStage> parsedStages = new ArrayList<>();
-        List<BigInteger> destination = null;
-        List<BigInteger> source = null;
-        List<BigInteger> length = null;
-        for (int lineIndex = 1; lineIndex < lines.size(); lineIndex++) {
-            String line = lines.get(lineIndex);
+        BigStage[] parsedStages = new BigStage[8];
+        int stageCount = 0;
+        BigList destination = null;
+        BigList source = null;
+        BigList length = null;
+        for (int lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+            String line = lines[lineIndex];
             if (line.isBlank()) {
                 continue;
             }
             if (line.endsWith("map:")) {
                 if (destination != null) {
-                    parsedStages.add(new BigStage(destination, source, length));
+                    if (stageCount == parsedStages.length) {
+                        parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+                    }
+                    parsedStages[stageCount++] = new BigStage(destination.toArray(), source.toArray(), length.toArray());
                 }
-                destination = new ArrayList<>();
-                source = new ArrayList<>();
-                length = new ArrayList<>();
+                destination = new BigList();
+                source = new BigList();
+                length = new BigList();
                 continue;
             }
             if (destination == null) {
@@ -131,9 +162,12 @@ public class Day05 implements DayTemplate {
             length.add(values[2]);
         }
         if (destination != null) {
-            parsedStages.add(new BigStage(destination, source, length));
+            if (stageCount == parsedStages.length) {
+                parsedStages = Arrays.copyOf(parsedStages, stageCount * 2);
+            }
+            parsedStages[stageCount++] = new BigStage(destination.toArray(), source.toArray(), length.toArray());
         }
-        bigStages = parsedStages.toArray(BigStage[]::new);
+        bigStages = Arrays.copyOf(parsedStages, stageCount);
     }
 
     private long solvePart1() {
@@ -267,7 +301,7 @@ public class Day05 implements DayTemplate {
     }
 
     private static BigInteger[] parseBigNumbers(String line, int from) {
-        List<BigInteger> numbers = new ArrayList<>();
+        BigList numbers = new BigList();
         int index = from;
         while (index < line.length()) {
             while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
@@ -285,7 +319,7 @@ public class Day05 implements DayTemplate {
             }
             numbers.add(new BigInteger(line.substring(start, index)));
         }
-        return numbers.toArray(BigInteger[]::new);
+        return numbers.toArray();
     }
 
     private static void requireRepresentableRange(long start, long length) {
@@ -348,10 +382,10 @@ public class Day05 implements DayTemplate {
         private final BigInteger[] source;
         private final BigInteger[] length;
 
-        BigStage(List<BigInteger> destination, List<BigInteger> source, List<BigInteger> length) {
-            this.destination = destination.toArray(BigInteger[]::new);
-            this.source = source.toArray(BigInteger[]::new);
-            this.length = length.toArray(BigInteger[]::new);
+        BigStage(BigInteger[] destination, BigInteger[] source, BigInteger[] length) {
+            this.destination = destination;
+            this.source = source;
+            this.length = length;
         }
 
         BigInteger convert(BigInteger value) {
@@ -400,6 +434,22 @@ public class Day05 implements DayTemplate {
         }
 
         long[] toArray() {
+            return Arrays.copyOf(values, size);
+        }
+    }
+
+    private static final class BigList {
+        private BigInteger[] values = new BigInteger[16];
+        private int size;
+
+        void add(BigInteger value) {
+            if (size == values.length) {
+                values = Arrays.copyOf(values, size * 2);
+            }
+            values[size++] = value;
+        }
+
+        BigInteger[] toArray() {
             return Arrays.copyOf(values, size);
         }
     }

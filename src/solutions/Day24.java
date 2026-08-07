@@ -536,36 +536,79 @@ public class Day24 implements DayTemplate {
     }
 
     private List<Hailstone> parse(Scanner in) {
+        in.useDelimiter("\\A");
+        String input = in.hasNext() ? in.next() : "";
         List<Hailstone> stones = new ArrayList<>();
-        while (in.hasNextLine()) {
-            String line = in.nextLine();
-            if (line.isBlank()) {
+        int offset = 0;
+        int length = input.length();
+        while (offset < length) {
+            int lineStart = offset;
+            while (offset < length && input.charAt(offset) != '\n'
+                    && input.charAt(offset) != '\r') {
+                offset++;
+            }
+            int lineEnd = offset;
+            if (offset < length) {
+                char ending = input.charAt(offset++);
+                if (ending == '\r' && offset < length && input.charAt(offset) == '\n') {
+                    offset++;
+                }
+            }
+            boolean blank = true;
+            for (int i = lineStart; i < lineEnd; i++) {
+                if (!Character.isWhitespace(input.charAt(i))) {
+                    blank = false;
+                    break;
+                }
+            }
+            if (blank) {
                 continue;
             }
-            String[] sides = line.split("@", -1);
-            if (sides.length != 2) {
-                throw new IllegalArgumentException("Malformed hailstone: " + line);
+            int at = -1;
+            for (int i = lineStart; i < lineEnd; i++) {
+                if (input.charAt(i) == '@') {
+                    if (at >= 0) {
+                        throw new IllegalArgumentException("Malformed hailstone");
+                    }
+                    at = i;
+                }
             }
-            BigInteger[] position = parseTriple(sides[0], line);
-            BigInteger[] velocity = parseTriple(sides[1], line);
+            if (at < 0) {
+                throw new IllegalArgumentException("Malformed hailstone");
+            }
+            BigInteger[] position = parseTriple(input, lineStart, at);
+            BigInteger[] velocity = parseTriple(input, at + 1, lineEnd);
             stones.add(new Hailstone(position[0], position[1], position[2],
                     velocity[0], velocity[1], velocity[2]));
         }
         return stones;
     }
 
-    private BigInteger[] parseTriple(String text, String line) {
-        String[] fields = text.split(",", -1);
-        if (fields.length != 3) {
-            throw new IllegalArgumentException("Malformed hailstone: " + line);
-        }
+    private BigInteger[] parseTriple(String input, int start, int end) {
         BigInteger[] values = new BigInteger[3];
+        int fieldStart = start;
         for (int index = 0; index < values.length; index++) {
-            try {
-                values[index] = new BigInteger(fields[index].trim());
-            } catch (NumberFormatException exception) {
-                throw new IllegalArgumentException("Malformed hailstone: " + line, exception);
+            int fieldEnd = fieldStart;
+            while (fieldEnd < end && input.charAt(fieldEnd) != ',') {
+                fieldEnd++;
             }
+            if ((fieldEnd < end) != (index < 2)) {
+                throw new IllegalArgumentException("Malformed hailstone");
+            }
+            int trimmedStart = fieldStart;
+            int trimmedEnd = fieldEnd;
+            while (trimmedStart < trimmedEnd && input.charAt(trimmedStart) <= ' ') {
+                trimmedStart++;
+            }
+            while (trimmedEnd > trimmedStart && input.charAt(trimmedEnd - 1) <= ' ') {
+                trimmedEnd--;
+            }
+            try {
+                values[index] = new BigInteger(input.substring(trimmedStart, trimmedEnd));
+            } catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("Malformed hailstone", exception);
+            }
+            fieldStart = fieldEnd + 1;
         }
         return values;
     }
