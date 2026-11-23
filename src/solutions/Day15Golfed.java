@@ -1,4 +1,1 @@
-class O{
-String s(boolean p,String[]I){long r=0;var m=new java.util.LinkedHashMap();for(var x:I[0].split(","))if(p)r+=h(x);else{var e=x.charAt(x.length()-1)-48;var l=x.split("\\W")[0];if(e<0)m.remove(l);else m.put(l,e);}var z=new int[256];if(!p)for(var e:m.keySet()){int b=h(e+"");r+=(b+1L)*++z[b]*(int)m.get(e);}return r+"";}
-int h(String s){return s.chars().reduce(0,(v,c)->(v+c)*17%256);}
-}
+class O extends java.util.LinkedHashMap{int r,z[]=new int[256];Object s(boolean p,String[]I){for(var x:I[0].split(","))if(p)r+=h(x);else{var q=x.split("\\W");compute(q[0],(K,V)->q.length<2?null:q[1]);}forEach((k,v)->r+=-~h(k)*++z[h(k)]*new Byte(v+""));return r;}int h(Object s){return(s+"").chars().reduce(0,(v,c)->(v+c)*17%256);}}

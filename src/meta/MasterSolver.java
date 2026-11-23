@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.Scanner;
@@ -143,11 +144,13 @@ public class MasterSolver {
     }
 
     private static String solve(Class<?> cls, boolean part1, File file) throws Exception {
-        Object solver = cls.getDeclaredConstructor().newInstance();
+        Constructor<?> ctor = cls.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        Object solver = ctor.newInstance();
         if (useGolfed) {
             Method m = cls.getDeclaredMethod("s", boolean.class, String[].class);
             m.setAccessible(true);
-            return (String) m.invoke(solver, part1, Files.readAllLines(file.toPath()).toArray(String[]::new));
+            return String.valueOf(m.invoke(solver, part1, Files.readAllLines(file.toPath()).toArray(String[]::new)));
         }
         try (Scanner in = new Scanner(file)) {
             Method m = cls.getDeclaredMethod("solve", boolean.class, Scanner.class);

@@ -1,12 +1,1 @@
-class Y{
- int r[],n,c,q[],z,t;
- String s(boolean p,String[]I){
-  var m="";
-  for(var L:I)for(var x:L.split(":? "))m+=m.contains(x)?"":x+n++%2;
-  var g=new int[n*n];
-  for(var L:I){c=n;for(var x:L.split(":? "))g[(z=m.indexOf(x)/4)*n+(c=c<n?c:z)]=g[c*n+z]=1;}
-  for(t=n;t-->1;)for(r=g.clone(),z=4;z-->0;){q=new int[n];if(!f(c=0))return""+c*(n-c);}
-  return"";
- }
- boolean f(int x){q[x]=c+++6;for(int j=n;j-->0;)if(x!=t&r[x*n+j]>q[j]&&f(j))return r[j*n+x]+++r[x*n+j]-->0;return x==t;}
-}
+class Y{int r[],n,c,q[],z,t;Object s(boolean p,String[]I){var m="";var g=new int[9999999];for(var L:I){c=-1;for(var x:L.split(":? "))g[(z=(m+=m.contains(x)?"":x+n++%2).indexOf(x)/4)<<12|(c=c<0?z:c)]=g[c<<12|z]=1;}for(;;t++)for(r=g.clone(),z=4;z-->0;){q=new int[n];if(!f(c=0))return c*(n-c);}}boolean f(int x){q[x]=c+++6;for(int j=n;j-->0;)if(r[x<<12|j]>q[j]&&f(j))return--r[x<<12|j]<=++r[j<<12|x];return x==t;}}
