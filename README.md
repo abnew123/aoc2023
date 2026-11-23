@@ -1,3 +1,8 @@
+> [!NOTE]
+> This repository is archived. These solutions, with their full history, now live in
+> [ShichengRao/advent-of-code](https://github.com/ShichengRao/advent-of-code/tree/main/2023)
+> alongside every other year.
+
 2023 AoC repo. For more detailed thoughts about the problems, see https://abnew123.substack.com/
 
 Total run time of all 50 parts is roughly 1.3 seconds on my 2019 Macbook Pro, and roughly 1 second on my 2024 Macbook Pro. Days 16 & 17 take up the most time.  
